@@ -24,6 +24,20 @@ namespace Extractor
 
         private static readonly string DotNetRuntime = "DotNetCore-3.1.21-win-x64.exe";
         private static readonly string ServiceConfig = "config.json";
+        private static readonly string[] Dependencies = new string[] {
+                "Microsoft.Win32.SystemEvents.dll",
+                "MQTTnet.dll",
+                "MqttSql.deps.json",
+                "MqttSql.dll",
+                "MqttSql.runtimeconfig.json",
+                "Newtonsoft.Json.dll",
+                "SQLite.Interop.dll",
+                "System.Data.SQLite.dll",
+                "System.Diagnostics.EventLog.dll",
+                "System.ServiceProcess.ServiceController.dll",
+                "Topshelf.dll",
+                "TopShelf.ServiceInstaller.dll"
+            };
         private static readonly string Service = "MqttSql.exe";
 
         public static void Main(string[] args)
@@ -47,6 +61,13 @@ namespace Extractor
 
             DebugLog($"Extracting the service configuration configuration \"{ServiceConfig}\"");
             ExtractResourceFile("Extractor", "Embeeded", ServiceConfig, targetDir);
+
+            DebugLog($"Extracting the service dependencies");
+            foreach (string dep in Dependencies)
+            {
+                DebugLog($"Extracting dependency \"{dep}\"");
+                ExtractResourceFile("Extractor", "Embeeded", dep, targetDir);
+            }
 
             DebugLog($"Extracting the service executable \"{Service}\"");
             ExtractResourceFile("Extractor", "Embeeded", Service, targetDir);

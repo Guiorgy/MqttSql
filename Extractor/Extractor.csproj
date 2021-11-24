@@ -82,6 +82,8 @@
   <ItemGroup>
     <None Include="app.manifest" />
     <EmbeddedResource Include="Embeeded\config.json" />
+    <EmbeddedResource Include="Embeeded\MqttSql.deps.json" />
+    <EmbeddedResource Include="Embeeded\MqttSql.runtimeconfig.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Embeeded\DotNetCore-3.1.21-win-x64.exe" />
@@ -95,6 +97,18 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Embeeded\Microsoft.Win32.SystemEvents.dll" />
+    <EmbeddedResource Include="Embeeded\MQTTnet.dll" />
+    <EmbeddedResource Include="Embeeded\MqttSql.dll" />
+    <EmbeddedResource Include="Embeeded\Newtonsoft.Json.dll" />
+    <EmbeddedResource Include="Embeeded\SQLite.Interop.dll" />
+    <EmbeddedResource Include="Embeeded\System.Data.SQLite.dll" />
+    <EmbeddedResource Include="Embeeded\System.Diagnostics.EventLog.dll" />
+    <EmbeddedResource Include="Embeeded\System.ServiceProcess.ServiceController.dll" />
+    <EmbeddedResource Include="Embeeded\Topshelf.dll" />
+    <EmbeddedResource Include="Embeeded\TopShelf.ServiceInstaller.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
