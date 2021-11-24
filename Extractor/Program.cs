@@ -125,6 +125,7 @@ namespace Extractor
         {
             using (Process process = new Process())
             {
+                process.StartInfo.WorkingDirectory = directory;
                 process.StartInfo.FileName = directory + (directory.EndsWith("\\") ? "" : "\\") + exe;
                 process.StartInfo.Arguments = args;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;

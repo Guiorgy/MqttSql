@@ -22,9 +22,9 @@ namespace MqttSql
 {
     public class Service
     {
-        public Service()
+        public Service(string homeDir = null)
         {
-            this.homeDir = Environment.GetEnvironmentVariable("MqttSqlHome");
+            this.homeDir = homeDir == null ? Environment.GetEnvironmentVariable("MqttSqlHome") : homeDir;
             this.dbPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "database.sqlite";
             this.configPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "config.json";
             this.logPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "logs.txt";
@@ -189,6 +189,7 @@ namespace MqttSql
 #endif
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1450:Private fields only used as local variables in methods should become local variables")]
         private readonly string homeDir;
         private readonly string dbPath;
         private readonly string configPath;
