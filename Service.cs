@@ -106,6 +106,7 @@ namespace MqttSql
 
         private void WriteToTable(string table, string message)
         {
+            lastSqlWrite = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             DebugLog($"Writing to table \"{table}\" the message: \"{message}\"");
             using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
             {
@@ -114,6 +115,27 @@ namespace MqttSql
                 SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
                 command.ExecuteNonQuery();
             }
+        }
+
+        private Task WriteToTableTask(string table, string message)
+        {
+            return new Task(() =>
+            {
+                lock (sqlLock)
+                {
+                    while (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqlWrite < 1000)
+                        Task.Delay(250);
+                    lastSqlWrite = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                }
+                DebugLog($"Writing to table \"{table}\" the message: \"{message}\"");
+                using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
+                {
+                    sqlCon.Open();
+                    string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\")";
+                    SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
+                    command.ExecuteNonQuery();
+                }
+            });
         }
 
         private void SubscribeToBrokers(IEnumerable<ServiceConfiguration> configurations)
@@ -176,7 +198,7 @@ namespace MqttSql
                         string topic = e.ApplicationMessage.Topic;
                         string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                         DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                        WriteToTable(TopicTable[topic], message);
+                        WriteToTableTask(TopicTable[topic], message).Start();
                     });
 
                     DebugLog($"Connecting to \"{cfg.Host}\"");
@@ -203,10 +225,14 @@ namespace MqttSql
         private readonly string homeDir;
         private readonly string dbPath;
         private readonly string configPath;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1450:Private fields only used as local variables in methods should become local variables")]
         private readonly string logPath;
 
         private List<ServiceConfiguration> configurations;
         private readonly string clientId = Environment.MachineName.Replace(' ', '.');
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
+        private readonly static object sqlLock = new object();
+        private long lastSqlWrite = 0;
     }
 }
