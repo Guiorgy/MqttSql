@@ -55,13 +55,17 @@ namespace Extractor
                 Directory.CreateDirectory(targetDir);
             }
 
-            if (!File.Exists(targetDir + (targetDir.EndsWith("\\") ? "" : "\\") + DotNetRuntime))
+            string dotnetinfo = GetCommandOutput("dotnet --info", 10);
+            if (dotnetinfo == null || !dotnetinfo.Contains("3.1.21"))
             {
-                DebugLog($"Extracting the .Net Runtime \"{DotNetRuntime}\"");
-                ExtractResourceFile("Extractor", "Embeeded", DotNetRuntime, targetDir);
+                if (!File.Exists(targetDir + (targetDir.EndsWith("\\") ? "" : "\\") + DotNetRuntime))
+                {
+                    DebugLog($"Extracting the .Net Runtime \"{DotNetRuntime}\"");
+                    ExtractResourceFile("Extractor", "Embeeded", DotNetRuntime, targetDir);
+                }
+                DebugLog($"Installing \"{DotNetRuntime}\" .Net Runtime");
+                RunExecutableFor(targetDir, DotNetRuntime, "/install /quiet /norestart", 30);
             }
-            DebugLog($"Installing \"{DotNetRuntime}\" .Net Runtime");
-            RunExecutableFor(targetDir, DotNetRuntime, "/install /quiet /norestart", 30);
 
             DebugLog($"Extracting the service configuration configuration \"{ServiceConfig}\"");
             ExtractResourceFile("Extractor", "Embeeded", ServiceConfig, targetDir);
@@ -121,6 +125,45 @@ namespace Extractor
             }
         }
 
+        private static string GetCommandOutput(string command, int timeout)
+        {
+            DebugLog($"Executing {command}");
+            string result = null;
+            Thread thread = new Thread(new ThreadStart(() =>
+            {
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + command)
+                {
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (Process process = new Process())
+                {
+                    process.StartInfo = procStartInfo;
+                    process.Start();
+                    process.WaitForExit();
+
+                    result = process.StandardOutput.ReadToEnd();
+                    DebugLog(result);
+                }
+            }));
+            thread.Start();
+            while (timeout > 0)
+            {
+                Thread.Sleep(1000);
+                if (!thread.IsAlive) break;
+                timeout--;
+            }
+            if (thread.IsAlive)
+            {
+                thread.Abort();
+                DebugLog("Aborting!");
+            }
+            return result;
+        }
+
         private static void RunExecutable(string directory, string exe, string args)
         {
             using (Process process = new Process())
@@ -144,24 +187,24 @@ namespace Extractor
 #if LOG
                 string result = process.StandardOutput.ReadToEnd();
                 DebugLog(result);
-                DebugWait();
 #endif
             }
         }
 
         private static void RunExecutableFor(string directory, string exe, string args, int seconds)
         {
-            using (Process process = new Process())
+            Thread thread = new Thread(new ThreadStart(() => RunExecutable(directory, exe, args)));
+            thread.Start();
+            while (seconds > 0)
             {
-                Thread thread = new Thread(new ThreadStart(() => RunExecutable(directory, exe, args)));
-                thread.Start();
-                while (seconds > 0)
-                {
-                    Thread.Sleep(1000);
-                    if (!thread.IsAlive) break;
-                    seconds--;
-                }
-                if (thread.IsAlive) thread.Abort();
+                Thread.Sleep(1000);
+                if (!thread.IsAlive) break;
+                seconds--;
+            }
+            if (thread.IsAlive)
+            {
+                thread.Abort();
+                DebugLog("Aborting!");
             }
         }
     }
