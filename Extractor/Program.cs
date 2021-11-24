@@ -1,4 +1,8 @@
-﻿using System.Diagnostics;
+﻿#if !LOG && DEBUG
+#define LOG
+#endif
+
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -9,14 +13,14 @@ namespace Extractor
     {
         private static void DebugLog(string message)
         {
-#if DEBUG
+#if LOG
             System.Console.WriteLine(message);
 #endif
         }
 
         private static void DebugWait()
         {
-#if DEBUG
+#if LOG
             System.Console.Out.Flush();
             System.Console.ReadLine();
 #endif
@@ -109,7 +113,7 @@ namespace Extractor
                 process.Start();
                 process.WaitForExit();
 
-#if DEBUG
+#if LOG
                 string result = process.StandardOutput.ReadToEnd();
                 DebugLog(result);
                 DebugWait();
@@ -124,7 +128,7 @@ namespace Extractor
                 process.StartInfo.FileName = directory + (directory.EndsWith("\\") ? "" : "\\") + exe;
                 process.StartInfo.Arguments = args;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-#if DEBUG
+#if LOG
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.UseShellExecute = false;
@@ -136,7 +140,7 @@ namespace Extractor
                 process.Start();
                 process.WaitForExit();
 
-#if DEBUG
+#if LOG
                 string result = process.StandardOutput.ReadToEnd();
                 DebugLog(result);
                 DebugWait();

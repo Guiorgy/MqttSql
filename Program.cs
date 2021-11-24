@@ -1,4 +1,8 @@
-﻿using System;
+﻿#if !LOG && DEBUG
+#define LOG
+#endif
+
+using System;
 using System.Linq;
 using Topshelf;
 
@@ -10,7 +14,7 @@ namespace MqttSql
         {
             if (args.Any(arg => arg.Equals("install"))) {
                 string home = System.IO.Directory.GetCurrentDirectory();
-#if DEBUG
+#if LOG
                 Console.WriteLine($"Setting home directory to \"{home}\"");
 #endif
                 Environment.SetEnvironmentVariable("MqttSqlHome", home, EnvironmentVariableTarget.Machine);
@@ -31,7 +35,7 @@ namespace MqttSql
                 host.SetDisplayName("MQTT to SQL");
                 host.SetDescription("Subscribes to a MQTT topic and writes the data into a local SQLite database");
 
-#if DEBUG
+#if LOG
                 host.OnException(e =>
                 {
                     Console.WriteLine(e.Message);

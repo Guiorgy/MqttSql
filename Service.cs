@@ -1,4 +1,8 @@
-﻿using MQTTnet;
+﻿#if !LOG && DEBUG
+#define LOG
+#endif
+
+using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Subscribing;
@@ -173,14 +177,14 @@ namespace MqttSql
 
         private void DebugLog(string message)
         {
-#if DEBUG
+#if LOG
             File.AppendAllText(logPath, message + Environment.NewLine);
 #endif
         }
 
         private void DebugLog(object messageObj)
         {
-#if DEBUG
+#if LOG
             DebugLog(messageObj.ToString());
 #endif
         }
