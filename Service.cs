@@ -64,7 +64,7 @@ namespace MqttSql
         {
             DebugLog($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
-            DebugLog(new Regex("(\"password\":\")(.*?)(,|\n|\r)").Replace(json, "$1********\"$3"));
+            DebugLog(new Regex("(\"password\":)(.*?)(,|\n|\r)").Replace(json, "$1\"********\"$3"));
             configurations = JsonConvert.DeserializeObject<List<ServiceConfiguration>>(json);
             DebugLog("Configuration loaded:");
             foreach (var cfg in configurations)
