@@ -118,10 +118,15 @@ namespace MqttSql
 
         private void SubscribeToBrokers(IEnumerable<ServiceConfiguration> configurations)
         {
-            foreach (var cfg in configurations)
+            var connections =
+                configurations
+                .OrderBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]")
+                .GroupBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]");
+            foreach (var con in connections)
             {
                 Task.Run(async () =>
                 {
+                    var cfg = con.First();
                     var factory = new MqttFactory();
                     var mqttClient = factory.CreateMqttClient();
                     var options = new MqttClientOptionsBuilder()
@@ -150,15 +155,20 @@ namespace MqttSql
                         }
                     });
 
+                    var TopicTable = new Dictionary<string, string>(con.Count());
                     mqttClient.UseConnectedHandler(async e =>
                     {
                         DebugLog($"Connection established with \"{cfg.Host}\"");
-                        DebugLog($"Subscribing to \"{cfg.Topic}\" topic");
-                        await mqttClient.SubscribeAsync(
-                            new MqttClientSubscribeOptionsBuilder()
-                                .WithTopicFilter(cfg.Topic, qualityOfServiceLevel: MqttQualityOfServiceLevel.ExactlyOnce)
-                                .Build()
-                        );
+                        foreach (var cfg2 in con)
+                        {
+                            DebugLog($"Subscribing to \"{cfg2.Topic}\" topic");
+                            TopicTable.Add(cfg2.Topic, cfg2.Table);
+                            await mqttClient.SubscribeAsync(
+                                new MqttClientSubscribeOptionsBuilder()
+                                    .WithTopicFilter(cfg2.Topic, qualityOfServiceLevel: MqttQualityOfServiceLevel.ExactlyOnce)
+                                    .Build()
+                            );
+                        }
                     });
 
                     mqttClient.UseApplicationMessageReceivedHandler(e =>
@@ -166,7 +176,7 @@ namespace MqttSql
                         string topic = e.ApplicationMessage.Topic;
                         string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                         DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                        WriteToTable(cfg.Table, message);
+                        WriteToTable(TopicTable[topic], message);
                     });
 
                     DebugLog($"Connecting to \"{cfg.Host}\"");
