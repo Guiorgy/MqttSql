@@ -93,8 +93,13 @@ namespace MqttSql
             using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
             {
                 sqlCon.Open();
+                var created = new HashSet<string>();
                 foreach (string table in tables)
                 {
+                    if (created.Contains(table))
+                        continue;
+                    else
+                        created.Add(table);
                     DebugLog($"Checking the existence of table \"{table}\"");
                     string sql = "CREATE TABLE IF NOT EXISTS " + table + "("
                                    + "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,"
