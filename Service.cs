@@ -93,20 +93,29 @@ namespace MqttSql
             using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
             {
                 sqlCon.Open();
-                var created = new HashSet<string>();
-                foreach (string table in tables)
+                using (var transaction = sqlCon.BeginTransaction())
                 {
-                    if (created.Contains(table))
-                        continue;
-                    else
-                        created.Add(table);
-                    DebugLog($"Checking the existence of table \"{table}\"");
-                    string sql = "CREATE TABLE IF NOT EXISTS " + table + "("
-                                   + "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,"
-                                   + "Message VARCHAR NOT NULL"
-                               + ");";
-                    SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
-                    command.ExecuteNonQuery();
+                    using (var command = new SQLiteCommand(sqlCon))
+                    {
+                        command.Transaction = transaction;
+
+                        var created = new HashSet<string>();
+                        foreach (string table in tables)
+                        {
+                            if (created.Contains(table))
+                                continue;
+                            else
+                                created.Add(table);
+                            DebugLog($"Checking the existence of table \"{table}\"");
+                            command.CommandText = "CREATE TABLE IF NOT EXISTS " + table + "("
+                                                    + "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,"
+                                                    + "Message VARCHAR NOT NULL"
+                                                + ");";
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
                 }
             }
         }
