@@ -9,9 +9,9 @@
  Modify the `Extractor.Program` fields as needed:
 
  ```cs
-static readonly string DotNetRuntime = "DotNetCore-3.1.21-win-x64.exe";
-static readonly string ServiceConfig = "config.json";
-static readonly string[] Dependencies = new string[] {
+static readonly string DotNetRuntime = "DotNetCore-3.1.21-win-x64.exe"; // the .Net Core runtime MqttSql service uses
+static readonly string ServiceConfig = "config.json"; // the service configuration file
+static readonly string[] Dependencies = new string[] { // the rest of the files created when building MqttSql.
         "Microsoft.Win32.SystemEvents.dll",
         "MQTTnet.dll",
         "MqttSql.deps.json",
@@ -28,11 +28,19 @@ static readonly string[] Dependencies = new string[] {
 static readonly string Service = "MqttSql.exe";
  ```
 
+ If any of the file names are changed, you'll need to remove the old file from the `Solution Explorer`, add the new file and change the `Build Action` in the `Properties` to `Embedded Resource`.
+
+ If a different .Net runtime was used to build MqttSql, then first repeat the step above and after modify the next line with the apropriate version:
+
+ `if (dotnetinfo == null || !dotnetinfo.Contains("3.1.21"))`
+
  Build the project.
 
 ## Installation
 
- Just run the executable as admin. Alternatively, you may pass the path to the target directory as the first argument from the command line.
+ Just run the executable as admin. Alternatively, you may pass the path to the target directory as the first argument from the command line, for example:
+
+ `.\Extractor.exe C:\MqttSql`
 
 ## MIT License
 
