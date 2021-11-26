@@ -33,7 +33,7 @@
 
  This project uses [TopShelf](https://github.com/Topshelf/Topshelf) to manage the Windows service.
 
- To install the windows service, open an elevated shell window using navigate to the directory with the executable, for example:
+ To install the Windows service, open an elevated shell window and navigate to the directory with the executable, for example:
 
  `cd "C:\Program Files\MqttSql`
 
