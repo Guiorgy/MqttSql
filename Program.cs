@@ -3,17 +3,100 @@
 #endif
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+#if !LINUX
 using Topshelf;
+using Topshelf.Runtime.DotNetCore;
+using static System.Runtime.InteropServices.OSPlatform;
+using static System.Runtime.InteropServices.RuntimeInformation;
+#endif
 
 namespace MqttSql
 {
     public static class Program
     {
-        public static void Main(string[] args)
+#if LINUX
+        [System.Runtime.InteropServices.DllImport("libc")]
+        public static extern uint getuid();
+        [System.Runtime.InteropServices.DllImport("libc")]
+        public static extern uint geteuid();
+#endif
+
+        public static async Task Main(string[] args)
         {
-            if (args.Any(arg => arg.Equals("install"))) {
-                string home = System.IO.Directory.GetCurrentDirectory();
+#if !LINUX
+            if (IsOSPlatform(Linux))
+#endif
+            {
+                var proccess = Process.GetCurrentProcess();
+                var dir = Directory.GetCurrentDirectory();
+                if (args.ContainsAny("install", "uninstall", "start", "stop"))
+                {
+#if LINUX
+                    if (getuid() != 0 && geteuid() != 0)
+                        throw new Exception("Insufficient rights. Try running with sudo");
+#endif
+                    if (args.Contains("uninstall") && args.ContainsAny("install", "start"))
+                        throw new ArgumentException("Can't use \"uninstall\" with \"install\" or \"start\"");
+
+                    if (args.Contains("install"))
+                    {
+                        string user = "root";
+                        bool userFlag = false;
+                        foreach (string arg in args)
+                        {
+                            if (userFlag)
+                            {
+                                user = arg;
+                                break;
+                            }
+                            else if (arg == "-u" || arg == "--user")
+                                userFlag = true;
+                        }
+#if LOG
+                        Console.WriteLine($"Directory: {dir}");
+                        Console.WriteLine($"Executable: {exe}");
+                        Console.WriteLine($"User: {user}");
+#endif
+                        File.WriteAllText(systemdServicePath,
+                            systemdServiceText
+                                .Replace("{EXE}", proccess.MainModule.FileName)
+                                .Replace("{DIR}", dir)
+                                .Replace("{USER}", user));
+                        ExecuteCommand(systemctlPath + " daemon-reload");
+                    }
+                    if (args.Contains("start"))
+                    {
+                        ExecuteCommand(systemctlPath + " enable " + systemdServiceName);
+                        ExecuteCommand(systemctlPath + " start " + systemdServiceName);
+                    }
+                    if (args.ContainsAny("stop", "uninstall"))
+                    {
+                        if (args.Contains("start"))
+                            await Task.Delay(60_000);
+                        ExecuteCommand(systemctlPath + " stop " + systemdServiceName);
+                        ExecuteCommand(systemctlPath + " disable " + systemdServiceName);
+                    }
+                    if (args.Contains("uninstall"))
+                    {
+                        if (File.Exists(systemdServicePath))
+                            File.Delete(systemdServicePath);
+                        ExecuteCommand(systemctlPath + " daemon-reload");
+                    }
+                    return;
+                }
+                Service service = new Service(dir, "/");
+                await service.StartAsync();
+                return;
+            }
+
+#if !LINUX
+            if (args.Any(arg => arg.Equals("install")))
+            {
+                string home = Directory.GetCurrentDirectory();
 #if LOG
                 Console.WriteLine($"Setting home directory to \"{home}\"");
 #endif
@@ -22,6 +105,9 @@ namespace MqttSql
 
             var exitCode = HostFactory.Run(host =>
             {
+                if (IsOSPlatform(OSX) || IsOSPlatform(Linux) || IsOSPlatform(FreeBSD))
+                    host.UseEnvironmentBuilder(target => new DotNetCoreEnvironmentBuilder(target));
+
                 host.Service<Service>(service =>
                 {
                     service.ConstructUsing(s => new Service());
@@ -34,6 +120,8 @@ namespace MqttSql
                 host.SetServiceName("MqttSql");
                 host.SetDisplayName("MQTT to SQL");
                 host.SetDescription("Subscribes to a MQTT topic and writes the data into a local SQLite database");
+                host.EnableServiceRecovery(src => src.RestartService(TimeSpan.FromSeconds(10)));
+                host.StartAutomatically();
 
 #if LOG
                 host.OnException(e =>
@@ -45,6 +133,58 @@ namespace MqttSql
             });
 
             Environment.ExitCode = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+#endif
         }
+
+        private static void ExecuteCommand(string command, bool sudo = true)
+        {
+#if LOG
+            Console.WriteLine($"Executing \"{command}\"{(sudo ? " as root" : "")}");
+#endif
+            ProcessStartInfo procStartInfo =
+                new ProcessStartInfo(sudo ? "/usr/bin/sudo" : "/bin/bash/", command)
+                {
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+            using (Process process = new Process())
+            {
+                process.StartInfo = procStartInfo;
+                process.Start();
+                process.WaitForExit();
+
+#if LOG
+                string result = process.StandardOutput.ReadToEnd();
+                Console.WriteLine(result);
+#endif
+            }
+        }
+
+        private readonly static string systemctlPath = "/usr/bin/systemctl";
+        private readonly static string systemdServiceName = "mqtt-sql";
+        private readonly static string systemdServicePath = "/etc/systemd/system/" + systemdServiceName + ".service";
+        private readonly static string systemdServiceText =
+            @"
+            [Unit]
+            Description=Subscribes to a MQTT topic and writes the data into a local SQLite database
+
+            [Service]
+            Type=simple
+            WorkingDirectory={DIR}
+            ExecStart={EXE}
+            User={USER}
+            Restart=always
+            Restart=on-failure
+            RestartSec=10
+            StandardOutput=syslog
+            StandardError=syslog
+            SyslogIdentifier=%n
+
+            [Install]
+            WantedBy=multi-user.target
+            ".Replace("            ", "");
     }
 }

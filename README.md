@@ -1,6 +1,6 @@
 # MqttSql
 
- A simple .Net Core Windows service that subscribes to MQTT brokers and writes the messages into a local SQLite database
+ A simple .Net Core Windows/systemd service that subscribes to MQTT brokers and writes the messages into a local SQLite database.
 
 ## Configuration
 
@@ -13,7 +13,7 @@
     "port": 1883,
     "user": "user1",
     "password": "password1",
-    "topic": "some/tpic/1",
+    "topic": "some/topic/1",
     "table": "table1"
   },
   {
@@ -31,21 +31,31 @@
 
 ## Installation
 
- This project uses [TopShelf](https://github.com/Topshelf/Topshelf) to manage the Windows service.
+ Make sure that [.Net Core 3.1](https://dotnet.microsoft.com/download/dotnet) or higher is installed. Example for Ubuntu 20.04:
 
- To install the Windows service, open an elevated shell window and navigate to the directory with the executable, for example:
+ ```sh
+ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+ sudo dpkg -i packages-microsoft-prod.deb
+ sudo rm packages-microsoft-prod.deb
+ sudo apt update
+ sudo apt install -y dotnet-runtime-3.1=3.1.21-1
+ ```
 
- `cd "C:\Program Files\MqttSql`
+ This project uses [Topshelf](https://github.com/Topshelf/Topshelf) to manage the Windows service. The Linux systemd installation will be the same as with Topshelf.
+
+ To install the service, open an elevated shell window and navigate to the directory with the executable, for example:
+
+ `cd "C:\Program Files\MqttSql` for Windows and `cd ~/MqttSql` for Linux
 
  And run the executable with `install` and `start` arguments, for example:
 
- `.\MqttSql.exe install start`
+ `.\MqttSql.exe install start` for Windows and `sudo ./MqttSql install start` for Linux
 
  To unregister and uninstall the service, run the executable with the `uninstall` argument, for example:
 
- `.\MqttSql.exe uninstall`
+ `.\MqttSql.exe uninstall` for Windows and `sudo ./MqttSql uninstall` for Linux
 
- Alternatively, you can use the Extractor tool included in the project, which will put all the necesary files into the target directory, install the .Net Core runtime if necesary and install the service.
+ Alternatively on Windows, you can use the Extractor tool included in the project, which will put all the necesary files into the target directory, install the .Net Core runtime if necesary and install the service.
 
 ## MIT License
 

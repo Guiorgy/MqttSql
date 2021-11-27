@@ -112,7 +112,7 @@
     <EmbeddedResource Include="Embeeded\TopShelf.ServiceInstaller.dll" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".gitignore" />
+    <None Include="Embeeded\.gitignore" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

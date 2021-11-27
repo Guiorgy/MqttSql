@@ -13,25 +13,34 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace MqttSql
 {
     public class Service
     {
-        public Service(string homeDir = null)
+        public Service(string homeDir = null, string dirSep = "\\")
         {
+            string macAddress = NetworkInterface
+                .GetAllNetworkInterfaces()
+                .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .Select(nic => nic.GetPhysicalAddress().ToString())
+                .FirstOrDefault();
+            this.clientId = $"{macAddress}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
             this.homeDir = homeDir == null ? Environment.GetEnvironmentVariable("MqttSqlHome") : homeDir;
-            this.dbPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "database.sqlite";
-            this.configPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "config.json";
-            this.logPath = this.homeDir + (this.homeDir.EndsWith("\\") ? "" : "\\") + "logs.txt";
+            this.dbPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "database.sqlite";
+            this.configPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "config.json";
+            this.logPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "logs.txt";
             DebugLog($"Home: \"{this.homeDir}\"");
             DebugLog($"Database: \"{this.dbPath}\"");
             DebugLog($"Configuration: \"{this.configPath}\"");
             DebugLog($"Logs: \"{this.logPath}\"");
+            DebugLog($"ClientId: \"{this.clientId}\"");
         }
 
         public void Start()
@@ -42,8 +51,24 @@ namespace MqttSql
                 ReadJsonConfig();
                 var tables = configurations.Select(cfg => cfg.Table);
                 EnsureTablesExist(tables);
-                SubscribeToBrokers(configurations);
+                SubscribeToBrokers();
             }, cancellationToken.Token);
+        }
+
+        public async Task StartAsync()
+        {
+            messageQueue = Channel.CreateUnbounded<Tuple<string, string>>();
+            EnsureDbExists();
+            ReadJsonConfig();
+            var tables = configurations.Select(cfg => cfg.Table);
+            EnsureTablesExist(tables);
+            SubscribeToBrokers();
+            await foreach ((string table, string message)
+                in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
+            {
+                WriteToTable(table, message);
+                await Task.Delay(1000);
+            }
         }
 
         public void Stop()
@@ -127,7 +152,7 @@ namespace MqttSql
             using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
             {
                 sqlCon.Open();
-                string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\")";
+                string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\"")";
                 SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
                 command.ExecuteNonQuery();
             }
@@ -147,14 +172,14 @@ namespace MqttSql
                 using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
                 {
                     sqlCon.Open();
-                    string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\")";
+                    string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\"")";
                     SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
                     command.ExecuteNonQuery();
                 }
             });
         }
 
-        private void SubscribeToBrokers(IEnumerable<ServiceConfiguration> configurations)
+        private void SubscribeToBrokers()
         {
             var connections =
                 configurations
@@ -162,7 +187,7 @@ namespace MqttSql
                 .GroupBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]");
             foreach (var con in connections)
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     var cfg = con.First();
                     var factory = new MqttFactory();
@@ -183,13 +208,16 @@ namespace MqttSql
                         try
                         {
                             DebugLog($"Attempting to recconnect to \"{cfg.Host}\"");
-                            await mqttClient.ConnectAsync(options, cancellationToken.Token);
+                            await mqttClient.ReconnectAsync(cancellationToken.Token);
                             connectionFailed = false;
                             DebugLog("Reconnected!");
                         }
                         catch
                         {
                             DebugLog("Reconnection Failed!");
+                            cancellationToken.Cancel();
+                            await Task.Delay(1000);
+                            Environment.Exit(-1);
                         }
                     });
 
@@ -209,13 +237,26 @@ namespace MqttSql
                         }
                     });
 
-                    mqttClient.UseApplicationMessageReceivedHandler(e =>
+                    if (messageQueue == null)
                     {
-                        string topic = e.ApplicationMessage.Topic;
-                        string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                        DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                        WriteToTableTask(TopicTable[topic], message).Start();
-                    });
+                        mqttClient.UseApplicationMessageReceivedHandler(e =>
+                        {
+                            string topic = e.ApplicationMessage.Topic;
+                            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                            DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
+                            WriteToTableTask(TopicTable[topic], message).Start();
+                        });
+                    }
+                    else
+                    {
+                        mqttClient.UseApplicationMessageReceivedHandler(e =>
+                        {
+                            string topic = e.ApplicationMessage.Topic;
+                            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                            DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
+                            messageQueue.Writer.TryWrite(Tuple.Create(TopicTable[topic], message));
+                        });
+                    }
 
                     DebugLog($"Connecting to \"{cfg.Host}\"");
                     await mqttClient.ConnectAsync(options, cancellationToken.Token);
@@ -226,7 +267,27 @@ namespace MqttSql
         private void DebugLog(string message)
         {
 #if LOG
-            File.AppendAllText(logPath, message + Environment.NewLine);
+            if ((logWrites = logWrites > 1000 ? 0 : logWrites + 1) > 1000
+                && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
+            {
+                byte[] buffer;
+                using (BinaryReader reader = new BinaryReader(file.Open(FileMode.Open)))
+                {
+                    reader.BaseStream.Position = file.Length - 1_000_000;
+                    buffer = reader.ReadBytes(1_000_000);
+                }
+                using (BinaryWriter writer = new BinaryWriter(file.Open(FileMode.Truncate)))
+                {
+                    writer.BaseStream.Position = 0;
+                    writer.Write(buffer);
+                    writer.Write(Encoding.UTF8.GetBytes(message + Environment.NewLine));
+                }
+            }
+            else
+            {
+            	Console.WriteLine(message + Environment.NewLine);
+            	File.AppendAllText(logPath, message + Environment.NewLine);
+            }
 #endif
         }
 
@@ -241,14 +302,17 @@ namespace MqttSql
         private readonly string homeDir;
         private readonly string dbPath;
         private readonly string configPath;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1450:Private fields only used as local variables in methods should become local variables")]
         private readonly string logPath;
 
         private List<ServiceConfiguration> configurations;
-        private readonly string clientId = Environment.MachineName.Replace(' ', '.');
+        private readonly string clientId;
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
 
         private readonly static object sqlLock = new object();
         private long lastSqlWrite = 0;
+
+        private Channel<Tuple<string, string>> messageQueue = null;
+
+        private int logWrites = 0;
     }
 }
