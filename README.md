@@ -49,7 +49,7 @@
 
  And run the executable with `install` and `start` arguments, for example:
 
- `.\MqttSql.exe install start` for Windows and `sudo ./MqttSql install --user user1 start` for Linux, where `-u` or `--user` arguments can be user to set the user the service should run with (default `root`).
+ `.\MqttSql.exe install start` for Windows and `sudo ./MqttSql install --user user1 start` for Linux, where `-u` or `--user` arguments can be used to set the user the service should run with (default `root`).
 
  To unregister and uninstall the service, run the executable with the `uninstall` argument, for example:
 
