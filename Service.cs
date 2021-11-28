@@ -35,12 +35,15 @@ namespace MqttSql
             this.homeDir = homeDir == null ? Environment.GetEnvironmentVariable("MqttSqlHome") : homeDir;
             this.dbPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "database.sqlite";
             this.configPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "config.json";
-            this.logPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "logs.txt";
             DebugLog($"Home: \"{this.homeDir}\"");
             DebugLog($"Database: \"{this.dbPath}\"");
             DebugLog($"Configuration: \"{this.configPath}\"");
-            DebugLog($"Logs: \"{this.logPath}\"");
             DebugLog($"ClientId: \"{this.clientId}\"");
+
+#if LOG
+            this.logPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "logs.txt";
+            DebugLog($"Logs: \"{this.logPath}\"");
+#endif
         }
 
         public void Start()
@@ -185,29 +188,32 @@ namespace MqttSql
                 configurations
                 .OrderBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]")
                 .GroupBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]");
-            foreach (var con in connections)
+            foreach (var congroup in connections)
             {
                 _ = Task.Run(async () =>
                 {
-                    var cfg = con.First();
+                    var TopicTable = new Dictionary<string, string>(congroup.Count());
+                    foreach (var cfg in congroup) TopicTable.Add(cfg.Topic, cfg.Table);
+                    var connection = congroup.First();
+
                     var factory = new MqttFactory();
                     var mqttClient = factory.CreateMqttClient();
                     var options = new MqttClientOptionsBuilder()
                         .WithClientId(clientId)
-                        .WithTcpServer(cfg.Host, cfg.Port)
-                        .WithCredentials(cfg.User, cfg.Password)
+                        .WithTcpServer(connection.Host, connection.Port)
+                        .WithCredentials(connection.User, connection.Password)
                         .Build();
 
                     bool connectionFailed = false;
                     mqttClient.UseDisconnectedHandler(async e =>
                     {
-                        DebugLog($"Disconnected from \"{cfg.Host}\"! Reason: \"{e.Reason}\"");
+                        DebugLog($"Disconnected from \"{connection.Host}\"! Reason: \"{e.Reason}\"");
                         await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10));
                         connectionFailed = true;
 
                         try
                         {
-                            DebugLog($"Attempting to recconnect to \"{cfg.Host}\"");
+                            DebugLog($"Attempting to recconnect to \"{connection.Host}\"");
                             await mqttClient.ReconnectAsync(cancellationToken.Token);
                             connectionFailed = false;
                             DebugLog("Reconnected!");
@@ -221,17 +227,15 @@ namespace MqttSql
                         }
                     });
 
-                    var TopicTable = new Dictionary<string, string>(con.Count());
                     mqttClient.UseConnectedHandler(async e =>
                     {
-                        DebugLog($"Connection established with \"{cfg.Host}\"");
-                        foreach (var cfg2 in con)
+                        DebugLog($"Connection established with \"{connection.Host}\"");
+                        foreach ((string topic, string table) in TopicTable)
                         {
-                            DebugLog($"Subscribing to \"{cfg2.Topic}\" topic");
-                            TopicTable.Add(cfg2.Topic, cfg2.Table);
+                            DebugLog($"Subscribing to \"{topic}\" topic");
                             await mqttClient.SubscribeAsync(
                                 new MqttClientSubscribeOptionsBuilder()
-                                    .WithTopicFilter(cfg2.Topic, qualityOfServiceLevel: MqttQualityOfServiceLevel.ExactlyOnce)
+                                    .WithTopicFilter(topic, qualityOfServiceLevel: MqttQualityOfServiceLevel.ExactlyOnce)
                                     .Build()
                             );
                         }
@@ -258,12 +262,17 @@ namespace MqttSql
                         });
                     }
 
-                    DebugLog($"Connecting to \"{cfg.Host}\"");
+                    DebugLog($"Connecting to \"{connection.Host}\"");
                     await mqttClient.ConnectAsync(options, cancellationToken.Token);
                 }, cancellationToken.Token);
             }
         }
 
+
+#if !LOG
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+#endif
         private void DebugLog(string message)
         {
 #if LOG
@@ -291,6 +300,10 @@ namespace MqttSql
 #endif
         }
 
+#if !LOG
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+#endif
         private void DebugLog(object messageObj)
         {
 #if LOG
@@ -302,7 +315,10 @@ namespace MqttSql
         private readonly string homeDir;
         private readonly string dbPath;
         private readonly string configPath;
+#if LOG
         private readonly string logPath;
+        private int logWrites = 0;
+#endif
 
         private List<ServiceConfiguration> configurations;
         private readonly string clientId;
@@ -312,7 +328,5 @@ namespace MqttSql
         private long lastSqlWrite = 0;
 
         private Channel<Tuple<string, string>> messageQueue = null;
-
-        private int logWrites = 0;
     }
 }
