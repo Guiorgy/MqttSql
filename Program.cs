@@ -1,8 +1,4 @@
-﻿#if !LOG && DEBUG
-#define LOG
-#endif
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -56,14 +52,16 @@ namespace MqttSql
                             else if (arg == "-u" || arg == "--user")
                                 userFlag = true;
                         }
-#if LOG
-                        Console.WriteLine($"Directory: {dir}");
-                        Console.WriteLine($"Executable: {exe}");
-                        Console.WriteLine($"User: {user}");
-#endif
+
+                        Console.WriteLine("Creating systemd service:");
+                        var exe = proccess.MainModule.FileName;
+                        Console.WriteLine($"\t Directory: {dir}");
+                        Console.WriteLine($"\t Executable: {exe}");
+                        Console.WriteLine($"\t User: {user}");
+
                         File.WriteAllText(systemdServicePath,
                             systemdServiceText
-                                .Replace("{EXE}", proccess.MainModule.FileName)
+                                .Replace("{EXE}", exe)
                                 .Replace("{DIR}", dir)
                                 .Replace("{USER}", user));
                         ExecuteCommand(systemctlPath + " daemon-reload");
@@ -97,9 +95,7 @@ namespace MqttSql
             if (args.Any(arg => arg.Equals("install")))
             {
                 string home = Directory.GetCurrentDirectory();
-#if LOG
                 Console.WriteLine($"Setting home directory to \"{home}\"");
-#endif
                 Environment.SetEnvironmentVariable("MqttSqlHome", home, EnvironmentVariableTarget.Machine);
             }
 
@@ -123,13 +119,11 @@ namespace MqttSql
                 host.EnableServiceRecovery(src => src.RestartService(TimeSpan.FromSeconds(10)));
                 host.StartAutomatically();
 
-#if LOG
                 host.OnException(e =>
                 {
                     Console.WriteLine(e.Message);
                     Console.WriteLine(e.StackTrace);
                 });
-#endif
             });
 
             Environment.ExitCode = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
@@ -138,9 +132,7 @@ namespace MqttSql
 
         private static void ExecuteCommand(string command, bool sudo = true)
         {
-#if LOG
             Console.WriteLine($"Executing \"{command}\"{(sudo ? " as root" : "")}");
-#endif
             ProcessStartInfo procStartInfo =
                 new ProcessStartInfo(sudo ? "/usr/bin/sudo" : "/bin/bash/", command)
                 {
@@ -156,10 +148,8 @@ namespace MqttSql
                 process.Start();
                 process.WaitForExit();
 
-#if LOG
                 string result = process.StandardOutput.ReadToEnd();
                 Console.WriteLine(result);
-#endif
             }
         }
 
