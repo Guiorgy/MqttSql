@@ -152,7 +152,7 @@ namespace MqttSql
             using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
             {
                 sqlCon.Open();
-                string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\"")";
+                string sql = "INSERT INTO " + table + "(Message) values ('" + message + "')";
                 SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
                 command.ExecuteNonQuery();
             }
@@ -172,7 +172,7 @@ namespace MqttSql
                 using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
                 {
                     sqlCon.Open();
-                    string sql = "INSERT INTO " + table + "(Message) values (\"" + message + "\"")";
+                    string sql = "INSERT INTO " + table + "(Message) values ('" + message + "')";
                     SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
                     command.ExecuteNonQuery();
                 }
