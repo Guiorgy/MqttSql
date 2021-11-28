@@ -16,11 +16,16 @@ namespace MqttSql
     {
 #if LINUX
         [System.Runtime.InteropServices.DllImport("libc")]
-        public static extern uint getuid();
+        private static extern uint getuid();
         [System.Runtime.InteropServices.DllImport("libc")]
-        public static extern uint geteuid();
+        private static extern uint geteuid();
 #endif
 
+#if LINUX
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1199:Nested code blocks should not be used")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3626:Jump statements should not be redundant")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped")]
         public static async Task Main(string[] args)
         {
 #if !LINUX
@@ -33,7 +38,7 @@ namespace MqttSql
                 {
 #if LINUX
                     if (getuid() != 0 && geteuid() != 0)
-                        throw new Exception("Insufficient rights. Try running with sudo");
+                        throw new UnauthorizedAccessException("Insufficient rights. Try running with sudo");
 #endif
                     if (args.Contains("uninstall") && args.ContainsAny("install", "start"))
                         throw new ArgumentException("Can't use \"uninstall\" with \"install\" or \"start\"");
