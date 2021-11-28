@@ -45,15 +45,15 @@
 
  To install the service, open an elevated shell window and navigate to the directory with the executable, for example:
 
- `cd "C:\Program Files\MqttSql` for Windows and `cd ~/MqttSql` for Linux
+ `cd "C:\Program Files\MqttSql` for Windows and `cd ~/MqttSql` for Linux.
 
  And run the executable with `install` and `start` arguments, for example:
 
- `.\MqttSql.exe install start` for Windows and `sudo ./MqttSql install start` for Linux
+ `.\MqttSql.exe install start` for Windows and `sudo ./MqttSql install --user user1 start` for Linux, where `-u` or `--user` arguments can be user to set the user the service should run with (default `root`).
 
  To unregister and uninstall the service, run the executable with the `uninstall` argument, for example:
 
- `.\MqttSql.exe uninstall` for Windows and `sudo ./MqttSql uninstall` for Linux
+ `.\MqttSql.exe uninstall` for Windows and `sudo ./MqttSql uninstall` for Linux.
 
  Alternatively on Windows, you can use the Extractor tool included in the project, which will put all the necesary files into the target directory, install the .Net Core runtime if necesary and install the service.
 
