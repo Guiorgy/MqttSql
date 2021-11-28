@@ -12,6 +12,12 @@
     <NeutralLanguage>en</NeutralLanguage>
     <ApplicationIcon>mqttsql.ico</ApplicationIcon>
     <Configurations>Debug;Release;Linux Release</Configurations>
+    <Version>2.0.0</Version>
+    <PackageProjectUrl>https://github.com/Guiorgy/MqttSql</PackageProjectUrl>
+    <PackageIcon>mqttsql.ico</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl>https://github.com/Guiorgy/MqttSql</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -53,6 +59,14 @@
     <Compile Remove="Extractor\**" />
     <EmbeddedResource Remove="Extractor\**" />
     <None Remove="Extractor\**" />
+    <None Include="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="mqttsql.ico">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
