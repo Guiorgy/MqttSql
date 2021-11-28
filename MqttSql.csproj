@@ -59,7 +59,7 @@
     <PackageReference Include="MQTTnet" Version="3.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
-    <PackageReference Include="Topshelf" Version="4.3.0" />
+    <PackageReference Include="Topshelf" Version="4.3.0" Condition="'$(Configuration)' != 'Linux Release'" />
   </ItemGroup>
 
 </Project>
