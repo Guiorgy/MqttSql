@@ -40,7 +40,7 @@ namespace MqttSql
 
                     if (args.Contains("install"))
                     {
-                        string user = "root";
+                        string user = Environment.UserName ?? "root";
                         bool userFlag = false;
                         foreach (string arg in args)
                         {
@@ -58,6 +58,14 @@ namespace MqttSql
                         Console.WriteLine($"\t Directory: {dir}");
                         Console.WriteLine($"\t Executable: {exe}");
                         Console.WriteLine($"\t User: {user}");
+                        if (user == "root")
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine($"The service was set to run with \"root\" user. "
+                                + $"If this is unwanted, either modify the \"{systemdServicePath}\" service file, "
+                                + $"or install using the \"-u\" or \"--user\" argument.");
+                            Console.ResetColor();
+                        }
 
                         File.WriteAllText(systemdServicePath,
                             systemdServiceText
