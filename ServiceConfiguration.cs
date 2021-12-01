@@ -7,8 +7,14 @@ namespace MqttSql.Configurations
 {
     public class ServiceConfiguration
     {
-        public BaseConfiguration[] Databases { get; set; } = new BaseConfiguration[0];
-        public BrokerConfiguration[] Brokers { get; set; } = new BrokerConfiguration[0];
+        public BaseConfiguration[] Databases { get; }
+        public BrokerConfiguration[] Brokers { get; }
+
+        [JsonConstructor]
+        public ServiceConfiguration(
+            BaseConfiguration[] databases = default,
+            BrokerConfiguration[] brokers = default) =>
+            (Databases, Brokers) = (databases ?? new BaseConfiguration[0], brokers ?? new BrokerConfiguration[0]);
 
         public override string ToString()
         {
@@ -32,10 +38,17 @@ namespace MqttSql.Configurations
 
     public class BaseConfiguration
     {
-        public string Name { get; set; } = "sqlite";
+        public string Name { get; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DatabaseType Type { get; set; } = DatabaseType.SqlLite;
-        public string ConnectionString { get; set; } = string.Empty;
+        public DatabaseType Type { get; }
+        public string ConnectionString { get; }
+
+        [JsonConstructor]
+        public BaseConfiguration(
+            string name = "sqlite",
+            DatabaseType type = DatabaseType.SqlLite,
+            string connectionString = default) =>
+            (Name, Type, ConnectionString) = (name, type, connectionString);
 
         public override string ToString()
         {
@@ -62,11 +75,20 @@ namespace MqttSql.Configurations
 
     public class BrokerConfiguration
     {
-        public string Host { get; set; } = "localhost";
-        public int Port { get; set; } = 1883;
-        public string User { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public SubscriptionConfiguration[] Subscriptions { get; set; } = new SubscriptionConfiguration[0];
+        public string Host { get; }
+        public int Port { get; }
+        public string User { get; }
+        public string Password { get; }
+        public SubscriptionConfiguration[] Subscriptions { get; }
+
+        [JsonConstructor]
+        public BrokerConfiguration(
+            string host = "localhost",
+            int port = 1883,
+            string user = default,
+            string password = default,
+            SubscriptionConfiguration[] subscriptions = default) =>
+            (Host, Port, User, Password, Subscriptions) = (host, port, user, password, subscriptions ?? new SubscriptionConfiguration[0]);
 
         public override string ToString()
         {
@@ -106,10 +128,19 @@ namespace MqttSql.Configurations
 
     public class SubscriptionConfiguration
     {
-        public string Topic { get; set; } = "sql";
-        public int QOS { get; set; } = 0;
-        public string Base { get; set; } = "sqlite";
-        public string Table { get; set; } = "mqtt";
+        public string Topic { get; }
+        public int QOS { get; }
+        [JsonPropertyName("base")]
+        public string Database { get; }
+        public string Table { get; }
+
+        [JsonConstructor]
+        public SubscriptionConfiguration(
+            string topic = "sql",
+            int qos = 0,
+            string database = "sqlite",
+            string table = "mqtt") =>
+            (Topic, QOS, Database, Table) = (topic, qos, database, table);
 
         public override string ToString()
         {
