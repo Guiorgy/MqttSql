@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace MqttSql
 {
@@ -67,6 +68,73 @@ namespace MqttSql
         public static bool ContainsAal<TSource>(this IEnumerable<TSource> source, params TSource[] values)
         {
             return source.Intersect(values).Count() == values.Count();
+        }
+
+        //
+        // Summary:
+        //     Appends text to the start and end of every line in a string.
+        //
+        // Parameters:
+        //   str:
+        //     The string to modify.
+        //
+        //   before:
+        //     The string that every line should start with.
+        //
+        //   after:
+        //     The string that every line should end with.
+        //
+        // Returns:
+        //     The modified string.
+        public static string AppendToLines(this string str, string before, string after)
+        {
+            return
+                before +
+                string.Join(after + Environment.NewLine + before,
+                    str.Split(Environment.NewLine)) +
+                after;
+        }
+
+        //
+        // Summary:
+        //     Appends text to the start of every line in a string.
+        //
+        // Parameters:
+        //   str:
+        //     The string to modify.
+        //
+        //   before:
+        //     The string that every line should start with.
+        //
+        // Returns:
+        //     The modified string.
+        public static string AppendBeforeLines(this string str, string before)
+        {
+            return
+                before +
+                string.Join(Environment.NewLine + before,
+                    str.Split(Environment.NewLine));
+        }
+
+        //
+        // Summary:
+        //     Appends text to the end of every line in a string.
+        //
+        // Parameters:
+        //   str:
+        //     The string to modify.
+        //
+        //   after:
+        //     The string that every line should end with.
+        //
+        // Returns:
+        //     The modified string.
+        public static string AppendAfterLines(this string str, string after)
+        {
+            return
+                string.Join(after + Environment.NewLine,
+                    str.Split(Environment.NewLine)) +
+                after;
         }
     }
 }
