@@ -100,19 +100,19 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Embeeded\.gitignore" />
     <EmbeddedResource Include="Embeeded\Microsoft.Win32.SystemEvents.dll" />
     <EmbeddedResource Include="Embeeded\MQTTnet.dll" />
     <EmbeddedResource Include="Embeeded\MqttSql.dll" />
-    <EmbeddedResource Include="Embeeded\Newtonsoft.Json.dll" />
     <EmbeddedResource Include="Embeeded\SQLite.Interop.dll" />
     <EmbeddedResource Include="Embeeded\System.Data.SQLite.dll" />
     <EmbeddedResource Include="Embeeded\System.Diagnostics.EventLog.dll" />
     <EmbeddedResource Include="Embeeded\System.ServiceProcess.ServiceController.dll" />
+    <EmbeddedResource Include="Embeeded\System.Runtime.CompilerServices.Unsafe.dll" />
+    <EmbeddedResource Include="Embeeded\System.Text.Encodings.Web.dll" />
+    <EmbeddedResource Include="Embeeded\System.Text.Json.dll" />
     <EmbeddedResource Include="Embeeded\Topshelf.dll" />
     <EmbeddedResource Include="Embeeded\TopShelf.ServiceInstaller.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Embeeded\.gitignore" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

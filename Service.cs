@@ -7,7 +7,6 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Protocol;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -15,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
@@ -95,7 +95,13 @@ namespace MqttSql
             DebugLog(Regex.Replace(json,
                 "(\"password\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
                 m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + '"' + m.Groups[4].Value));
-            configurations = JsonConvert.DeserializeObject<List<ServiceConfiguration>>(json);
+            var jsonOptions = new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                MaxDepth = 5
+            };
+            configurations = JsonSerializer.Deserialize<List<ServiceConfiguration>>(json, jsonOptions);
             DebugLog("Configuration loaded:");
             foreach (var cfg in configurations)
                 DebugLog(cfg.ToSafeString());
