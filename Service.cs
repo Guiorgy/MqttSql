@@ -327,6 +327,7 @@ namespace MqttSql
         private void DebugLog(string message)
         {
 #if LOG
+            Console.WriteLine(message + Environment.NewLine);
             if ((logWrites = logWrites > 1000 ? 0 : logWrites + 1) > 1000
                 && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
             {
@@ -345,9 +346,22 @@ namespace MqttSql
             }
             else
             {
-            	Console.WriteLine(message + Environment.NewLine);
             	File.AppendAllText(logPath, message + Environment.NewLine);
             }
+#endif
+        }
+
+#if !LOG
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+#endif
+        private void DebugLog(string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
+        {
+#if LOG
+            Console.ForegroundColor = foregroundColor;
+            Console.BackgroundColor = backgroundColor;
+            DebugLog(message);
+            Console.ResetColor();
 #endif
         }
 
