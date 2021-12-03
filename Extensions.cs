@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MqttSql
 {
@@ -135,6 +136,23 @@ namespace MqttSql
                 string.Join(after + Environment.NewLine,
                     str.Split(Environment.NewLine)) +
                 after;
+        }
+
+        //
+        // Summary:
+        //     Gets the value associated with the specified key.
+        //
+        // Parameters:
+        //   key:
+        //     The key of the value to get.
+        //
+        // Returns:
+        //     The value associated with the specified key, if the key is found;
+        //     otherwise, null.
+        [return: MaybeNull]
+        public static TValue GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class
+        {
+            return dict.TryGetValue(key, out TValue value) ? value : null;
         }
     }
 }

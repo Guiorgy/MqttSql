@@ -7,6 +7,11 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Protocol;
+using MqttSql.Configurations;
+using static MqttSql.ConfigurationsJson.BaseConfiguration;
+using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
+using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
+using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -32,16 +37,17 @@ namespace MqttSql
                 .Select(nic => nic.GetPhysicalAddress().ToString())
                 .FirstOrDefault();
             this.clientId = $"{macAddress}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
-            this.homeDir = homeDir == null ? Environment.GetEnvironmentVariable("MqttSqlHome") : homeDir;
-            this.dbPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "database.sqlite";
-            this.configPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "config.json";
-            DebugLog($"Home: \"{this.homeDir}\"");
-            DebugLog($"Database: \"{this.dbPath}\"");
-            DebugLog($"Configuration: \"{this.configPath}\"");
             DebugLog($"ClientId: \"{this.clientId}\"");
 
+            this.homeDir = homeDir ?? Environment.GetEnvironmentVariable("MqttSqlHome");
+            if (!this.homeDir.EndsWith(dirSep)) this.homeDir += dirSep;
+            DebugLog($"Home: \"{this.homeDir}\"");
+
+            this.configPath = this.homeDir + "config.json";
+            DebugLog($"Configuration: \"{this.configPath}\"");
+
 #if LOG
-            this.logPath = this.homeDir + (this.homeDir.EndsWith(dirSep) ? "" : dirSep) + "logs.txt";
+            this.logPath = this.homeDir + "logs.txt";
             DebugLog($"Logs: \"{this.logPath}\"");
 #endif
         }
@@ -50,7 +56,6 @@ namespace MqttSql
         {
             Task.Run(() =>
             {
-                EnsureDbExists();
                 ReadJsonConfig();
                 var tables = configurations.Select(cfg => cfg.Table);
                 EnsureTablesExist(tables);
@@ -61,7 +66,6 @@ namespace MqttSql
         public async Task StartAsync()
         {
             messageQueue = Channel.CreateUnbounded<Tuple<string, string>>();
-            EnsureDbExists();
             ReadJsonConfig();
             var tables = configurations.Select(cfg => cfg.Table);
             EnsureTablesExist(tables);
@@ -79,15 +83,6 @@ namespace MqttSql
             cancellationToken.Cancel(false);
         }
 
-        private void EnsureDbExists()
-        {
-            if (!File.Exists(dbPath))
-            {
-                DebugLog($"Creating database file \"{dbPath}\"");
-                SQLiteConnection.CreateFile(dbPath);
-            }
-        }
-
         private void ReadJsonConfig()
         {
             DebugLog($"Loading configuration \"{configPath}\":");
@@ -101,10 +96,60 @@ namespace MqttSql
                 ReadCommentHandling = JsonCommentHandling.Skip,
                 MaxDepth = 5
             };
-            configurations = JsonSerializer.Deserialize<List<ServiceConfiguration>>(json, jsonOptions);
+            ServiceConfigurationJson configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(json, jsonOptions);
             DebugLog("Configuration loaded:");
-            foreach (var cfg in configurations)
-                DebugLog(cfg.ToSafeString());
+            DebugLog(configuration.ToString());
+            ConfigureBrokers(configuration);
+        }
+
+        private void ConfigureBrokers(ServiceConfigurationJson configuration)
+        {
+            var databases = new Dictionary<string, BaseConfigurationJson>(configuration.Databases.Length);
+            foreach (var db in configuration.Databases)
+            {
+                if (!databases.ContainsKey(db.Name))
+                {
+                    if (db.Type != DatabaseType.SqlLite)
+                    {
+                        databases.Add(db.Name, db);
+                    }
+                    else
+                    {
+                        string connectionString = db.ConnectionString ?? "Version3;";
+                        string path =
+                            Regex.Match(connectionString,
+                            "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
+                        if (string.IsNullOrWhiteSpace(path))
+                            path = homeDir + "database.sqlite";
+                        else if (path.StartsWith('.'))
+                            path = Path.GetFullPath(homeDir + path);
+                        if (!File.Exists(path))
+                        {
+                            DebugLog($"Creating database file \"{path}\"");
+                            SQLiteConnection.CreateFile(path);
+                        }
+                        connectionString =
+                            Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
+                                Regex.Replace(db.ConnectionString,
+                                "(Data Source\\s*=\\s*)(.*?)(;|$)",
+                                $"$1{path}$3") :
+                                $"Data Source={path};{connectionString}";
+                        databases.Add(db.Name, new BaseConfigurationJson(db.Name, DatabaseType.SqlLite, connectionString));
+                    }
+                }
+                else DebugLog($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");
+            }
+
+            var brokers = new List<BrokerConfiguration>(configuration.Brokers.Length);
+            foreach (var broker in configuration.Brokers)
+            {
+                var similar = brokers.FirstOrDefault(b => b.Equals(broker));
+                if (similar == null)
+                    brokers.Add(new BrokerConfiguration(databases, broker));
+                else
+                    similar.Merge(databases, broker);
+            }
+            this.brokers = brokers.ToArray();
         }
 
         private void EnsureTableExists(string table)
@@ -317,18 +362,19 @@ namespace MqttSql
 #endif
         }
 
+        private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
+        private readonly string clientId;
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1450:Private fields only used as local variables in methods should become local variables")]
         private readonly string homeDir;
-        private readonly string dbPath;
         private readonly string configPath;
+
 #if LOG
         private readonly string logPath;
         private int logWrites = 0;
 #endif
 
-        private List<ServiceConfiguration> configurations;
-        private readonly string clientId;
-        private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+        private BrokerConfiguration[] brokers;
 
         private readonly static object sqlLock = new object();
         private long lastSqlWrite = 0;

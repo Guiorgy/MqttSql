@@ -1,94 +1,65 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
+using static MqttSql.ConfigurationsJson.BaseConfiguration;
+using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
+using BrokerConfigurationJson =  MqttSql.ConfigurationsJson.BrokerConfiguration;
 
 namespace MqttSql.Configurations
 {
-    public class ServiceConfiguration
-    {
-        public BaseConfiguration[] Databases { get; }
-        public BrokerConfiguration[] Brokers { get; }
-
-        [JsonConstructor]
-        public ServiceConfiguration(
-            BaseConfiguration[] databases = default,
-            BrokerConfiguration[] brokers = default) =>
-            (Databases, Brokers) = (databases ?? new BaseConfiguration[0], brokers ?? new BrokerConfiguration[0]);
-
-        public override string ToString()
-        {
-            /*return
-                $"Databases:{Environment.NewLine}" +
-                string.Join(Environment.NewLine,
-                    Databases.Select(database => database.ToString().AppendBeforeLines("\t"))) +
-                $"{Environment.NewLine}Brokers:{Environment.NewLine}" +
-                string.Join(Environment.NewLine,
-                    Brokers.Select(broker => broker.ToString().AppendBeforeLines("\t")));*/
-            var builder = new StringBuilder()
-                .AppendLine("Databases:");
-            foreach (var database in Databases)
-                builder.Append(database.ToStringBuilder()).AppendLine();
-            builder.AppendLine("Brokers:");
-            foreach (var broker in Brokers)
-                builder.Append(broker.ToStringBuilder());
-            return builder.ToString();
-        }
-    }
-
-    public class BaseConfiguration
-    {
-        public string Name { get; }
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DatabaseType Type { get; }
-        public string ConnectionString { get; }
-
-        [JsonConstructor]
-        public BaseConfiguration(
-            string name = "sqlite",
-            DatabaseType type = DatabaseType.SqlLite,
-            string connectionString = default) =>
-            (Name, Type, ConnectionString) = (name, type, connectionString);
-
-        public override string ToString()
-        {
-            return
-                $"Name: {Name}{Environment.NewLine}" +
-                $"Type: {Type}{Environment.NewLine}" +
-                $"ConnectionString: {ConnectionString}{Environment.NewLine}";
-        }
-
-        internal StringBuilder ToStringBuilder()
-        {
-            return new StringBuilder(10)
-                .Append("\tName: ").AppendLine(Name)
-                .Append("\tType: ").AppendLine(Type.ToString())
-                .Append("\tConnectionString: ").AppendLine(ConnectionString);
-        }
-
-        public enum DatabaseType
-        {
-            SqlLite = 0,
-            GeneralSql = 1
-        }
-    }
-
     public class BrokerConfiguration
     {
         public string Host { get; }
         public int Port { get; }
         public string User { get; }
         public string Password { get; }
-        public SubscriptionConfiguration[] Subscriptions { get; }
+        public List<SubscriptionConfiguration> Subscriptions { get; }
 
-        [JsonConstructor]
-        public BrokerConfiguration(
-            string host = "localhost",
-            int port = 1883,
-            string user = default,
-            string password = default,
-            SubscriptionConfiguration[] subscriptions = default) =>
-            (Host, Port, User, Password, Subscriptions) = (host, port, user, password, subscriptions ?? new SubscriptionConfiguration[0]);
+        public BrokerConfiguration(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
+        {
+            Host = jsonConfig.Host;
+            Port = jsonConfig.Port;
+            User = jsonConfig.User;
+            Password = jsonConfig.Password;
+            var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
+            Subscriptions = new List<SubscriptionConfiguration>(topicGroups.Count());
+            foreach (var topicGroup in topicGroups)
+            {
+                int maxQOS = topicGroup.Max(sub => sub.QOS);
+                Subscriptions.Add(
+                    new SubscriptionConfiguration(
+                        topicGroup.Key,
+                        maxQOS,
+                        topicGroup
+                            .Select(sub =>(databases.GetValueOrNull(sub.Database), sub.Table))
+                            .Where(tuple => tuple.Item1 != null)));
+            }
+        }
+
+        public void Merge(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
+        {
+            var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
+            var newSubscriptions = new List<SubscriptionConfiguration>(topicGroups.Count());
+            foreach (var topicGroup in topicGroups)
+            {
+                int maxQOS = topicGroup.Max(sub => sub.QOS);
+                newSubscriptions.Add(
+                    new SubscriptionConfiguration(
+                        topicGroup.Key,
+                        maxQOS,
+                        topicGroup
+                            .Select(sub => (databases.GetValueOrNull(sub.Database), sub.Table))
+                            .Where(tuple => tuple.Item1 != null)));
+            }
+            foreach (var newSub in newSubscriptions)
+            {
+                var sub = Subscriptions.FirstOrDefault(s => s.Topic.Equals(newSub.Topic));
+                if (sub == null)
+                    Subscriptions.Add(newSub);
+                else
+                    sub.Merge(newSub);
+            }
+        }
 
         public override string ToString()
         {
@@ -97,65 +68,84 @@ namespace MqttSql.Configurations
                 $"Port: {Port}{Environment.NewLine}" +
                 $"User: {User}{Environment.NewLine}" +
 #if DEBUG
-                    $"Password:{Password}{Environment.NewLine}" +
+                $"Password:{Password}{Environment.NewLine}" +
 #else
-                    $"Password:{new string('*', Password.Length)}{Environment.NewLine}" +
+                $"Password:{new string('*', Password.Length)}{Environment.NewLine}" +
 #endif
-                    $"Subscriptions:{Environment.NewLine}" +
+                $"Subscriptions:{Environment.NewLine}" +
                 string.Join(Environment.NewLine,
                     Subscriptions.Select(sub => sub.ToString().AppendBeforeLines("\t")));
-        }
-
-        internal StringBuilder ToStringBuilder()
-        {
-            var builder = new StringBuilder(20 + 3 * Subscriptions.Length)
-                .Append("\tHost: ").AppendLine(Host)
-                .Append("\tPort: ").AppendLine(Port.ToString())
-                .Append("\tUser: ").AppendLine(User)
-#if DEBUG
-                    .Append("\tPassword: ").AppendLine(Password)
-#else
-                    .Append("\tPassword: ").AppendLine(new string('*', Password.Length))
-#endif
-                    .AppendLine("\tSubscriptions:");
-            if (Subscriptions.Length == 0)
-                builder.AppendLine();
-            else foreach (var subscription in Subscriptions)
-                builder.Append(subscription.ToStringBuilder()).AppendLine();
-            return builder;
         }
     }
 
     public class SubscriptionConfiguration
     {
         public string Topic { get; }
-        public int QOS { get; }
-        [JsonPropertyName("base")]
-        public string Database { get; }
-        public string Table { get; }
+        public int QOS { get; private set; }
+        public List<BaseConfiguration> Databases { get; }
 
-        [JsonConstructor]
-        public SubscriptionConfiguration(
-            string topic = "sql",
-            int qos = 0,
-            string database = "sqlite",
-            string table = "mqtt") =>
-            (Topic, QOS, Database, Table) = (topic, qos, database, table);
+        public SubscriptionConfiguration(string topic, int qos, IEnumerable<(BaseConfigurationJson, string)> bases)
+        {
+            Topic = topic;
+            QOS = qos;
+            var baseGroups = bases.GroupBy(tuple => tuple.Item1);
+            Databases = new List<BaseConfiguration>(baseGroups.Count());
+            foreach (var baseGroup in baseGroups)
+            {
+                Databases.Add(
+                    new BaseConfiguration(
+                        baseGroup.Key,
+                        baseGroup.Select(tuple => tuple.Item2).ToArray()));
+            }
+        }
+
+        public void Merge(SubscriptionConfiguration other)
+        {
+            QOS = Math.Max(QOS, other.QOS);
+            foreach (var newDb in other.Databases)
+            {
+                var db = Databases.FirstOrDefault(db => db.Type == newDb.Type && db.ConnectionString.Equals(newDb.ConnectionString));
+                if (db == null)
+                    Databases.Add(newDb);
+                else
+                    db.Merge(newDb);
+            }
+        }
 
         public override string ToString()
         {
             return
                 $"Topic: {Topic}{Environment.NewLine}" +
                 $"QOS: {QOS}{Environment.NewLine}" +
-                $"Table: {Table}{Environment.NewLine}";
+                string.Join(Environment.NewLine,
+                    Databases.Select(db => db.ToString().AppendBeforeLines("\t")));
         }
 
-        internal StringBuilder ToStringBuilder()
+        public class BaseConfiguration
         {
-            return new StringBuilder(10)
-                .Append("\t\tTopic: ").AppendLine(Topic)
-                .Append("\t\tQOS: ").AppendLine(QOS.ToString())
-                .Append("\t\tTable: ").AppendLine(Table);
+            public DatabaseType Type { get; }
+            public string ConnectionString { get; }
+            public List<string> Tables { get; }
+
+            public BaseConfiguration(BaseConfigurationJson jsonConfig, params string[] tables)
+            {
+                Type = jsonConfig.Type;
+                ConnectionString = jsonConfig.ConnectionString;
+                Tables = new List<string>(tables);
+            }
+
+            public void Merge(BaseConfiguration other)
+            {
+                Tables.AddRange(other.Tables.Where(table => !Tables.Contains(table)));
+            }
+
+            public override string ToString()
+            {
+                return
+                    $"Type: {Type}{Environment.NewLine}" +
+                    $"ConnectionString: {ConnectionString}{Environment.NewLine}" +
+                    $"[{string.Join(", ", Tables)}]{Environment.NewLine}";
+            }
         }
     }
 }
