@@ -37,18 +37,22 @@ namespace MqttSql
                 .Select(nic => nic.GetPhysicalAddress().ToString())
                 .FirstOrDefault();
             this.clientId = $"{macAddress}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
-            DebugLog($"ClientId: \"{this.clientId}\"");
 
+#if DEBUG
+            this.homeDir = homeDir ?? Directory.GetCurrentDirectory();
+#else
             this.homeDir = homeDir ?? Environment.GetEnvironmentVariable("MqttSqlHome");
+#endif
             if (!this.homeDir.EndsWith(dirSep)) this.homeDir += dirSep;
-            DebugLog($"Home: \"{this.homeDir}\"");
 
             this.configPath = this.homeDir + "config.json";
-            DebugLog($"Configuration: \"{this.configPath}\"");
 
 #if LOG
             this.logPath = this.homeDir + "logs.txt";
             DebugLog($"Logs: \"{this.logPath}\"");
+            DebugLog($"ClientId: \"{this.clientId}\"");
+            DebugLog($"Home: \"{this.homeDir}\"");
+            DebugLog($"Configuration: \"{this.configPath}\"");
 #endif
         }
 
