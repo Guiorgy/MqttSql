@@ -52,26 +52,9 @@ namespace MqttSql
 #endif
         }
 
-        public void Start()
+        private void LoadAndStartService()
         {
-            Task.Run(() =>
-            {
-                ReadJsonConfig();
-                var bases = brokers.SelectMany(broker => broker.Subscriptions.SelectMany(sub => sub.Databases).Distinct());
-                var sqliteBases = bases.Where(db => db.Type == DatabaseType.SqlLite);
-                lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
-                foreach (var sqlite in sqliteBases)
-                {
-                    lastSqliteWrite.Add(sqlite.ConnectionString, 0);
-                    EnsureSqliteTablesExist(sqlite);
-                }
-                SubscribeToBrokers();
-            }, cancellationToken.Token);
-        }
 
-        public async Task StartAsync()
-        {
-            messageQueue = Channel.CreateUnbounded<(List<BaseConfiguration>, string)>();
             ReadJsonConfig();
             var bases = brokers.SelectMany(broker => broker.Subscriptions.SelectMany(sub => sub.Databases).Distinct());
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SqlLite);
@@ -81,7 +64,20 @@ namespace MqttSql
                 lastSqliteWrite.Add(sqlite.ConnectionString, 0);
                 EnsureSqliteTablesExist(sqlite);
             }
+            foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql))
+                EnsureSqlTablesExist(general);
             SubscribeToBrokers();
+        }
+
+        public void Start()
+        {
+            Task.Run(() => LoadAndStartService(), cancellationToken.Token);
+        }
+
+        public async Task StartAsync()
+        {
+            messageQueue = Channel.CreateUnbounded<(List<BaseConfiguration>, string)>();
+            LoadAndStartService();
             await foreach ((List<BaseConfiguration> databases, string message)
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
@@ -184,10 +180,45 @@ namespace MqttSql
                             else
                                 created.Add(table);
                             DebugLog($"Checking the existence of table \"{table}\"");
-                            command.CommandText = "CREATE TABLE IF NOT EXISTS " + table + "("
-                                                    + "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,"
-                                                    + "Message VARCHAR NOT NULL"
-                                                + ");";
+                            command.CommandText = "CREATE TABLE IF NOT EXISTS " + table + "(" +
+                                                      "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY," +
+                                                      "Message VARCHAR NOT NULL" +
+                                                  ");";
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+            }
+        }
+
+        private void EnsureSqlTablesExist(BaseConfiguration db)
+        {
+            using (var sqlCon = new SQLiteConnection(db.ConnectionString))
+            {
+                sqlCon.Open();
+                using (var transaction = sqlCon.BeginTransaction())
+                {
+                    using (var command = new SQLiteCommand(sqlCon))
+                    {
+                        command.Transaction = transaction;
+
+                        var created = new HashSet<string>();
+                        foreach (string table in db.Tables)
+                        {
+                            if (created.Contains(table))
+                                continue;
+                            else
+                                created.Add(table);
+                            DebugLog($"Checking the existence of table \"{table}\"");
+                            command.CommandText = "IF OBJECT_ID('" + table + "', 'U') IS NULL" +
+                                                  "BEGIN" +
+                                                      "CREATE TABLE " + table + "(" +
+                                                          "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY," +
+                                                          "Message VARCHAR NOT NULL" +
+                                                      ")" +
+                                                  "END;";
                             command.ExecuteNonQuery();
                         }
 
