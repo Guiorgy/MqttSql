@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using static MqttSql.ConfigurationsJson.BaseConfiguration;
 using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
@@ -7,7 +8,7 @@ using BrokerConfigurationJson =  MqttSql.ConfigurationsJson.BrokerConfiguration;
 
 namespace MqttSql.Configurations
 {
-    public class BrokerConfiguration
+    public class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>
     {
         public string Host { get; }
         public int Port { get; }
@@ -76,6 +77,26 @@ namespace MqttSql.Configurations
                 string.Join(Environment.NewLine,
                     Subscriptions.Select(sub => sub.ToString().AppendBeforeLines("\t")));
         }
+
+        public bool Equals([AllowNull] BrokerConfiguration other)
+        {
+            return
+                other != null
+                && other.Host.Equals(this.Host)
+                && other.Port.Equals(this.Port)
+                && other.User.Equals(this.User)
+                && other.Password.Equals(this.Password);
+        }
+
+        public bool Equals([AllowNull] BrokerConfigurationJson other)
+        {
+            return
+                other != null
+                && other.Host.Equals(this.Host)
+                && other.Port.Equals(this.Port)
+                && other.User.Equals(this.User)
+                && other.Password.Equals(this.Password);
+        }
     }
 
     public class SubscriptionConfiguration
@@ -121,7 +142,7 @@ namespace MqttSql.Configurations
                     Databases.Select(db => db.ToString().AppendBeforeLines("\t")));
         }
 
-        public class BaseConfiguration
+        public class BaseConfiguration : IEquatable<BaseConfiguration>
         {
             public DatabaseType Type { get; }
             public string ConnectionString { get; }
@@ -145,6 +166,13 @@ namespace MqttSql.Configurations
                     $"Type: {Type}{Environment.NewLine}" +
                     $"ConnectionString: {ConnectionString}{Environment.NewLine}" +
                     $"[{string.Join(", ", Tables)}]{Environment.NewLine}";
+            }
+
+            public bool Equals([AllowNull] BaseConfiguration other)
+            {
+                return
+                    other != null
+                    && other.ConnectionString.Equals(this.ConnectionString);
             }
         }
     }

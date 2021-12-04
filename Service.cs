@@ -8,10 +8,6 @@ using MQTTnet.Client.Options;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Protocol;
 using MqttSql.Configurations;
-using static MqttSql.ConfigurationsJson.BaseConfiguration;
-using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
-using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
-using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -24,6 +20,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using static MqttSql.Configurations.SubscriptionConfiguration;
+using static MqttSql.ConfigurationsJson.BaseConfiguration;
+using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
+using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 
 namespace MqttSql
 {
@@ -57,23 +57,36 @@ namespace MqttSql
             Task.Run(() =>
             {
                 ReadJsonConfig();
-                var tables = configurations.Select(cfg => cfg.Table);
-                EnsureTablesExist(tables);
+                var bases = brokers.SelectMany(broker => broker.Subscriptions.SelectMany(sub => sub.Databases).Distinct());
+                var sqliteBases = bases.Where(db => db.Type == DatabaseType.SqlLite);
+                lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
+                foreach (var sqlite in sqliteBases)
+                {
+                    lastSqliteWrite.Add(sqlite.ConnectionString, 0);
+                    EnsureSqliteTablesExist(sqlite);
+                }
                 SubscribeToBrokers();
             }, cancellationToken.Token);
         }
 
         public async Task StartAsync()
         {
-            messageQueue = Channel.CreateUnbounded<Tuple<string, string>>();
+            messageQueue = Channel.CreateUnbounded<(List<BaseConfiguration>, string)>();
             ReadJsonConfig();
-            var tables = configurations.Select(cfg => cfg.Table);
-            EnsureTablesExist(tables);
+            var bases = brokers.SelectMany(broker => broker.Subscriptions.SelectMany(sub => sub.Databases).Distinct());
+            var sqliteBases = bases.Where(db => db.Type == DatabaseType.SqlLite);
+            lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
+            foreach (var sqlite in sqliteBases)
+            {
+                lastSqliteWrite.Add(sqlite.ConnectionString, 0);
+                EnsureSqliteTablesExist(sqlite);
+            }
             SubscribeToBrokers();
-            await foreach ((string table, string message)
+            await foreach ((List<BaseConfiguration> databases, string message)
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
-                WriteToTable(table, message);
+                foreach (var db in databases)
+                    WriteToDatabase(db, message);
                 await Task.Delay(1000);
             }
         }
@@ -152,24 +165,9 @@ namespace MqttSql
             this.brokers = brokers.ToArray();
         }
 
-        private void EnsureTableExists(string table)
+        private void EnsureSqliteTablesExist(BaseConfiguration sqliteDb)
         {
-            DebugLog($"Checking the existence of table \"{table}\"");
-            using (var sqlCon = new SQLiteConnection(dbPath))
-            {
-                sqlCon.Open();
-                string sql = "CREAT TABLE IF NOT EXISTS " + table + "("
-                               + "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,"
-                               + "Message VARCHAR"
-                           + ")";
-                SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
-                command.ExecuteNonQuery();
-            }
-        }
-
-        private void EnsureTablesExist(IEnumerable<string> tables)
-        {
-            using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
+            using (var sqlCon = new SQLiteConnection(sqliteDb.ConnectionString))
             {
                 sqlCon.Open();
                 using (var transaction = sqlCon.BeginTransaction())
@@ -179,7 +177,7 @@ namespace MqttSql
                         command.Transaction = transaction;
 
                         var created = new HashSet<string>();
-                        foreach (string table in tables)
+                        foreach (string table in sqliteDb.Tables)
                         {
                             if (created.Contains(table))
                                 continue;
@@ -199,72 +197,94 @@ namespace MqttSql
             }
         }
 
-        private void WriteToTable(string table, string message)
+        private void WriteToDatabase(BaseConfiguration db, string message)
         {
-            lastSqlWrite = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            DebugLog($"Writing to table \"{table}\" the message: \"{message}\"");
-            using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
+            if (db.Type == DatabaseType.SqlLite)
+                lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
+            using (var sqlCon = new SQLiteConnection(db.ConnectionString))
             {
                 sqlCon.Open();
-                string sql = "INSERT INTO " + table + "(Message) values ('" + message + "')";
-                SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
-                command.ExecuteNonQuery();
+                using (var transaction = sqlCon.BeginTransaction())
+                {
+                    using (var command = new SQLiteCommand(sqlCon))
+                    {
+                        command.Transaction = transaction;
+
+                        foreach (string table in db.Tables)
+                        {
+                            DebugLog($"Writing to the \"{table}\" table");
+                            command.CommandText = "INSERT INTO " + table + "(Message) values ('" + message + "')";
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                }
             }
         }
 
-        private Task WriteToTableTask(string table, string message)
+        private Task WriteToDatabaseTask(BaseConfiguration db, string message)
         {
             return new Task(() =>
             {
-                lock (sqlLock)
+                if (db.Type == DatabaseType.SqlLite)
                 {
-                    while (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqlWrite < 1000)
-                        Task.Delay(250);
-                    lastSqlWrite = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    lock (sqlLock)
+                    {
+                        while (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite[db.ConnectionString] < 1000)
+                            Task.Delay(250);
+                        lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    }
                 }
-                DebugLog($"Writing to table \"{table}\" the message: \"{message}\"");
-                using (var sqlCon = new SQLiteConnection("Data Source = " + dbPath + "; Version = 3;"))
+                DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
+                using (var sqlCon = new SQLiteConnection(db.ConnectionString))
                 {
                     sqlCon.Open();
-                    string sql = "INSERT INTO " + table + "(Message) values ('" + message + "')";
-                    SQLiteCommand command = new SQLiteCommand(sql, sqlCon);
-                    command.ExecuteNonQuery();
+                    using (var transaction = sqlCon.BeginTransaction())
+                    {
+                        using (var command = new SQLiteCommand(sqlCon))
+                        {
+                            command.Transaction = transaction;
+
+                            foreach (string table in db.Tables)
+                            {
+                                DebugLog($"Writing to the \"{table}\" table");
+                                command.CommandText = "INSERT INTO " + table + "(Message) values ('" + message + "')";
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                        }
+                    }
                 }
             });
         }
 
         private void SubscribeToBrokers()
         {
-            var connections =
-                configurations
-                .OrderBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]")
-                .GroupBy(cfg => $"{cfg.Host}:{cfg.Port}[{cfg.User},{cfg.Password}]");
-            foreach (var congroup in connections)
+            foreach (var broker in brokers)
             {
                 _ = Task.Run(async () =>
                 {
-                    var TopicTable = new Dictionary<string, string>(congroup.Count());
-                    foreach (var cfg in congroup) TopicTable.Add(cfg.Topic, cfg.Table);
-                    var connection = congroup.First();
-
                     var factory = new MqttFactory();
                     var mqttClient = factory.CreateMqttClient();
                     var options = new MqttClientOptionsBuilder()
                         .WithClientId(clientId)
-                        .WithTcpServer(connection.Host, connection.Port)
-                        .WithCredentials(connection.User, connection.Password)
+                        .WithTcpServer(broker.Host, broker.Port)
+                        .WithCredentials(broker.User, broker.Password)
                         .Build();
 
                     bool connectionFailed = false;
                     mqttClient.UseDisconnectedHandler(async e =>
                     {
-                        DebugLog($"Disconnected from \"{connection.Host}\"! Reason: \"{e.Reason}\"");
+                        DebugLog($"Disconnected from \"{broker.Host}\"! Reason: \"{e.Reason}\"");
                         await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10));
                         connectionFailed = true;
 
                         try
                         {
-                            DebugLog($"Attempting to recconnect to \"{connection.Host}\"");
+                            DebugLog($"Attempting to recconnect to \"{broker.Host}\"");
                             await mqttClient.ReconnectAsync(cancellationToken.Token);
                             connectionFailed = false;
                             DebugLog("Reconnected!");
@@ -280,45 +300,49 @@ namespace MqttSql
 
                     mqttClient.UseConnectedHandler(async e =>
                     {
-                        DebugLog($"Connection established with \"{connection.Host}\"");
-                        foreach ((string topic, string table) in TopicTable)
+                        DebugLog($"Connection established with \"{broker.Host}\"");
+                        foreach (var sub in broker.Subscriptions)
                         {
-                            DebugLog($"Subscribing to \"{topic}\" topic");
+                            DebugLog($"Subscribing to \"{sub.Topic}\" topic");
                             await mqttClient.SubscribeAsync(
                                 new MqttClientSubscribeOptionsBuilder()
-                                    .WithTopicFilter(topic, qualityOfServiceLevel: MqttQualityOfServiceLevel.ExactlyOnce)
+                                    .WithTopicFilter(sub.Topic, qualityOfServiceLevel: (MqttQualityOfServiceLevel)(sub.QOS))
                                     .Build()
                             );
                         }
                     });
 
-                    if (messageQueue == null)
-                    {
-                        mqttClient.UseApplicationMessageReceivedHandler(e =>
+                    Func<MqttApplicationMessageReceivedEventArgs, (List<BaseConfiguration>, string)> getMessageAndDb =
+                        (e) =>
                         {
                             string topic = e.ApplicationMessage.Topic;
                             string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                             DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                            WriteToTableTask(TopicTable[topic], message).Start();
+                            return (broker.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
+                        };
+
+                    if (messageQueue == null)
+                    {
+                        mqttClient.UseApplicationMessageReceivedHandler(e =>
+                        {
+                            (List<BaseConfiguration> bases, string message) = getMessageAndDb(e);
+                            foreach (var db in bases)
+                                WriteToDatabaseTask(db, message).Start();
                         });
                     }
                     else
                     {
                         mqttClient.UseApplicationMessageReceivedHandler(e =>
                         {
-                            string topic = e.ApplicationMessage.Topic;
-                            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                            DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                            messageQueue.Writer.TryWrite(Tuple.Create(TopicTable[topic], message));
+                            messageQueue.Writer.TryWrite(getMessageAndDb(e));
                         });
                     }
 
-                    DebugLog($"Connecting to \"{connection.Host}\"");
+                    DebugLog($"Connecting to \"{broker.Host}\"");
                     await mqttClient.ConnectAsync(options, cancellationToken.Token);
                 }, cancellationToken.Token);
             }
         }
-
 
 #if !LOG
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -346,7 +370,7 @@ namespace MqttSql
             }
             else
             {
-            	File.AppendAllText(logPath, message + Environment.NewLine);
+                File.AppendAllText(logPath, message + Environment.NewLine);
             }
 #endif
         }
@@ -391,8 +415,8 @@ namespace MqttSql
         private BrokerConfiguration[] brokers;
 
         private readonly static object sqlLock = new object();
-        private long lastSqlWrite = 0;
+        private Dictionary<string, long> lastSqliteWrite;
 
-        private Channel<Tuple<string, string>> messageQueue = null;
+        private Channel<(List<BaseConfiguration>, string)> messageQueue = null;
     }
 }
