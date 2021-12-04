@@ -158,7 +158,10 @@ namespace MqttSql
             {
                 var similar = brokers.FirstOrDefault(b => b.Equals(broker));
                 if (similar == null)
-                    brokers.Add(new BrokerConfiguration(databases, broker));
+                {
+                    var newBroker = new BrokerConfiguration(databases, broker);
+                    if (newBroker.Subscriptions.Count != 0) brokers.Add(newBroker);
+                }
                 else
                     similar.Merge(databases, broker);
             }
