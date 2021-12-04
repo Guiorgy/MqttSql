@@ -130,7 +130,7 @@ namespace MqttSql.ConfigurationsJson
             if (Subscriptions.Length == 0)
                 builder.AppendLine();
             else foreach (var subscription in Subscriptions)
-                builder.Append(subscription.ToStringBuilder()).AppendLine();
+                    builder.Append(subscription.ToStringBuilder()).AppendLine();
             return builder;
         }
 

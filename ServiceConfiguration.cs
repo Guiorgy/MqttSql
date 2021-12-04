@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using static MqttSql.ConfigurationsJson.BaseConfiguration;
 using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
-using BrokerConfigurationJson =  MqttSql.ConfigurationsJson.BrokerConfiguration;
+using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
 
 namespace MqttSql.Configurations
 {
@@ -32,7 +32,7 @@ namespace MqttSql.Configurations
                         topicGroup.Key,
                         maxQOS,
                         topicGroup
-                            .Select(sub =>(databases.GetValueOrNull(sub.Database), sub.Table))
+                            .Select(sub => (databases.GetValueOrNull(sub.Database), sub.Table))
                             .Where(tuple => tuple.Item1 != null)));
             }
         }

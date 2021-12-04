@@ -163,6 +163,9 @@ namespace MqttSql
                     similar.Merge(databases, broker);
             }
             this.brokers = brokers.ToArray();
+
+            DebugLog("Final brokers configuration:");
+            DebugLog(string.Join(Environment.NewLine, brokers.Select(broker => broker.ToString())));
         }
 
         private void EnsureSqliteTablesExist(BaseConfiguration sqliteDb)
