@@ -156,7 +156,7 @@ namespace MqttSql.ConfigurationsJson
         [JsonConstructor]
         public SubscriptionConfiguration(
             string topic = "sql",
-            int qos = 0,
+            int qos = 2,
             string database = "sqlite",
             string table = "mqtt") =>
             (Topic, QOS, Database, Table) = (topic, qos, database, table);
