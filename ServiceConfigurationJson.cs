@@ -47,7 +47,7 @@ namespace MqttSql.ConfigurationsJson
         [JsonConstructor]
         public BaseConfiguration(
             string name = "sqlite",
-            DatabaseType type = DatabaseType.SqlLite,
+            DatabaseType type = DatabaseType.SQLite,
             string connectionString = default) =>
             (Name, Type, ConnectionString) = (name, type, connectionString);
 
@@ -77,7 +77,7 @@ namespace MqttSql.ConfigurationsJson
 
         public enum DatabaseType
         {
-            SqlLite = 0,
+            SQLite = 0,
             GeneralSql = 1
         }
     }

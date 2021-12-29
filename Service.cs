@@ -61,7 +61,7 @@ namespace MqttSql
 
             ReadJsonConfig();
             var bases = brokers.SelectMany(broker => broker.Subscriptions.SelectMany(sub => sub.Databases).Distinct());
-            var sqliteBases = bases.Where(db => db.Type == DatabaseType.SqlLite);
+            var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
             lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
             foreach (var sqlite in sqliteBases)
             {
@@ -126,7 +126,7 @@ namespace MqttSql
             {
                 if (!databases.ContainsKey(db.Name))
                 {
-                    if (db.Type != DatabaseType.SqlLite)
+                    if (db.Type != DatabaseType.SQLite)
                     {
                         databases.Add(db.Name, db);
                     }
@@ -151,7 +151,7 @@ namespace MqttSql
                                 "(Data Source\\s*=\\s*)(.*?)(;|$)",
                                 $"$1{path}$3") :
                                 $"Data Source={path};{connectionString}";
-                        databases.Add(db.Name, new BaseConfigurationJson(db.Name, DatabaseType.SqlLite, connectionString));
+                        databases.Add(db.Name, new BaseConfigurationJson(db.Name, DatabaseType.SQLite, connectionString));
                     }
                 }
                 else DebugLog($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");
@@ -246,7 +246,7 @@ namespace MqttSql
 
         private void WriteToDatabase(BaseConfiguration db, string message)
         {
-            if (db.Type == DatabaseType.SqlLite)
+            if (db.Type == DatabaseType.SQLite)
                 lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
             using (var sqlCon = new SQLiteConnection(db.ConnectionString))
@@ -275,7 +275,7 @@ namespace MqttSql
         {
             return new Task(() =>
             {
-                if (db.Type == DatabaseType.SqlLite)
+                if (db.Type == DatabaseType.SQLite)
                 {
                     lock (sqlLock)
                     {
