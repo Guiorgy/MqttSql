@@ -15,7 +15,7 @@ namespace MqttSql.Configurations
         public int Port { get; }
         public List<ClientConfiguration> Clients { get; }
 
-        private List<SubscriptionConfiguration> MakeSubscriptions(
+        private static List<SubscriptionConfiguration> MakeSubscriptions(
             IEnumerable<IGrouping<string, SubscriptionConfigurationJson>> topicGroups,
             Dictionary<string, BaseConfigurationJson> databases)
         {
@@ -48,7 +48,7 @@ namespace MqttSql.Configurations
         {
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
             var newSubscriptions = MakeSubscriptions(topicGroups, databases);
-            var client = Clients.FirstOrDefault(cl => cl.User == jsonConfig.User && cl.Password == jsonConfig.Password);
+            var client = Clients.Find(cl => cl.User == jsonConfig.User && cl.Password == jsonConfig.Password);
             if (client == null)
                 Clients.Add(new ClientConfiguration(jsonConfig.User, jsonConfig.Password, newSubscriptions));
             else
@@ -68,17 +68,25 @@ namespace MqttSql.Configurations
         public bool Equals([AllowNull] BrokerConfiguration other)
         {
             return
-                other != null
-                && other.Host.Equals(this.Host)
+                other?.Host.Equals(this.Host) == true
                 && other.Port.Equals(this.Port);
         }
 
         public bool Equals([AllowNull] BrokerConfigurationJson other)
         {
             return
-                other != null
-                && other.Host.Equals(this.Host)
+                other?.Host.Equals(this.Host) == true
                 && other.Port.Equals(this.Port);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as BrokerConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Host, Port);
         }
     }
 
@@ -99,7 +107,7 @@ namespace MqttSql.Configurations
         {
             foreach (var newSub in newSubscriptions)
             {
-                var sub = Subscriptions.FirstOrDefault(s => s.Topic.Equals(newSub.Topic));
+                var sub = Subscriptions.Find(s => s.Topic.Equals(newSub.Topic));
                 if (sub == null)
                     Subscriptions.Add(newSub);
                 else
@@ -148,7 +156,7 @@ namespace MqttSql.Configurations
             foreach (var newDb in other.Databases)
             {
                 if (string.IsNullOrWhiteSpace(newDb.ConnectionString) || newDb.Tables.Count == 0) continue;
-                var db = Databases.FirstOrDefault(db => db.Type == newDb.Type && db.ConnectionString.Equals(newDb.ConnectionString));
+                var db = Databases.Find(db => db.Type == newDb.Type && db.ConnectionString.Equals(newDb.ConnectionString));
                 if (db == null)
                     Databases.Add(newDb);
                 else
@@ -199,8 +207,17 @@ namespace MqttSql.Configurations
             public bool Equals([AllowNull] BaseConfiguration other)
             {
                 return
-                    other != null
-                    && other.ConnectionString.Equals(this.ConnectionString);
+                    other?.ConnectionString.Equals(this.ConnectionString) == true;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as BaseConfiguration);
+            }
+
+            public override int GetHashCode()
+            {
+                return ConnectionString.GetHashCode();
             }
         }
     }

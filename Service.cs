@@ -22,7 +22,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using static MqttSql.Configurations.SubscriptionConfiguration;
 using static MqttSql.ConfigurationsJson.BaseConfiguration;
+
 using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
+
 using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 
 namespace MqttSql
@@ -58,7 +60,6 @@ namespace MqttSql
 
         private void LoadAndStartService()
         {
-
             ReadJsonConfig();
             var bases = brokers.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
@@ -318,90 +319,85 @@ namespace MqttSql
             foreach (var broker in brokers)
             {
                 if (cancellationToken.IsCancellationRequested) return;
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     foreach (var (client, index) in broker.Clients.Select((client, index) => (client, index)))
                     {
                         if (cancellationToken.IsCancellationRequested) return;
-                        await Task.Run(async () =>
+
+                        var factory = new MqttFactory();
+                        var mqttClient = factory.CreateMqttClient();
+                        var options = new MqttClientOptionsBuilder()
+                            .WithClientId(clientId + (broker.Clients.Count != 1 ? $"-{index}" : ""))
+                            .WithTcpServer(broker.Host, broker.Port)
+                            .WithCredentials(client.User, client.Password)
+                            .Build();
+
+                        bool connectionFailed = false;
+                        mqttClient.UseDisconnectedHandler(async e =>
                         {
-                            var factory = new MqttFactory();
-                            var mqttClient = factory.CreateMqttClient();
-                            var options = new MqttClientOptionsBuilder()
-                                .WithClientId(clientId + (broker.Clients.Count != 1 ? $"-{index}" : ""))
-                                .WithTcpServer(broker.Host, broker.Port)
-                                .WithCredentials(client.User, client.Password)
-                                .Build();
+                            DebugLog($"Disconnected from \"{broker.Host}\"! Reason: \"{e.Reason}\"");
+                            await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10), cancellationToken.Token);
+                            if (cancellationToken.IsCancellationRequested) return;
+                            connectionFailed = true;
 
-                            bool connectionFailed = false;
-                            mqttClient.UseDisconnectedHandler(async e =>
+                            try
                             {
-                                DebugLog($"Disconnected from \"{broker.Host}\"! Reason: \"{e.Reason}\"");
-                                await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10), cancellationToken.Token);
-                                if (cancellationToken.IsCancellationRequested) return;
-                                connectionFailed = true;
-
-                                try
-                                {
-                                    DebugLog($"Attempting to recconnect to \"{broker.Host}\"");
-                                    await mqttClient.ReconnectAsync(cancellationToken.Token);
-                                    connectionFailed = false;
-                                    DebugLog("Reconnected!");
-                                }
-                                catch
-                                {
-                                    DebugLog("Reconnection Failed!");
-                                    cancellationToken.Cancel();
+                                DebugLog($"Attempting to recconnect to \"{broker.Host}\"");
+                                await mqttClient.ReconnectAsync(cancellationToken.Token);
+                                connectionFailed = false;
+                                DebugLog("Reconnected!");
+                            }
+                            catch
+                            {
+                                DebugLog("Reconnection Failed!");
+                                cancellationToken.Cancel();
 #pragma warning disable PH_P007 // Unused Cancellation Token
-                                    await Task.Delay(1000);
+                                await Task.Delay(1000);
 #pragma warning restore PH_P007 // Unused Cancellation Token
-                                    Environment.Exit(-1);
-                                }
-                            });
-
-                            mqttClient.UseConnectedHandler(async e =>
-                            {
-                                DebugLog($"Connection established with \"{broker.Host}\"");
-                                foreach (var sub in client.Subscriptions)
-                                {
-                                    DebugLog($"Subscribing to \"{sub.Topic}\" topic");
-                                    await mqttClient.SubscribeAsync(
-                                        new MqttClientSubscribeOptionsBuilder()
-                                            .WithTopicFilter(sub.Topic, qualityOfServiceLevel: (MqttQualityOfServiceLevel)(sub.QOS))
-                                            .Build()
-                                    );
-                                }
-                            });
-
-                            Func<MqttApplicationMessageReceivedEventArgs, (List<BaseConfiguration>, string)> getMessageAndDb =
-                                (e) =>
-                                {
-                                    string topic = e.ApplicationMessage.Topic;
-                                    string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                                    DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                                    return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
-                                };
-
-                            if (messageQueue == null)
-                            {
-                                mqttClient.UseApplicationMessageReceivedHandler(e =>
-                                {
-                                    (List<BaseConfiguration> bases, string message) = getMessageAndDb(e);
-                                    foreach (var db in bases)
-                                        WriteToDatabaseTask(db, message).Start();
-                                });
+                                Environment.Exit(-1);
                             }
-                            else
-                            {
-                                mqttClient.UseApplicationMessageReceivedHandler(e =>
-                                {
-                                    messageQueue.Writer.TryWrite(getMessageAndDb(e));
-                                });
-                            }
+                        });
 
-                            DebugLog($"Connecting to \"{broker.Host}\"");
-                            await mqttClient.ConnectAsync(options, cancellationToken.Token);
-                        }, cancellationToken.Token);
+                        mqttClient.UseConnectedHandler(async _ =>
+                        {
+                            DebugLog($"Connection established with \"{broker.Host}\"");
+                            foreach (var sub in client.Subscriptions)
+                            {
+                                DebugLog($"Subscribing to \"{sub.Topic}\" topic");
+                                await mqttClient.SubscribeAsync(
+                                    new MqttClientSubscribeOptionsBuilder()
+                                        .WithTopicFilter(sub.Topic, qualityOfServiceLevel: (MqttQualityOfServiceLevel)(sub.QOS))
+                                        .Build()
+                                );
+                            }
+                        });
+
+                        (List<BaseConfiguration>, string) getMessageAndDb(MqttApplicationMessageReceivedEventArgs e)
+                        {
+                            string topic = e.ApplicationMessage.Topic;
+                            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                            DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
+                            return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
+                        }
+
+                        if (messageQueue == null)
+                        {
+                            mqttClient.UseApplicationMessageReceivedHandler(e =>
+                            {
+                                (List<BaseConfiguration> bases, string message) = getMessageAndDb(e);
+                                foreach (var db in bases)
+                                    WriteToDatabaseTask(db, message).Start();
+                            });
+                        }
+                        else
+                        {
+                            mqttClient.UseApplicationMessageReceivedHandler(e => messageQueue.Writer.TryWrite(getMessageAndDb(e)));
+                        }
+
+                        DebugLog($"Connecting to \"{broker.Host}\"");
+                        await mqttClient.ConnectAsync(options, cancellationToken.Token);
+
                         await Task.Delay(1000, cancellationToken.Token);
                     }
                 }, cancellationToken.Token);
@@ -420,12 +416,12 @@ namespace MqttSql
                 && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
             {
                 byte[] buffer;
-                using (BinaryReader reader = new BinaryReader(file.Open(FileMode.Open)))
+                using (BinaryReader reader = new(file.Open(FileMode.Open)))
                 {
                     reader.BaseStream.Position = file.Length - 1_000_000;
                     buffer = reader.ReadBytes(1_000_000);
                 }
-                using (BinaryWriter writer = new BinaryWriter(file.Open(FileMode.Truncate)))
+                using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
                 {
                     writer.BaseStream.Position = 0;
                     writer.Write(buffer);
@@ -464,10 +460,9 @@ namespace MqttSql
 #endif
         }
 
-        private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+        private readonly CancellationTokenSource cancellationToken = new();
 
         private readonly string clientId;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1450:Private fields only used as local variables in methods should become local variables")]
         private readonly string homeDir;
         private readonly string configPath;
 
@@ -478,9 +473,9 @@ namespace MqttSql
 
         private BrokerConfiguration[] brokers;
 
-        private readonly static object sqlLock = new object();
+        private static readonly object sqlLock = new();
         private Dictionary<string, long> lastSqliteWrite;
 
-        private Channel<(List<BaseConfiguration>, string)> messageQueue = null;
+        private Channel<(List<BaseConfiguration>, string)> messageQueue;
     }
 }

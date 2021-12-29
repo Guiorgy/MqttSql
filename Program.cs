@@ -25,7 +25,6 @@ namespace MqttSql
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1199:Nested code blocks should not be used")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3626:Jump statements should not be redundant")]
 #endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped")]
         public static async Task Main(string[] args)
         {
 #if !LINUX
@@ -66,9 +65,9 @@ namespace MqttSql
                         if (user == "root")
                         {
                             Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine($"The service was set to run with \"root\" user. "
+                            Console.WriteLine("The service was set to run with \"root\" user. "
                                 + $"If this is unwanted, either modify the \"{systemdServicePath}\" service file, "
-                                + $"or install using the \"-u\" or \"--user\" argument.");
+                                + "or install using the \"-u\" or \"--user\" argument.");
                             Console.ResetColor();
                         }
 
@@ -99,7 +98,7 @@ namespace MqttSql
                     }
                     return;
                 }
-                Service service = new Service(dir, "/");
+                Service service = new(dir, "/");
                 await service.StartAsync();
                 return;
             }
@@ -120,7 +119,7 @@ namespace MqttSql
                 host.Service<Service>(service =>
                 {
 #if DEBUG
-                    service.ConstructUsing(s => new Service(Directory.GetCurrentDirectory()));
+                    service.ConstructUsing(_ => new Service(Directory.GetCurrentDirectory()));
 #else
                     service.ConstructUsing(s => new Service());
 #endif
@@ -150,16 +149,15 @@ namespace MqttSql
         private static void ExecuteCommand(string command, bool sudo = true)
         {
             Console.WriteLine($"Executing \"{command}\"{(sudo ? " as root" : "")}");
-            ProcessStartInfo procStartInfo =
-                new ProcessStartInfo(sudo ? "/usr/bin/sudo" : "/bin/bash/", command)
-                {
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+            ProcessStartInfo procStartInfo = new(sudo ? "/usr/bin/sudo" : "/bin/bash/", command)
+            {
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-            using (Process process = new Process())
+            using (Process process = new())
             {
                 process.StartInfo = procStartInfo;
                 process.Start();

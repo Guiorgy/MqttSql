@@ -15,7 +15,7 @@ namespace MqttSql.ConfigurationsJson
         public ServiceConfiguration(
             BaseConfiguration[] databases = default,
             BrokerConfiguration[] brokers = default) =>
-            (Databases, Brokers) = (databases ?? new BaseConfiguration[0], brokers ?? new BrokerConfiguration[0]);
+            (Databases, Brokers) = (databases ?? Array.Empty<BaseConfiguration>(), brokers ?? Array.Empty<BrokerConfiguration>());
 
         public override string ToString()
         {
@@ -75,6 +75,16 @@ namespace MqttSql.ConfigurationsJson
                 && other.ConnectionString.Equals(this.ConnectionString);
         }
 
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as BaseConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, ConnectionString);
+        }
+
         public enum DatabaseType
         {
             SQLite = 0,
@@ -97,7 +107,7 @@ namespace MqttSql.ConfigurationsJson
             string user = default,
             string password = default,
             SubscriptionConfiguration[] subscriptions = default) =>
-            (Host, Port, User, Password, Subscriptions) = (host, port, user, password, subscriptions ?? new SubscriptionConfiguration[0]);
+            (Host, Port, User, Password, Subscriptions) = (host, port, user, password, subscriptions ?? Array.Empty<SubscriptionConfiguration>());
 
         public override string ToString()
         {
@@ -137,11 +147,20 @@ namespace MqttSql.ConfigurationsJson
         public bool Equals([AllowNull] BrokerConfiguration other)
         {
             return
-                other != null
-                && other.Host.Equals(this.Host)
+                other?.Host.Equals(this.Host) == true
                 && other.Port.Equals(this.Port)
                 && other.User.Equals(this.User)
                 && other.Password.Equals(this.Password);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as BrokerConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Host, Port, User, Password);
         }
     }
 
