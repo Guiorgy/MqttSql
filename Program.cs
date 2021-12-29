@@ -72,7 +72,7 @@ namespace MqttSql
                             Console.ResetColor();
                         }
 
-                        File.WriteAllText(systemdServicePath,
+                        await File.WriteAllTextAsync(systemdServicePath,
                             systemdServiceText
                                 .Replace("{EXE}", exe)
                                 .Replace("{DIR}", dir)
