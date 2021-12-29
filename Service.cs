@@ -100,9 +100,13 @@ namespace MqttSql
         {
             DebugLog($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
+#if DEBUG
+            DebugLog(json);
+#else
             DebugLog(Regex.Replace(json,
                 "(\"password\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
                 m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + '"' + m.Groups[4].Value));
+#endif
             var jsonOptions = new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,

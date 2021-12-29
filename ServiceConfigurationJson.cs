@@ -106,9 +106,9 @@ namespace MqttSql.ConfigurationsJson
                 $"Port: {Port}{Environment.NewLine}" +
                 $"User: {User}{Environment.NewLine}" +
 #if DEBUG
-                $"Password:{Password}{Environment.NewLine}" +
+                $"Password: {Password}{Environment.NewLine}" +
 #else
-                $"Password:{new string('*', Password.Length)}{Environment.NewLine}" +
+                $"Password: {new string('*', Password.Length)}{Environment.NewLine}" +
 #endif
                 $"Subscriptions:{Environment.NewLine}" +
                 string.Join(Environment.NewLine,
