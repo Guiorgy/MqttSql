@@ -13,9 +13,7 @@ namespace MqttSql.Configurations
     {
         public string Host { get; }
         public int Port { get; }
-        public string User { get; }
-        public string Password { get; }
-        public List<SubscriptionConfiguration> Subscriptions { get; }
+        public List<ClientConfiguration> Clients { get; }
 
         private List<SubscriptionConfiguration> MakeSubscriptions(
             IEnumerable<IGrouping<string, SubscriptionConfigurationJson>> topicGroups,
@@ -26,8 +24,8 @@ namespace MqttSql.Configurations
             {
                 var bases =
                     topicGroup
-                    .Select(sub => (databases.GetValueOrNull(sub.Database), sub.Table))
-                    .Where(tuple => tuple.Item1 != null);
+                    .Select(sub => (dbcfg: databases.GetValueOrNull(sub.Database), table: sub.Table))
+                    .Where(tuple => tuple.dbcfg != null);
                 if (!bases.Any()) continue;
                 int maxQOS = topicGroup.Max(sub => sub.QOS);
                 var sub = new SubscriptionConfiguration(topicGroup.Key, maxQOS, bases);
@@ -40,16 +38,65 @@ namespace MqttSql.Configurations
         {
             Host = jsonConfig.Host;
             Port = jsonConfig.Port;
-            User = jsonConfig.User;
-            Password = jsonConfig.Password;
-            var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
-            Subscriptions = MakeSubscriptions(topicGroups, databases);
+            Clients = new List<ClientConfiguration>()
+            {
+                new ClientConfiguration(jsonConfig.User, jsonConfig.Password, MakeSubscriptions(jsonConfig.Subscriptions.GroupBy(sub => sub.Topic), databases))
+            };
         }
 
         public void Merge(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
         {
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
             var newSubscriptions = MakeSubscriptions(topicGroups, databases);
+            var client = Clients.FirstOrDefault(cl => cl.User == jsonConfig.User && cl.Password == jsonConfig.Password);
+            if (client == null)
+                Clients.Add(new ClientConfiguration(jsonConfig.User, jsonConfig.Password, newSubscriptions));
+            else
+                client.Merge(newSubscriptions);
+        }
+
+        public override string ToString()
+        {
+            return
+                $"Host: {Host}{Environment.NewLine}" +
+                $"Port: {Port}{Environment.NewLine}" +
+                $"Clients:{Environment.NewLine}" +
+                string.Join(Environment.NewLine,
+                    Clients.Select(cl => cl.ToString().AppendBeforeLines("\t")));
+        }
+
+        public bool Equals([AllowNull] BrokerConfiguration other)
+        {
+            return
+                other != null
+                && other.Host.Equals(this.Host)
+                && other.Port.Equals(this.Port);
+        }
+
+        public bool Equals([AllowNull] BrokerConfigurationJson other)
+        {
+            return
+                other != null
+                && other.Host.Equals(this.Host)
+                && other.Port.Equals(this.Port);
+        }
+    }
+
+    public sealed class ClientConfiguration
+    {
+        public string User { get; }
+        public string Password { get; }
+        public List<SubscriptionConfiguration> Subscriptions { get; }
+
+        public ClientConfiguration(string user, string password, List<SubscriptionConfiguration> subscriptions)
+        {
+            User = user;
+            Password = password;
+            Subscriptions = subscriptions;
+        }
+
+        public void Merge(List<SubscriptionConfiguration> newSubscriptions)
+        {
             foreach (var newSub in newSubscriptions)
             {
                 var sub = Subscriptions.FirstOrDefault(s => s.Topic.Equals(newSub.Topic));
@@ -63,37 +110,15 @@ namespace MqttSql.Configurations
         public override string ToString()
         {
             return
-                $"Host: {Host}{Environment.NewLine}" +
-                $"Port: {Port}{Environment.NewLine}" +
                 $"User: {User}{Environment.NewLine}" +
 #if DEBUG
-                $"Password:{Password}{Environment.NewLine}" +
+                $"Password: {Password}{Environment.NewLine}" +
 #else
-                $"Password:{new string('*', Password.Length)}{Environment.NewLine}" +
+                $"Password: {new string('*', Password.Length)}{Environment.NewLine}" +
 #endif
                 $"Subscriptions:{Environment.NewLine}" +
                 string.Join(Environment.NewLine,
                     Subscriptions.Select(sub => sub.ToString().AppendBeforeLines("\t")));
-        }
-
-        public bool Equals([AllowNull] BrokerConfiguration other)
-        {
-            return
-                other != null
-                && other.Host.Equals(this.Host)
-                && other.Port.Equals(this.Port)
-                && other.User.Equals(this.User)
-                && other.Password.Equals(this.Password);
-        }
-
-        public bool Equals([AllowNull] BrokerConfigurationJson other)
-        {
-            return
-                other != null
-                && other.Host.Equals(this.Host)
-                && other.Port.Equals(this.Port)
-                && other.User.Equals(this.User)
-                && other.Password.Equals(this.Password);
         }
     }
 
@@ -103,15 +128,15 @@ namespace MqttSql.Configurations
         public int QOS { get; private set; }
         public List<BaseConfiguration> Databases { get; }
 
-        public SubscriptionConfiguration(string topic, int qos, IEnumerable<(BaseConfigurationJson, string)> bases)
+        public SubscriptionConfiguration(string topic, int qos, IEnumerable<(BaseConfigurationJson dbcfg, string table)> bases)
         {
             Topic = topic;
             QOS = qos;
-            var baseGroups = bases.GroupBy(tuple => tuple.Item1);
+            var baseGroups = bases.GroupBy(tuple => tuple.dbcfg);
             Databases = new List<BaseConfiguration>(baseGroups.Count());
             foreach (var baseGroup in baseGroups)
             {
-                var db = new BaseConfiguration(baseGroup.Key, baseGroup.Select(tuple => tuple.Item2).ToArray());
+                var db = new BaseConfiguration(baseGroup.Key, baseGroup.Select(tuple => tuple.table).ToArray());
                 if (string.IsNullOrWhiteSpace(db.ConnectionString) || db.Tables.Count == 0) continue;
                 Databases.Add(db);
             }
@@ -136,6 +161,7 @@ namespace MqttSql.Configurations
             return
                 $"Topic: {Topic}{Environment.NewLine}" +
                 $"QOS: {QOS}{Environment.NewLine}" +
+                $"Databases:{Environment.NewLine}" +
                 string.Join(Environment.NewLine,
                     Databases.Select(db => db.ToString().AppendBeforeLines("\t")));
         }
@@ -163,7 +189,11 @@ namespace MqttSql.Configurations
                 return
                     $"Type: {Type}{Environment.NewLine}" +
                     $"ConnectionString: {ConnectionString}{Environment.NewLine}" +
-                    $"[{string.Join(", ", Tables)}]{Environment.NewLine}";
+                    (
+                        Tables.Count == 1
+                        ? $"Table: {Tables[0]}{Environment.NewLine}"
+                        : $"Tables: [{string.Join(", ", Tables)}]{Environment.NewLine}"
+                    );
             }
 
             public bool Equals([AllowNull] BaseConfiguration other)
