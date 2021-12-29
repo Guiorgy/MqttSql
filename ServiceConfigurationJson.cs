@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace MqttSql.ConfigurationsJson
 {
-    public class ServiceConfiguration
+    public sealed class ServiceConfiguration
     {
         public BaseConfiguration[] Databases { get; }
         public BrokerConfiguration[] Brokers { get; }
@@ -37,7 +37,7 @@ namespace MqttSql.ConfigurationsJson
         }
     }
 
-    public class BaseConfiguration : IEquatable<BaseConfiguration>
+    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>
     {
         public string Name { get; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -82,7 +82,7 @@ namespace MqttSql.ConfigurationsJson
         }
     }
 
-    public class BrokerConfiguration : IEquatable<BrokerConfiguration>
+    public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>
     {
         public string Host { get; }
         public int Port { get; }
@@ -145,7 +145,7 @@ namespace MqttSql.ConfigurationsJson
         }
     }
 
-    public class SubscriptionConfiguration
+    public sealed class SubscriptionConfiguration
     {
         public string Topic { get; }
         public int QOS { get; }

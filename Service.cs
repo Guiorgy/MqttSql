@@ -87,7 +87,7 @@ namespace MqttSql
             {
                 foreach (var db in databases)
                     WriteToDatabase(db, message);
-                await Task.Delay(1000);
+                await Task.Delay(1000, cancellationToken.Token);
             }
         }
 
@@ -153,7 +153,9 @@ namespace MqttSql
                 else DebugLog($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");
             }
 
+#pragma warning disable S1117 // Local variables should not shadow class fields
             var brokers = new List<BrokerConfiguration>(configuration.Brokers.Length);
+#pragma warning restore S1117 // Local variables should not shadow class fields
             foreach (var broker in configuration.Brokers)
             {
                 var similar = brokers.FirstOrDefault(b => b.Equals(broker));
@@ -273,11 +275,15 @@ namespace MqttSql
                 {
                     lock (sqlLock)
                     {
-                        while (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite[db.ConnectionString] < 1000)
-                            Task.Delay(250);
+                        while (!cancellationToken.IsCancellationRequested &&
+                            DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite[db.ConnectionString] < 1000)
+                        {
+                            Task.Delay(250, cancellationToken.Token);
+                        }
                         lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     }
                 }
+                if (cancellationToken.IsCancellationRequested) return;
                 DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
                 using (var sqlCon = new SQLiteConnection(db.ConnectionString))
                 {
@@ -286,6 +292,7 @@ namespace MqttSql
                     {
                         using (var command = new SQLiteCommand(sqlCon))
                         {
+                            if (cancellationToken.IsCancellationRequested) return;
                             command.Transaction = transaction;
 
                             foreach (string table in db.Tables)
@@ -299,7 +306,7 @@ namespace MqttSql
                         }
                     }
                 }
-            });
+            }, cancellationToken.Token);
         }
 
         private void SubscribeToBrokers()
@@ -320,7 +327,8 @@ namespace MqttSql
                     mqttClient.UseDisconnectedHandler(async e =>
                     {
                         DebugLog($"Disconnected from \"{broker.Host}\"! Reason: \"{e.Reason}\"");
-                        await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10));
+                        await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10), cancellationToken.Token);
+                        if (cancellationToken.IsCancellationRequested) return;
                         connectionFailed = true;
 
                         try
@@ -334,7 +342,9 @@ namespace MqttSql
                         {
                             DebugLog("Reconnection Failed!");
                             cancellationToken.Cancel();
+#pragma warning disable PH_P007 // Unused Cancellation Token
                             await Task.Delay(1000);
+#pragma warning restore PH_P007 // Unused Cancellation Token
                             Environment.Exit(-1);
                         }
                     });

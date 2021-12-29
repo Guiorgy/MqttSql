@@ -9,7 +9,7 @@ using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionCon
 
 namespace MqttSql.Configurations
 {
-    public class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>
+    public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>
     {
         public string Host { get; }
         public int Port { get; }
@@ -28,7 +28,7 @@ namespace MqttSql.Configurations
                     topicGroup
                     .Select(sub => (databases.GetValueOrNull(sub.Database), sub.Table))
                     .Where(tuple => tuple.Item1 != null);
-                if (bases.Count() == 0) continue;
+                if (!bases.Any()) continue;
                 int maxQOS = topicGroup.Max(sub => sub.QOS);
                 var sub = new SubscriptionConfiguration(topicGroup.Key, maxQOS, bases);
                 if (sub.Databases.Count != 0 && !string.IsNullOrWhiteSpace(sub.Topic)) subscriptions.Add(sub);
@@ -97,7 +97,7 @@ namespace MqttSql.Configurations
         }
     }
 
-    public class SubscriptionConfiguration
+    public sealed class SubscriptionConfiguration
     {
         public string Topic { get; }
         public int QOS { get; private set; }
@@ -140,7 +140,7 @@ namespace MqttSql.Configurations
                     Databases.Select(db => db.ToString().AppendBeforeLines("\t")));
         }
 
-        public class BaseConfiguration : IEquatable<BaseConfiguration>
+        public sealed class BaseConfiguration : IEquatable<BaseConfiguration>
         {
             public DatabaseType Type { get; }
             public string ConnectionString { get; }
