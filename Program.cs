@@ -119,7 +119,11 @@ namespace MqttSql
 
                 host.Service<Service>(service =>
                 {
+#if DEBUG
+                    service.ConstructUsing(s => new Service(Directory.GetCurrentDirectory()));
+#else
                     service.ConstructUsing(s => new Service());
+#endif
                     service.WhenStarted(s => s.Start());
                     service.WhenStopped(s => s.Stop());
                 });
