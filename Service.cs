@@ -118,6 +118,29 @@ namespace MqttSql
             DebugLog("Configuration loaded:");
             DebugLog(configuration.ToString());
             ConfigureBrokers(configuration);
+
+            configFileChangeWatcher = new(configPath);
+            configFileChangeWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            configFileChangeWatcher.Changed += ConfigurationFileChanged;
+        }
+
+        private async void ConfigurationFileChanged(object sender, FileSystemEventArgs e)
+        {
+            configFileChangeWatcher = null;
+            DebugLog("Configuration file changed.");
+            while (!serviceLoaded)
+                await Task.Delay(1000, cancellationToken.Token);
+            DebugLog($"Disconnecting {mqttClients.Count} clients.");
+            foreach (var client in mqttClients)
+            {
+                await client.DisconnectAsync();
+                client.Dispose();
+            }
+            mqttClients = null;
+            await Task.Delay(10000, cancellationToken.Token);
+            serviceLoaded = false;
+            DebugLog("Loading new configuration.");
+            LoadAndStartService();
         }
 
         private void ConfigureBrokers(ServiceConfigurationJson configuration)
@@ -316,14 +339,17 @@ namespace MqttSql
 
         private void SubscribeToBrokers()
         {
+            List<Task> tasks = new(brokers.Length);
+
+            mqttClients = new(brokers.Sum(broker => broker.Clients.Count));
             foreach (var broker in brokers)
             {
-                if (cancellationToken.IsCancellationRequested) return;
-                _ = Task.Run(async () =>
+                if (cancellationToken.IsCancellationRequested || configFileChangeWatcher == null) break;
+                tasks.Add(Task.Run(async () =>
                 {
                     foreach (var (client, index) in broker.Clients.Select((client, index) => (client, index)))
                     {
-                        if (cancellationToken.IsCancellationRequested) return;
+                        if (cancellationToken.IsCancellationRequested || configFileChangeWatcher == null) break;
 
                         var factory = new MqttFactory();
                         var mqttClient = factory.CreateMqttClient();
@@ -337,8 +363,9 @@ namespace MqttSql
                         mqttClient.UseDisconnectedHandler(async e =>
                         {
                             DebugLog($"Disconnected from \"{broker.Host}\"! Reason: \"{e.Reason}\"");
+                            if (cancellationToken.IsCancellationRequested || configFileChangeWatcher == null) return;
                             await Task.Delay(connectionFailed ? TimeSpan.FromMinutes(15) : TimeSpan.FromSeconds(10), cancellationToken.Token);
-                            if (cancellationToken.IsCancellationRequested) return;
+                            if (cancellationToken.IsCancellationRequested || configFileChangeWatcher == null) return;
                             connectionFailed = true;
 
                             try
@@ -397,11 +424,14 @@ namespace MqttSql
 
                         DebugLog($"Connecting to \"{broker.Host}\"");
                         await mqttClient.ConnectAsync(options, cancellationToken.Token);
+                        mqttClients.Add(mqttClient);
 
                         await Task.Delay(1000, cancellationToken.Token);
                     }
-                }, cancellationToken.Token);
+                }, cancellationToken.Token));
             }
+
+            Task.WhenAll(tasks).ContinueWith(_ => serviceLoaded = true, cancellationToken.Token);
         }
 
 #if !LOG
@@ -468,9 +498,13 @@ namespace MqttSql
 
 #if LOG
         private readonly string logPath;
-        private int logWrites = 0;
+        private int logWrites;
 #endif
 
+        private FileSystemWatcher configFileChangeWatcher;
+        private bool serviceLoaded;
+
+        private List<IMqttClient> mqttClients;
         private BrokerConfiguration[] brokers;
 
         private static readonly object sqlLock = new();
