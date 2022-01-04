@@ -320,9 +320,7 @@ namespace MqttSql
                             {
                                 DebugLog("Reconnection Failed!");
                                 cancellationToken.Cancel();
-#pragma warning disable PH_P007 // Unused Cancellation Token
                                 await Task.Delay(1000);
-#pragma warning restore PH_P007 // Unused Cancellation Token
                                 Environment.Exit(-1);
                             }
                         });
