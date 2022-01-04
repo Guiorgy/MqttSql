@@ -57,8 +57,11 @@
 
   <ItemGroup>
     <Compile Remove="Extractor\**" />
+    <Compile Remove="Tests\**" />
     <EmbeddedResource Remove="Extractor\**" />
+    <EmbeddedResource Remove="Tests\**" />
     <None Remove="Extractor\**" />
+    <None Remove="Tests\**" />
     <None Include="LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>

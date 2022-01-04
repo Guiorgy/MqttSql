@@ -1,0 +1,67 @@
+Databases:
+	Name: db1
+	Type: SQLite
+	ConnectionString: 
+
+Brokers:
+	Host: localhost
+	Port: 1883
+	User: user1
+	Password: password1
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table-1.1
+
+	Host: localhost
+	Port: 1883
+	User: user2
+	Password: password2
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 1
+		Database: db1
+		Table: table-2.1
+
+		Topic: some/topic/2
+		QOS: 1
+		Database: db1
+		Table: table-2.2
+
+	Host: localhost
+	Port: 1883
+	User: user1
+	Password: password1
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table-1.1
+
+		Topic: some/topic/2
+		QOS: 2
+		Database: db1
+		Table: table-1.2
+
+	Host: localhost
+	Port: 1883
+	User: user3
+	Password: password3
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 1
+		Database: db1
+		Table: table-3.1
+
+		Topic: some/topic/2
+		QOS: 1
+		Database: db1
+		Table: table-3.2
+
+	Host: localhost
+	Port: 1883
+	User: user4
+	Password: password4
+	Subscriptions:
+

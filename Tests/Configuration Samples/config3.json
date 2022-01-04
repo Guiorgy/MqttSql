@@ -1,0 +1,134 @@
+{
+	"databases": [
+		{
+			"name": "db1",
+			"type": "SQLite"
+			// For help creating connection strings visit: https://www.connectionstrings.com/
+		},
+		{
+			"name": "db2",
+			"type": "GeneralSql",
+			"connectionString": "Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;"
+		}
+	],
+	"brokers": [
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user1",
+			"password": "password1",
+			"subscriptions": [
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table1"
+				},
+				{
+					"topic": "some/topic/2",
+					"qos": 2,
+					"base": "db1",
+					"table": "table2"
+				}
+			]
+		},
+		{
+			"host": "192.168.0.101",
+			"port": 1883,
+			"user": "user2",
+			"password": "password2",
+			"subscriptions": [
+				{
+					"topic": "some/topic/3",
+					"qos": 0,
+					"base": "db2",
+					"table": "table3"
+				},
+				{
+					"topic": "some/topic/4",
+					"qos": 0,
+					"base": "db2",
+					"table": "table4"
+				}
+			]
+		},
+		{
+			"host": "192.168.0.101",
+			"port": 1883,
+			"user": "user2",
+			"password": "password2"
+		},
+		{
+			"host": "192.168.0.101",
+			"port": 1883,
+			"user": "user2",
+			"password": "password2",
+			"subscriptions": [
+				{
+					"topic": "some/topic/3",
+					"qos": 1,
+					"base": "db2",
+					"table": "table3"
+				},
+				{
+					"topic": "some/topic/5",
+					"qos": 1,
+					"base": "db2",
+					"table": "table4"
+				},
+				{
+					"topic": "some/topic/5",
+					"qos": 2,
+					"base": "db2",
+					"table": "table5"
+				},
+				{
+					"topic": "some/topic/5",
+					"qos": 0,
+					"base": "db1",
+					"table": "table5"
+				}
+			]
+		},
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user1",
+			"password": "password1",
+			"subscriptions": [
+				{
+					"topic": "some/topic/1",
+					"qos": 1,
+					"base": "db1",
+					"table": "table-1.1"
+				},
+				{
+					"topic": "some/topic/2",
+					"qos": 1,
+					"base": "db1",
+					"table": "table-2.1"
+				}
+			]
+		},
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user3",
+			"password": "password3",
+			"subscriptions": [
+				{
+					"topic": "some/topic/1",
+					"qos": 1,
+					"base": "db1",
+					"table": "table-1.1"
+				},
+				{
+					"topic": "some/topic/2",
+					"qos": 1,
+					"base": "db1",
+					"table": "table-2.1"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,25 @@
+{
+	"databases": [
+		{
+			"name": "db1",
+			"type": "SQLite"
+			// For help creating connection strings visit: https://www.connectionstrings.com/
+		}
+	],
+	"brokers": [
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user",
+			"password": "password",
+			"subscriptions": [
+				{
+					"topic": "some/topic",
+					"qos": 2,
+					"base": "db1",
+					"table": "table"
+				}
+			]
+		}
+	]
+}

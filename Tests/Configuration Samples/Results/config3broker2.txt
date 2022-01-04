@@ -1,0 +1,31 @@
+Host: 192.168.0.101
+Port: 1883
+Clients:
+	User: user2
+	Password: password2
+	Subscriptions:
+		Topic: some/topic/3
+		QOS: 1
+		Databases:
+			Type: GeneralSql
+			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+			Table: table3
+			
+		Topic: some/topic/4
+		QOS: 0
+		Databases:
+			Type: GeneralSql
+			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+			Table: table4
+			
+		Topic: some/topic/5
+		QOS: 2
+		Databases:
+			Type: GeneralSql
+			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+			Tables: [table4, table5]
+			
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version3;
+			Table: table5
+			
