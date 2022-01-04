@@ -171,7 +171,7 @@ namespace MqttSql
                         }
                         connectionString =
                             Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
-                                Regex.Replace(db.ConnectionString,
+                                Regex.Replace(connectionString,
                                 "(Data Source\\s*=\\s*)(.*?)(;|$)",
                                 $"$1{path}$3") :
                                 $"Data Source={path};{connectionString}";
