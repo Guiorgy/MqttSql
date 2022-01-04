@@ -1,7 +1,6 @@
 ﻿using MqttSql.Configurations;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -24,7 +23,7 @@ namespace MqttSql
             return GetBrokersFromConfig(LoadJsonConfig(configPath, logger), GetSQLiteDbPath, logger);
         }
 
-        public static ServiceConfigurationJson LoadJsonConfig(string configPath, Action<string> logger = null)
+        private static ServiceConfigurationJson LoadJsonConfig(string configPath, Action<string> logger = null)
         {
             logger?.Invoke($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
@@ -48,7 +47,7 @@ namespace MqttSql
             return configuration;
         }
 
-        public static BrokerConfiguration[] GetBrokersFromConfig(
+        private static BrokerConfiguration[] GetBrokersFromConfig(
             ServiceConfigurationJson configuration,
             Func<string, string> GetSQLiteDbPath = null,
             Action<string> logger = null)
