@@ -382,26 +382,35 @@ namespace MqttSql
         private void DebugLog(string message)
         {
 #if LOG
-            Console.WriteLine(message + Environment.NewLine);
-            if ((logWrites = logWrites > 1000 ? 0 : logWrites + 1) > 1000
-                && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
+            try
             {
-                byte[] buffer;
-                using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                Console.WriteLine(message + Environment.NewLine);
+                if ((logWrites = logWrites > 1000 ? 0 : logWrites + 1) > 1000
+                    && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
                 {
-                    reader.BaseStream.Position = file.Length - 1_000_000;
-                    buffer = reader.ReadBytes(1_000_000);
+                    byte[] buffer;
+                    using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                    {
+                        reader.BaseStream.Position = file.Length - 1_000_000;
+                        buffer = reader.ReadBytes(1_000_000);
+                    }
+                    using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                    {
+                        writer.BaseStream.Position = 0;
+                        writer.Write(buffer);
+                        writer.Write(Encoding.UTF8.GetBytes(message + Environment.NewLine));
+                    }
                 }
-                using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                else
                 {
-                    writer.BaseStream.Position = 0;
-                    writer.Write(buffer);
-                    writer.Write(Encoding.UTF8.GetBytes(message + Environment.NewLine));
+                    File.AppendAllText(logPath, message + Environment.NewLine);
                 }
-            }
-            else
+            } catch (Exception ex)
             {
-                File.AppendAllText(logPath, message + Environment.NewLine);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.WriteLine(ex.ToString());
+                Console.ResetColor();
             }
 #endif
         }
