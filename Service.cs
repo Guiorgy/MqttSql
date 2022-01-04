@@ -15,17 +15,11 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using static MqttSql.Configurations.SubscriptionConfiguration;
-using static MqttSql.ConfigurationsJson.BaseConfiguration;
-
-using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
-
-using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
+using static MqttSql.Configurations.SubscriptionConfiguration.BaseConfiguration;
 
 namespace MqttSql
 {
@@ -60,7 +54,7 @@ namespace MqttSql
 
         private void LoadAndStartService()
         {
-            ReadJsonConfig();
+            LoadConfiguration();
             var bases = brokers.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
             lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
@@ -72,6 +66,25 @@ namespace MqttSql
             foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql))
                 EnsureSqlTablesExist(general);
             SubscribeToBrokers();
+        }
+
+        private async void ConfigurationFileChanged(object sender, FileSystemEventArgs e)
+        {
+            configFileChangeWatcher = null;
+            DebugLog("Configuration file changed.");
+            while (!serviceLoaded)
+                await Task.Delay(1000, cancellationToken.Token);
+            DebugLog($"Disconnecting {mqttClients.Count} clients.");
+            foreach (var client in mqttClients)
+            {
+                await client.DisconnectAsync();
+                client.Dispose();
+            }
+            mqttClients = null;
+            await Task.Delay(10000, cancellationToken.Token);
+            serviceLoaded = false;
+            DebugLog("Loading new configuration.");
+            LoadAndStartService();
         }
 
         public void Start()
@@ -97,108 +110,36 @@ namespace MqttSql
             cancellationToken.Cancel(false);
         }
 
-        private void ReadJsonConfig()
+        private void LoadConfiguration()
         {
-            DebugLog($"Loading configuration \"{configPath}\":");
-            string json = File.ReadAllText(configPath);
-#if DEBUG
-            DebugLog(json);
-#else
-            DebugLog(Regex.Replace(json,
-                "(\"password\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
-                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + '"' + m.Groups[4].Value));
-#endif
-            var jsonOptions = new JsonSerializerOptions()
+            string GetSQLiteDbPath(string path)
             {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                MaxDepth = 5
-            };
-            ServiceConfigurationJson configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(json, jsonOptions);
-            DebugLog("Configuration loaded:");
-            DebugLog(configuration.ToString());
-            ConfigureBrokers(configuration);
+                if (string.IsNullOrWhiteSpace(path))
+                    path = homeDir + "database.sqlite";
+                else if (path.StartsWith('.'))
+                    path = Path.GetFullPath(homeDir + path);
+                if (!File.Exists(path))
+                {
+                    DebugLog($"Creating database file \"{path}\"");
+                    SQLiteConnection.CreateFile(path);
+                }
+                return path;
+            }
+            
+#if DEBUG
+            this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath, DebugLog);
+#else
+            this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath);
+#endif
 
+            if (configFileChangeWatcher != null)
+            {
+                configFileChangeWatcher.Dispose();
+                configFileChangeWatcher = null;
+            }
             configFileChangeWatcher = new(configPath);
             configFileChangeWatcher.NotifyFilter = NotifyFilters.LastWrite;
             configFileChangeWatcher.Changed += ConfigurationFileChanged;
-        }
-
-        private async void ConfigurationFileChanged(object sender, FileSystemEventArgs e)
-        {
-            configFileChangeWatcher = null;
-            DebugLog("Configuration file changed.");
-            while (!serviceLoaded)
-                await Task.Delay(1000, cancellationToken.Token);
-            DebugLog($"Disconnecting {mqttClients.Count} clients.");
-            foreach (var client in mqttClients)
-            {
-                await client.DisconnectAsync();
-                client.Dispose();
-            }
-            mqttClients = null;
-            await Task.Delay(10000, cancellationToken.Token);
-            serviceLoaded = false;
-            DebugLog("Loading new configuration.");
-            LoadAndStartService();
-        }
-
-        private void ConfigureBrokers(ServiceConfigurationJson configuration)
-        {
-            var databases = new Dictionary<string, BaseConfigurationJson>(configuration.Databases.Length);
-            foreach (var db in configuration.Databases)
-            {
-                if (!databases.ContainsKey(db.Name))
-                {
-                    if (db.Type != DatabaseType.SQLite)
-                    {
-                        databases.Add(db.Name, db);
-                    }
-                    else
-                    {
-                        string connectionString = db.ConnectionString ?? "Version3;";
-                        string path =
-                            Regex.Match(connectionString,
-                            "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
-                        if (string.IsNullOrWhiteSpace(path))
-                            path = homeDir + "database.sqlite";
-                        else if (path.StartsWith('.'))
-                            path = Path.GetFullPath(homeDir + path);
-                        if (!File.Exists(path))
-                        {
-                            DebugLog($"Creating database file \"{path}\"");
-                            SQLiteConnection.CreateFile(path);
-                        }
-                        connectionString =
-                            Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
-                                Regex.Replace(connectionString,
-                                "(Data Source\\s*=\\s*)(.*?)(;|$)",
-                                $"$1{path}$3") :
-                                $"Data Source={path};{connectionString}";
-                        databases.Add(db.Name, new BaseConfigurationJson(db.Name, DatabaseType.SQLite, connectionString));
-                    }
-                }
-                else DebugLog($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");
-            }
-
-#pragma warning disable S1117 // Local variables should not shadow class fields
-            var brokers = new List<BrokerConfiguration>(configuration.Brokers.Length);
-#pragma warning restore S1117 // Local variables should not shadow class fields
-            foreach (var broker in configuration.Brokers)
-            {
-                var similar = brokers.FirstOrDefault(b => b.Equals(broker));
-                if (similar == null)
-                {
-                    var newBroker = new BrokerConfiguration(databases, broker);
-                    if (newBroker.Clients[0].Subscriptions.Count != 0) brokers.Add(newBroker);
-                }
-                else
-                    similar.Merge(databases, broker);
-            }
-            this.brokers = brokers.ToArray();
-
-            DebugLog("Final brokers configuration:");
-            DebugLog(string.Join(Environment.NewLine, brokers.Select(broker => broker.ToString())));
         }
 
         private void EnsureSqliteTablesExist(BaseConfiguration sqliteDb)

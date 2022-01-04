@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
+using static MqttSql.Configurations.SubscriptionConfiguration.BaseConfiguration;
 
 namespace MqttSql.ConfigurationsJson
 {
@@ -83,12 +84,6 @@ namespace MqttSql.ConfigurationsJson
         public override int GetHashCode()
         {
             return HashCode.Combine(Type, ConnectionString);
-        }
-
-        public enum DatabaseType
-        {
-            SQLite = 0,
-            GeneralSql = 1
         }
     }
 

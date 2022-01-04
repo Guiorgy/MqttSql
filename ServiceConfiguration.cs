@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using static MqttSql.ConfigurationsJson.BaseConfiguration;
 using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
 using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
 using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionConfiguration;
@@ -219,6 +218,12 @@ namespace MqttSql.Configurations
             public override int GetHashCode()
             {
                 return ConnectionString.GetHashCode();
+            }
+
+            public enum DatabaseType
+            {
+                SQLite = 0,
+                GeneralSql = 1
             }
         }
     }
