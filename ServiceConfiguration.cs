@@ -46,6 +46,7 @@ namespace MqttSql.Configurations
 
         public void Merge(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
         {
+            if (jsonConfig.Subscriptions.Length == 0) return;
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
             var newSubscriptions = MakeSubscriptions(topicGroups, databases);
             var client = Clients.Find(cl => cl.User == jsonConfig.User && cl.Password == jsonConfig.Password);
