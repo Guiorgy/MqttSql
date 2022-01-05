@@ -18,8 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using static MqttSql.Configurations.SubscriptionConfiguration;
-using static MqttSql.Configurations.SubscriptionConfiguration.BaseConfiguration;
+using static MqttSql.Configurations.BaseConfiguration;
 
 namespace MqttSql
 {

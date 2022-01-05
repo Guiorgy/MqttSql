@@ -5,9 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using static MqttSql.Configurations.SubscriptionConfiguration.BaseConfiguration;
-
-using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
+using static MqttSql.Configurations.BaseConfiguration;
 
 using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 
@@ -52,14 +50,15 @@ namespace MqttSql
             Func<string, string> GetSQLiteDbPath = null,
             Action<string> logger = null)
         {
-            var databases = new Dictionary<string, BaseConfigurationJson>(configuration.Databases.Length);
+            var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length);
             foreach (var db in configuration.Databases)
             {
                 if (!databases.ContainsKey(db.Name))
                 {
-                    if (db.Type != DatabaseType.SQLite)
+                    if (db.Type != nameof(DatabaseType.SQLite))
                     {
-                        databases.Add(db.Name, db);
+                        if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
+                            databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString));
                     }
                     else
                     {
@@ -74,7 +73,7 @@ namespace MqttSql
                                 "(Data Source\\s*=\\s*)(.*?)(;|$)",
                                 $"$1{path}$3") :
                                 $"Data Source={path};{connectionString}";
-                        databases.Add(db.Name, new BaseConfigurationJson(db.Name, DatabaseType.SQLite, connectionString));
+                        databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
                     }
                 }
                 else logger?.Invoke($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");

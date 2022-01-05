@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
-using static MqttSql.Configurations.SubscriptionConfiguration.BaseConfiguration;
+using static MqttSql.Configurations.BaseConfiguration;
 
 namespace MqttSql.ConfigurationsJson
 {
@@ -41,14 +41,13 @@ namespace MqttSql.ConfigurationsJson
     public sealed class BaseConfiguration : IEquatable<BaseConfiguration>
     {
         public string Name { get; }
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DatabaseType Type { get; }
+        public string Type { get; }
         public string ConnectionString { get; }
 
         [JsonConstructor]
         public BaseConfiguration(
             string name = "sqlite",
-            DatabaseType type = DatabaseType.SQLite,
+            string type = nameof(DatabaseType.SQLite),
             string connectionString = default) =>
             (Name, Type, ConnectionString) = (name, type, connectionString);
 

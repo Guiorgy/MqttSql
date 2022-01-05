@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using BaseConfigurationJson = MqttSql.ConfigurationsJson.BaseConfiguration;
 using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
 using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionConfiguration;
 
@@ -16,24 +15,34 @@ namespace MqttSql.Configurations
 
         private static List<SubscriptionConfiguration> MakeSubscriptions(
             IEnumerable<IGrouping<string, SubscriptionConfigurationJson>> topicGroups,
-            Dictionary<string, BaseConfigurationJson> databases)
+            Dictionary<string, BaseConfiguration> databases)
         {
             var subscriptions = new List<SubscriptionConfiguration>(topicGroups.Count());
             foreach (var topicGroup in topicGroups)
             {
-                var bases =
+                if (string.IsNullOrWhiteSpace(topicGroup.Key)) continue;
+                var allbases =
                     topicGroup
-                    .Select(sub => (dbcfg: databases.GetValueOrNull(sub.Database), table: sub.Table))
-                    .Where(tuple => tuple.dbcfg != null);
+                    .Select(sub => databases.GetValueOrNull(sub.Database)?.Clone()?.WithTables(sub.Table))
+                    .Where(db => db != null && db.Tables.Count != 0);
+                List<BaseConfiguration> bases = new(allbases.Count());
+                foreach (var adb in allbases)
+                {
+                    var db = bases.Find(db => db.ConnectionString.Equals(adb.ConnectionString));
+                    if (db == null)
+                        bases.Add(adb);
+                    else
+                        db.Merge(adb.Tables);
+                }
                 if (!bases.Any()) continue;
                 int maxQOS = topicGroup.Max(sub => sub.QOS);
                 var sub = new SubscriptionConfiguration(topicGroup.Key, maxQOS, bases);
-                if (sub.Databases.Count != 0 && !string.IsNullOrWhiteSpace(sub.Topic)) subscriptions.Add(sub);
+                subscriptions.Add(sub);
             }
             return subscriptions;
         }
 
-        public BrokerConfiguration(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
+        public BrokerConfiguration(Dictionary<string, BaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
         {
             Host = jsonConfig.Host;
             Port = jsonConfig.Port;
@@ -43,7 +52,7 @@ namespace MqttSql.Configurations
             };
         }
 
-        public void Merge(Dictionary<string, BaseConfigurationJson> databases, BrokerConfigurationJson jsonConfig)
+        public void Merge(Dictionary<string, BaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
         {
             if (jsonConfig.Subscriptions.Length == 0) return;
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
@@ -136,18 +145,11 @@ namespace MqttSql.Configurations
         public int QOS { get; private set; }
         public List<BaseConfiguration> Databases { get; }
 
-        public SubscriptionConfiguration(string topic, int qos, IEnumerable<(BaseConfigurationJson dbcfg, string table)> bases)
+        public SubscriptionConfiguration(string topic, int qos, IEnumerable<BaseConfiguration> bases)
         {
             Topic = topic;
             QOS = qos;
-            var baseGroups = bases.GroupBy(tuple => tuple.dbcfg);
-            Databases = new List<BaseConfiguration>(baseGroups.Count());
-            foreach (var baseGroup in baseGroups)
-            {
-                var db = new BaseConfiguration(baseGroup.Key, baseGroup.Select(tuple => tuple.table).ToArray());
-                if (string.IsNullOrWhiteSpace(db.ConnectionString) || db.Tables.Count == 0) continue;
-                Databases.Add(db);
-            }
+            Databases = bases.ToList();
         }
 
         public void Merge(SubscriptionConfiguration other)
@@ -173,58 +175,80 @@ namespace MqttSql.Configurations
                 string.Join(Environment.NewLine,
                     Databases.Select(db => db.ToString().AppendBeforeLines("\t")));
         }
+    }
 
-        public sealed class BaseConfiguration : IEquatable<BaseConfiguration>
+    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable
+    {
+        public DatabaseType Type { get; }
+        public string ConnectionString { get; }
+        public List<string> Tables { get; }
+
+        public BaseConfiguration(DatabaseType type, string connectionString, params string[] tables)
         {
-            public DatabaseType Type { get; }
-            public string ConnectionString { get; }
-            public List<string> Tables { get; }
+            Type = type;
+            ConnectionString = connectionString;
+            Tables = new List<string>(tables.Where(table => !string.IsNullOrWhiteSpace(table)));
+        }
 
-            public BaseConfiguration(BaseConfigurationJson jsonConfig, params string[] tables)
-            {
-                Type = jsonConfig.Type;
-                ConnectionString = jsonConfig.ConnectionString;
-                Tables = new List<string>(tables.Where(table => !string.IsNullOrWhiteSpace(table)));
-            }
+        public void Merge(BaseConfiguration other)
+        {
+            Tables.AddRange(other.Tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+        }
 
-            public void Merge(BaseConfiguration other)
-            {
-                Tables.AddRange(other.Tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
-            }
+        public void Merge(List<string> tables)
+        {
+            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+        }
 
-            public override string ToString()
-            {
-                return
-                    $"Type: {Type}{Environment.NewLine}" +
-                    $"ConnectionString: {ConnectionString}{Environment.NewLine}" +
-                    (
-                        Tables.Count == 1
-                        ? $"Table: {Tables[0]}{Environment.NewLine}"
-                        : $"Tables: [{string.Join(", ", Tables)}]{Environment.NewLine}"
-                    );
-            }
+        internal BaseConfiguration Clone()
+        {
+            return new BaseConfiguration(Type, ConnectionString);
+        }
 
-            public bool Equals([AllowNull] BaseConfiguration other)
-            {
-                return
-                    other?.ConnectionString.Equals(this.ConnectionString) == true;
-            }
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
 
-            public override bool Equals(object obj)
-            {
-                return Equals(obj as BaseConfiguration);
-            }
+        internal BaseConfiguration WithTables(params string[] tables)
+        {
+            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            return this;
+        }
 
-            public override int GetHashCode()
-            {
-                return ConnectionString.GetHashCode();
-            }
+        public override string ToString()
+        {
+            return
+                $"Type: {Type}{Environment.NewLine}" +
+                $"ConnectionString: {ConnectionString}{Environment.NewLine}" +
+                (
+                    Tables.Count == 1
+                    ? $"Table: {Tables[0]}{Environment.NewLine}"
+                    : $"Tables: [{string.Join(", ", Tables)}]{Environment.NewLine}"
+                );
+        }
 
-            public enum DatabaseType
-            {
-                SQLite = 0,
-                GeneralSql = 1
-            }
+        public bool Equals([AllowNull] BaseConfiguration other)
+        {
+            return
+                other?.ConnectionString.Equals(this.ConnectionString) == true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as BaseConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            return ConnectionString.GetHashCode();
+        }
+
+        public enum DatabaseType
+        {
+            None = -1,
+            SQLite = 0,
+            GeneralSql = 1
         }
     }
 }
