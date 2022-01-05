@@ -21,10 +21,10 @@ namespace MqttSql.Configurations
             foreach (var topicGroup in topicGroups)
             {
                 if (string.IsNullOrWhiteSpace(topicGroup.Key)) continue;
-                var allbases =
+                IEnumerable<BaseConfiguration> allbases =
                     topicGroup
                     .Select(sub => databases.GetValueOrNull(sub.Database)?.Clone()?.WithTables(sub.Table))
-                    .Where(db => db != null && db.Tables.Count != 0);
+                    .Where(db => db != null && db.Tables.Count != 0)!;
                 List<BaseConfiguration> bases = new(allbases.Count());
                 foreach (var adb in allbases)
                 {
@@ -88,7 +88,7 @@ namespace MqttSql.Configurations
                 && other.Port.Equals(this.Port);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as BrokerConfiguration);
         }
@@ -234,7 +234,7 @@ namespace MqttSql.Configurations
                 other?.ConnectionString.Equals(this.ConnectionString) == true;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as BaseConfiguration);
         }

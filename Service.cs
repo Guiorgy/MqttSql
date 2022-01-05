@@ -24,13 +24,13 @@ namespace MqttSql
 {
     public class Service
     {
-        public Service(string homeDir = null, string dirSep = "\\")
+        public Service(string? homeDir = null, string dirSep = "\\")
         {
             string macAddress = NetworkInterface
                 .GetAllNetworkInterfaces()
                 .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
                 .Select(nic => nic.GetPhysicalAddress().ToString())
-                .FirstOrDefault();
+                .FirstOrDefault() ?? Guid.NewGuid().ToString();
             this.clientId = $"{macAddress}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
 
 #if DEBUG
@@ -54,7 +54,7 @@ namespace MqttSql
         private void LoadAndStartService()
         {
             LoadConfiguration();
-            var bases = brokers.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
+            var bases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
             lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
             foreach (var sqlite in sqliteBases)
@@ -73,7 +73,7 @@ namespace MqttSql
             DebugLog("Configuration file changed.");
             while (!serviceLoaded)
                 await Task.Delay(1000, cancellationToken.Token);
-            DebugLog($"Disconnecting {mqttClients.Count} clients.");
+            DebugLog($"Disconnecting {mqttClients!.Count} clients.");
             foreach (var client in mqttClients)
             {
                 await client.DisconnectAsync();
@@ -211,7 +211,7 @@ namespace MqttSql
         private void WriteToDatabase(BaseConfiguration db, string message)
         {
             if (db.Type == DatabaseType.SQLite)
-                lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                lastSqliteWrite![db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
             using (var sqlCon = new SQLiteConnection(db.ConnectionString))
             {
@@ -244,11 +244,11 @@ namespace MqttSql
                     lock (sqlLock)
                     {
                         while (!cancellationToken.IsCancellationRequested &&
-                            DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite[db.ConnectionString] < 1000)
+                            DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite![db.ConnectionString] < 1000)
                         {
                             Task.Delay(250, cancellationToken.Token);
                         }
-                        lastSqliteWrite[db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        lastSqliteWrite![db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     }
                 }
                 if (cancellationToken.IsCancellationRequested) return;
@@ -279,7 +279,7 @@ namespace MqttSql
 
         private void SubscribeToBrokers()
         {
-            List<Task> tasks = new(brokers.Length);
+            List<Task> tasks = new(brokers!.Length);
 
             mqttClients = new(brokers.Sum(broker => broker.Clients.Count));
             foreach (var broker in brokers)
@@ -433,7 +433,7 @@ namespace MqttSql
         private void DebugLog(object messageObj)
         {
 #if LOG
-            DebugLog(messageObj.ToString());
+            DebugLog(messageObj.ToString() ?? "");
 #endif
         }
 
@@ -448,15 +448,15 @@ namespace MqttSql
         private int logWrites;
 #endif
 
-        private FileSystemWatcher configFileChangeWatcher;
+        private FileSystemWatcher? configFileChangeWatcher;
         private bool serviceLoaded;
 
-        private List<IMqttClient> mqttClients;
-        private BrokerConfiguration[] brokers;
+        private List<IMqttClient>? mqttClients;
+        private BrokerConfiguration[]? brokers;
 
         private static readonly object sqlLock = new();
-        private Dictionary<string, long> lastSqliteWrite;
+        private Dictionary<string, long>? lastSqliteWrite;
 
-        private Channel<(List<BaseConfiguration>, string)> messageQueue;
+        private Channel<(List<BaseConfiguration>, string)>? messageQueue;
     }
 }

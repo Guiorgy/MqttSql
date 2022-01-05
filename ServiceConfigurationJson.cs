@@ -14,8 +14,8 @@ namespace MqttSql.ConfigurationsJson
 
         [JsonConstructor]
         public ServiceConfiguration(
-            BaseConfiguration[] databases = default,
-            BrokerConfiguration[] brokers = default) =>
+            BaseConfiguration[]? databases = default,
+            BrokerConfiguration[]? brokers = default) =>
             (Databases, Brokers) = (databases ?? Array.Empty<BaseConfiguration>(), brokers ?? Array.Empty<BrokerConfiguration>());
 
         public override string ToString()
@@ -48,7 +48,7 @@ namespace MqttSql.ConfigurationsJson
         public BaseConfiguration(
             string name = "sqlite",
             string type = nameof(DatabaseType.SQLite),
-            string connectionString = default) =>
+            string connectionString = "") =>
             (Name, Type, ConnectionString) = (name, type, connectionString);
 
         public override string ToString()
@@ -75,7 +75,7 @@ namespace MqttSql.ConfigurationsJson
                 && other.ConnectionString.Equals(this.ConnectionString);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as BaseConfiguration);
         }
@@ -98,9 +98,9 @@ namespace MqttSql.ConfigurationsJson
         public BrokerConfiguration(
             string host = "localhost",
             int port = 1883,
-            string user = default,
-            string password = default,
-            SubscriptionConfiguration[] subscriptions = default) =>
+            string user = "",
+            string password = "",
+            SubscriptionConfiguration[]? subscriptions = default) =>
             (Host, Port, User, Password, Subscriptions) = (host, port, user, password, subscriptions ?? Array.Empty<SubscriptionConfiguration>());
 
         public override string ToString()
@@ -138,7 +138,7 @@ namespace MqttSql.ConfigurationsJson
             return builder;
         }
 
-        public bool Equals([AllowNull] BrokerConfiguration other)
+        public bool Equals([AllowNull] BrokerConfiguration? other)
         {
             return
                 other?.Host.Equals(this.Host) == true
@@ -147,7 +147,7 @@ namespace MqttSql.ConfigurationsJson
                 && other.Password.Equals(this.Password);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as BrokerConfiguration);
         }

@@ -15,13 +15,13 @@ namespace MqttSql
     {
         public static BrokerConfiguration[] LoadBrokersFromJson(
             string configPath,
-            Func<string, string> GetSQLiteDbPath = null,
-            Action<string> logger = null)
+            Func<string, string>? GetSQLiteDbPath = null,
+            Action<string>? logger = null)
         {
             return GetBrokersFromConfig(LoadJsonConfig(configPath, logger), GetSQLiteDbPath, logger);
         }
 
-        private static ServiceConfigurationJson LoadJsonConfig(string configPath, Action<string> logger = null)
+        private static ServiceConfigurationJson LoadJsonConfig(string configPath, Action<string>? logger = null)
         {
             logger?.Invoke($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
@@ -38,7 +38,9 @@ namespace MqttSql
                 ReadCommentHandling = JsonCommentHandling.Skip,
                 MaxDepth = 5
             };
-            ServiceConfigurationJson configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(json, jsonOptions);
+            ServiceConfigurationJson? configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(json, jsonOptions);
+            if (configuration == null) throw new JsonException($"Failed to Deserialize the service configuration file \"{configPath}\"");
+
             logger?.Invoke("Configuration loaded:");
             logger?.Invoke(configuration.ToString());
 
@@ -47,8 +49,8 @@ namespace MqttSql
 
         private static BrokerConfiguration[] GetBrokersFromConfig(
             ServiceConfigurationJson configuration,
-            Func<string, string> GetSQLiteDbPath = null,
-            Action<string> logger = null)
+            Func<string, string>? GetSQLiteDbPath = null,
+            Action<string>? logger = null)
         {
             var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length);
             foreach (var db in configuration.Databases)
@@ -58,7 +60,7 @@ namespace MqttSql
                     if (db.Type != nameof(DatabaseType.SQLite))
                     {
                         if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
-                            databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString));
+                            databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString ?? ""));
                     }
                     else
                     {
@@ -66,7 +68,7 @@ namespace MqttSql
                         string path =
                             Regex.Match(connectionString,
                             "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
-                        path = GetSQLiteDbPath(path);
+                        path = GetSQLiteDbPath?.Invoke(path) ?? path;
                         connectionString =
                             Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
                                 Regex.Replace(connectionString,
