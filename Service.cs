@@ -56,10 +56,10 @@ namespace MqttSql
             LoadConfiguration();
             var bases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
-            lastSqliteWrite = new Dictionary<string, long>(sqliteBases.Count());
+            sqliteMessageQueues = new(sqliteBases.Count());
             foreach (var sqlite in sqliteBases)
             {
-                lastSqliteWrite.Add(sqlite.ConnectionString, 0);
+                sqliteMessageQueues.Add(sqlite, Channel.CreateUnbounded<string>());
                 EnsureSqliteTablesExist(sqlite);
             }
             foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql))
@@ -88,19 +88,31 @@ namespace MqttSql
 
         public void Start()
         {
-            Task.Run(() => LoadAndStartService(), cancellationToken.Token);
+            Task.Run(() => StartAsync(), cancellationToken.Token);
         }
 
         public async Task StartAsync()
         {
-            messageQueue = Channel.CreateUnbounded<(List<BaseConfiguration>, string)>();
             LoadAndStartService();
-            await foreach ((List<BaseConfiguration> databases, string message)
+
+            foreach (var (sqlite, queue) in sqliteMessageQueues!)
+            {
+                _ = Task.Run(async () =>
+                  {
+                      await foreach ((BaseConfiguration database, string message)
+                          in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
+                      {
+                          await WriteToSQLiteDatabaseTask(database, message);
+                          await Task.Delay(1000, cancellationToken.Token);
+                      }
+                  }, cancellationToken.Token);
+            }
+
+            await foreach ((BaseConfiguration database, string message)
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
-                foreach (var db in databases)
-                    WriteToDatabase(db, message);
-                await Task.Delay(1000, cancellationToken.Token);
+                await WriteToSqlDatabaseTask(database, message);
+                await Task.Delay(50);
             }
         }
 
@@ -124,7 +136,7 @@ namespace MqttSql
                 }
                 return path;
             }
-            
+
 #if DEBUG
             this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath, DebugLog);
 #else
@@ -208,49 +220,10 @@ namespace MqttSql
             }
         }
 
-        private void WriteToDatabase(BaseConfiguration db, string message)
-        {
-            if (db.Type == DatabaseType.SQLite)
-                lastSqliteWrite![db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
-            using (var sqlCon = new SQLiteConnection(db.ConnectionString))
-            {
-                sqlCon.Open();
-                using (var transaction = sqlCon.BeginTransaction())
-                {
-                    using (var command = new SQLiteCommand(sqlCon))
-                    {
-                        command.Transaction = transaction;
-
-                        foreach (string table in db.Tables)
-                        {
-                            DebugLog($"Writing to the \"{table}\" table");
-                            command.CommandText = "INSERT INTO " + table + "(Message) values ('" + message + "')";
-                            command.ExecuteNonQuery();
-                        }
-
-                        transaction.Commit();
-                    }
-                }
-            }
-        }
-
-        private Task WriteToDatabaseTask(BaseConfiguration db, string message)
+        private Task WriteToSQLiteDatabaseTask(BaseConfiguration db, string message)
         {
             return new Task(() =>
             {
-                if (db.Type == DatabaseType.SQLite)
-                {
-                    lock (sqlLock)
-                    {
-                        while (!cancellationToken.IsCancellationRequested &&
-                            DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastSqliteWrite![db.ConnectionString] < 1000)
-                        {
-                            Task.Delay(250, cancellationToken.Token);
-                        }
-                        lastSqliteWrite![db.ConnectionString] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    }
-                }
                 if (cancellationToken.IsCancellationRequested) return;
                 DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
                 using (var sqlCon = new SQLiteConnection(db.ConnectionString))
@@ -275,6 +248,14 @@ namespace MqttSql
                     }
                 }
             }, cancellationToken.Token);
+        }
+
+        private Task WriteToSqlDatabaseTask(BaseConfiguration db, string message)
+        {
+            return new Task(() =>
+            {
+                throw new NotImplementedException(); // TODO!
+            });
         }
 
         private void SubscribeToBrokers()
@@ -338,7 +319,7 @@ namespace MqttSql
                             }
                         });
 
-                        (List<BaseConfiguration>, string) getMessageAndDb(MqttApplicationMessageReceivedEventArgs e)
+                        (List<BaseConfiguration>, string) getMessageAndDbs(MqttApplicationMessageReceivedEventArgs e)
                         {
                             string topic = e.ApplicationMessage.Topic;
                             string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
@@ -346,19 +327,15 @@ namespace MqttSql
                             return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
                         }
 
-                        if (messageQueue == null)
+                        mqttClient.UseApplicationMessageReceivedHandler(e =>
                         {
-                            mqttClient.UseApplicationMessageReceivedHandler(e =>
-                            {
-                                (List<BaseConfiguration> bases, string message) = getMessageAndDb(e);
-                                foreach (var db in bases)
-                                    WriteToDatabaseTask(db, message).Start();
-                            });
-                        }
-                        else
-                        {
-                            mqttClient.UseApplicationMessageReceivedHandler(e => messageQueue.Writer.TryWrite(getMessageAndDb(e)));
-                        }
+                            (List<BaseConfiguration> bases, string message) = getMessageAndDbs(e);
+                            foreach (var db in bases)
+                                if (db.Type == DatabaseType.SQLite)
+                                    Task.Run(() => sqliteMessageQueues![db].Writer.WriteAsync(message, cancellationToken.Token));
+                                else
+                                    Task.Run(() => messageQueue.Writer.WriteAsync((db, message), cancellationToken.Token));
+                        });
 
                         DebugLog($"Connecting to \"{broker.Host}\"");
                         await mqttClient.ConnectAsync(options, cancellationToken.Token);
@@ -402,7 +379,8 @@ namespace MqttSql
                 {
                     File.AppendAllText(logPath, message + Environment.NewLine);
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.BackgroundColor = ConsoleColor.White;
@@ -454,9 +432,8 @@ namespace MqttSql
         private List<IMqttClient>? mqttClients;
         private BrokerConfiguration[]? brokers;
 
-        private static readonly object sqlLock = new();
-        private Dictionary<string, long>? lastSqliteWrite;
-
-        private Channel<(List<BaseConfiguration>, string)>? messageQueue;
+        private Dictionary<BaseConfiguration, Channel<string>>? sqliteMessageQueues;
+        private readonly Channel<(BaseConfiguration, string)> messageQueue =
+            Channel.CreateUnbounded<(BaseConfiguration, string)>();
     }
 }
