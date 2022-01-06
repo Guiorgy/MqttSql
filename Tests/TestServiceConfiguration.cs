@@ -4,6 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+#if !DEBUG
+using System.Text.RegularExpressions;
+#endif
+
 namespace Tests
 {
     [TestClass]
@@ -51,6 +55,11 @@ namespace Tests
 
             string loadedConfig = configuration.ToString();
             string expectedLoadedConfig = File.ReadAllText(configResultsDirPath + $"config{number}loaded.txt");
+#if !DEBUG
+            expectedLoadedConfig = Regex.Replace(expectedLoadedConfig,
+                "(Password: )(.*?)(\n|\r)",
+                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
+#endif
             Assert.AreEqual(expectedLoadedConfig, loadedConfig);
 
             var brokers = GetBrokersFromConfig(configuration);
@@ -58,6 +67,11 @@ namespace Tests
             {
                 string str = broker.ToString();
                 string expected = File.ReadAllText(configResultsDirPath + $"config{number}broker{index + 1}.txt");
+#if !DEBUG
+                expected = Regex.Replace(expected,
+                    "(Password: )(.*?)(\n|\r)",
+                    m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
+#endif
                 Assert.AreEqual(expected, str);
             }
         }
