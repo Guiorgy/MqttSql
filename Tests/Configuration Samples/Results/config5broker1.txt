@@ -1,0 +1,20 @@
+Host: localhost
+Port: 1883
+Clients:
+	User: user
+	Password: password
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Databases:
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+			Tables: [table1, table2, table3]
+			
+		Topic: some/topic/2
+		QOS: 2
+		Databases:
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+			Tables: [table1, table2]
+			

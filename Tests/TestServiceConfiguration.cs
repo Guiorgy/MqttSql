@@ -93,5 +93,17 @@ namespace Tests
         {
             TestSampleConfigNumber(3);
         }
+
+        [TestMethod]
+        public void TestConfig4()
+        {
+            TestSampleConfigNumber(4);
+        }
+
+        [TestMethod]
+        public void TestConfig5()
+        {
+            TestSampleConfigNumber(5);
+        }
     }
 }
