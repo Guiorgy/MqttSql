@@ -64,7 +64,7 @@ namespace MqttSql
                     }
                     else
                     {
-                        string connectionString = db.ConnectionString ?? "Version=3;";
+                        string connectionString = string.IsNullOrWhiteSpace(db.ConnectionString) ? "Version=3;" : db.ConnectionString;
                         string path =
                             Regex.Match(connectionString,
                             "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
