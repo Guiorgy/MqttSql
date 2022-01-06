@@ -8,14 +8,14 @@ Clients:
 		QOS: 2
 		Databases:
 			Type: SQLite
-			ConnectionString: Data Source=Some\Path\database.sqlite;Version3;
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Tables: [table1, table-1.1]
 			
 		Topic: some/topic/2
 		QOS: 2
 		Databases:
 			Type: SQLite
-			ConnectionString: Data Source=Some\Path\database.sqlite;Version3;
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Tables: [table2, table-2.1]
 			
 	User: user3
@@ -25,13 +25,13 @@ Clients:
 		QOS: 1
 		Databases:
 			Type: SQLite
-			ConnectionString: Data Source=Some\Path\database.sqlite;Version3;
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Table: table-1.1
 			
 		Topic: some/topic/2
 		QOS: 1
 		Databases:
 			Type: SQLite
-			ConnectionString: Data Source=Some\Path\database.sqlite;Version3;
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Table: table-2.1
 			
