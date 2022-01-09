@@ -112,7 +112,9 @@ namespace MqttSql
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
                 await WriteToSqlDatabaseTask(database, message);
+#pragma warning disable PH_P007 // Unused Cancellation Token
                 await Task.Delay(50);
+#pragma warning restore PH_P007 // Unused Cancellation Token
             }
         }
 
@@ -302,7 +304,9 @@ namespace MqttSql
                             {
                                 DebugLog("Reconnection Failed!");
                                 cancellationToken.Cancel();
+#pragma warning disable PH_P007 // Unused Cancellation Token
                                 await Task.Delay(1000);
+#pragma warning restore PH_P007 // Unused Cancellation Token
                                 Environment.Exit(-1);
                             }
                         });

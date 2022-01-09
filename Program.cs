@@ -58,7 +58,7 @@ namespace MqttSql
                         }
 
                         Console.WriteLine("Creating systemd service:");
-                        var exe = proccess.MainModule.FileName;
+                        var exe = proccess.MainModule?.FileName ?? $"{dir}/MqttSql";
                         Console.WriteLine($"\t Directory: {dir}");
                         Console.WriteLine($"\t Executable: {exe}");
                         Console.WriteLine($"\t User: {user}");
