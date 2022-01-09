@@ -8,6 +8,8 @@ using Topshelf;
 using Topshelf.Runtime.DotNetCore;
 using static System.Runtime.InteropServices.OSPlatform;
 using static System.Runtime.InteropServices.RuntimeInformation;
+#else
+using System.Runtime.InteropServices;
 #endif
 
 namespace MqttSql
@@ -15,10 +17,16 @@ namespace MqttSql
     public static class Program
     {
 #if LINUX
-        [System.Runtime.InteropServices.DllImport("libc")]
+        [DllImport("libc")]
         private static extern uint getuid();
-        [System.Runtime.InteropServices.DllImport("libc")]
+        [DllImport("libc")]
         private static extern uint geteuid();
+        [DllImport("libc")]
+        private static extern int seteuid(uint euid);
+        [DllImport("libc")]
+        private static extern uint getegid();
+        [DllImport("libc")]
+        private static extern int setegid(uint egid);
 #endif
 
 #if LINUX
@@ -36,7 +44,7 @@ namespace MqttSql
                 if (args.ContainsAny("install", "uninstall", "start", "stop"))
                 {
 #if LINUX
-                    if (getuid() != 0 && geteuid() != 0)
+                    if ((getuid() != 0 && geteuid() != 0 && seteuid(0) == -1) || (getegid() != 0 && setegid(0) == -1))
                         throw new UnauthorizedAccessException("Insufficient rights. Try running with sudo");
 #endif
                     if (args.Contains("uninstall") && args.ContainsAny("install", "start"))
