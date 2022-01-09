@@ -25,6 +25,12 @@ namespace MqttSql
         {
             logger?.Invoke($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
+            json = Regex.Replace(
+                json,
+                "(\"connectionString\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
+                m => m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + '"' + m.Groups[4].Value,
+                RegexOptions.IgnoreCase
+            );
 #if DEBUG
             logger?.Invoke(json);
 #else

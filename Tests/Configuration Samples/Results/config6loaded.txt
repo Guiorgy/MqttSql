@@ -1,0 +1,12 @@
+Databases:
+	Name: db1
+	Type: SQLite
+	ConnectionString: C:\Windows\Temp\MQTTSql
+
+Brokers:
+	Host: localhost
+	Port: 1883
+	User: user
+	Password: password
+	Subscriptions:
+

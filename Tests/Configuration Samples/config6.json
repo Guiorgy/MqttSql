@@ -1,0 +1,19 @@
+{
+	"databases": [
+		{
+			"name": "db1",
+			"type": "SQLite",
+			"connectionString": "C:\Windows\Temp\MQTTSql"
+		}
+	],
+	"brokers": [
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user",
+			"password": "password",
+			"subscriptions": [
+			]
+		}
+	]
+}

@@ -105,5 +105,11 @@ namespace Tests
         {
             TestSampleConfigNumber(5);
         }
+
+        [TestMethod]
+        public void TestConfig6()
+        {
+            TestSampleConfigNumber(6);
+        }
     }
 }
