@@ -3,6 +3,10 @@ Databases:
 	Type: SQLite
 	ConnectionString: C:\Windows\Temp\MQTTSql
 
+	Name: db2
+	Type: SQLite
+	ConnectionString: C:\Windows\Temp\MQTTSql
+
 Brokers:
 	Host: localhost
 	Port: 1883
