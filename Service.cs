@@ -148,9 +148,11 @@ namespace MqttSql
                 configFileChangeWatcher.Dispose();
                 configFileChangeWatcher = null;
             }
-            configFileChangeWatcher = new(configPath);
-            configFileChangeWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            configFileChangeWatcher = new(homeDir);
+            configFileChangeWatcher.Filter = "config.json";
+            configFileChangeWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
             configFileChangeWatcher.Changed += ConfigurationFileChanged;
+            configFileChangeWatcher.EnableRaisingEvents = true;
         }
 
         private void EnsureSqliteTablesExist(BaseConfiguration sqliteDb)
