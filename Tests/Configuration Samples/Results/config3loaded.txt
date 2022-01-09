@@ -77,12 +77,12 @@ Brokers:
 		Topic: some/topic/1
 		QOS: 1
 		Database: db1
-		Table: table-1.1
+		Table: table_1.1
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
-		Table: table-2.1
+		Table: table_2.1
 
 	Host: localhost
 	Port: 1883
@@ -92,10 +92,10 @@ Brokers:
 		Topic: some/topic/1
 		QOS: 1
 		Database: db1
-		Table: table-1.1
+		Table: table_1.1
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
-		Table: table-2.1
+		Table: table_2.1
 

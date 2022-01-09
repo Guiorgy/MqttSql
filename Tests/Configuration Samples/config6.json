@@ -4,6 +4,11 @@
 			"name": "db1",
 			"type": "SQLite",
 			"connectionString": "C:\Windows\Temp\MQTTSql"
+		},
+		{
+			"name": "db2",
+			"type": "SQLite",
+			"connectionString": "C:\\Windows\\Temp\\MQTTSql"
 		}
 	],
 	"brokers": [
