@@ -17,7 +17,7 @@
 					"topic": "some/topic/1",
 					"qos": 2,
 					"base": "db1",
-					"table": "table_1.1"
+					"table": "table_1_1"
 				}
 			]
 		},
@@ -31,13 +31,13 @@
 					"topic": "some/topic/1",
 					"qos": 1,
 					"base": "db1",
-					"table": "table_2.1"
+					"table": "table_2_1"
 				},
 				{
 					"topic": "some/topic/2",
 					"qos": 1,
 					"base": "db1",
-					"table": "table_2.2"
+					"table": "table_2_2"
 				}
 			]
 		},
@@ -51,13 +51,13 @@
 					"topic": "some/topic/1",
 					"qos": 2,
 					"base": "db1",
-					"table": "table_1.1"
+					"table": "table_1_1"
 				},
 				{
 					"topic": "some/topic/2",
 					"qos": 2,
 					"base": "db1",
-					"table": "table_1.2"
+					"table": "table_1_2"
 				}
 			]
 		},
@@ -71,13 +71,13 @@
 					"topic": "some/topic/1",
 					"qos": 1,
 					"base": "db1",
-					"table": "table_3.1"
+					"table": "table_3_1"
 				},
 				{
 					"topic": "some/topic/2",
 					"qos": 1,
 					"base": "db1",
-					"table": "table_3.2"
+					"table": "table_3_2"
 				}
 			]
 		},
