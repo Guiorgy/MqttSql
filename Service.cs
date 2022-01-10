@@ -392,6 +392,7 @@ namespace MqttSql
                 Console.BackgroundColor = ConsoleColor.White;
                 Console.WriteLine(ex.ToString());
                 Console.ResetColor();
+                Console.WriteLine();
             }
 #endif
         }
@@ -407,6 +408,7 @@ namespace MqttSql
             Console.BackgroundColor = backgroundColor;
             DebugLog(message);
             Console.ResetColor();
+            Console.WriteLine();
 #endif
         }
 
