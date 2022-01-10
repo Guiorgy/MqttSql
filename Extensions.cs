@@ -154,5 +154,48 @@ namespace MqttSql
         {
             return dict.TryGetValue(key, out TValue value) ? value : null;
         }
+
+        //
+        // Summary:
+        //     Returns distinctly merged elements from a sequence by using the default
+        //     equality comparer to compare values.
+        //
+        // Parameters:
+        //   source:
+        //     The sequence to merge duplicate elements in.
+        //
+        // Type parameters:
+        //   TSource:
+        //     The type of the elements of source.
+        //
+        // Returns:
+        //     An System.Collections.Generic.IEnumerable`1 that contains distinctly merged
+        //     elements from the source sequence.
+        //
+        // Exceptions:
+        //   T:System.ArgumentNullException:
+        //     source is null.
+        public static IEnumerable<TSource> DistinctMerge<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer = null) where TSource : IMergeable<TSource>
+        {
+            if (source == null) throw new ArgumentNullException("source");
+            return DistinctMergeIterator(source, comparer);
+        }
+
+        private static IEnumerable<TSource> DistinctMergeIterator<TSource>(IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer) where TSource : IMergeable<TSource>
+        {
+            HashSet<TSource> set = new(comparer);
+            foreach (TSource element in source)
+            {
+                if (set.TryGetValue(element, out TSource? oldElement))
+                {
+                    oldElement.Merge(element);
+                }
+                else
+                {
+                    set.Add(element);
+                    yield return element;
+                }
+            }
+        }
     }
 }

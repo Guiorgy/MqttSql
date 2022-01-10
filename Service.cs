@@ -55,7 +55,7 @@ namespace MqttSql
         private void LoadAndStartService()
         {
             LoadConfiguration();
-            var bases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).Distinct();
+            var bases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).DistinctMerge();
             var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
             sqliteMessageQueues = new(sqliteBases.Count());
             foreach (var sqlite in sqliteBases)

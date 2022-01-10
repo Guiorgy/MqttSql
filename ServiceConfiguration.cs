@@ -177,7 +177,7 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable
+    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>
     {
         public DatabaseType Type { get; }
         public string ConnectionString { get; }
