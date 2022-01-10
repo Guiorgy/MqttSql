@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MqttSql;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -60,7 +61,10 @@ namespace Tests
                 "(Password: )(.*?)(\n|\r)",
                 m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
 #endif
-            Assert.AreEqual(expectedLoadedConfig, loadedConfig);
+            Assert.AreEqual(
+                expectedLoadedConfig,
+                loadedConfig,
+                $"{Environment.NewLine}{Environment.NewLine}Differences:{Environment.NewLine}{expectedLoadedConfig.DifferenceString(loadedConfig)}");
 
             var brokers = GetBrokersFromConfig(configuration);
             foreach (var (broker, index) in brokers.Select((broker, index) => (broker, index)))
@@ -72,7 +76,10 @@ namespace Tests
                     "(Password: )(.*?)(\n|\r)",
                     m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
 #endif
-                Assert.AreEqual(expected, str);
+                Assert.AreEqual(
+                    expected,
+                    str,
+                    $"{Environment.NewLine}{Environment.NewLine}Differences:{Environment.NewLine}{expected.DifferenceString(str)}");
             }
         }
 
