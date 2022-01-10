@@ -99,10 +99,9 @@ namespace MqttSql
             {
                 _ = Task.Run(async () =>
                   {
-                      await foreach ((BaseConfiguration database, string message)
-                          in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
+                      await foreach (string message in queue.Reader.ReadAllAsync(cancellationToken.Token))
                       {
-                          await WriteToSQLiteDatabaseTask(database, message);
+                          await WriteToSQLiteDatabaseTask(sqlite, message);
                           await Task.Delay(1000, cancellationToken.Token);
                       }
                   }, cancellationToken.Token);
