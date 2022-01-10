@@ -101,7 +101,7 @@ namespace MqttSql
                   {
                       await foreach (string message in queue.Reader.ReadAllAsync(cancellationToken.Token))
                       {
-                          await WriteToSQLiteDatabaseTask(sqlite, message);
+                          await WriteToSQLiteDatabaseAsync(sqlite, message);
                           await Task.Delay(1000, cancellationToken.Token);
                       }
                   }, cancellationToken.Token);
@@ -110,7 +110,7 @@ namespace MqttSql
             await foreach ((BaseConfiguration database, string message)
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
-                await WriteToSqlDatabaseTask(database, message);
+                await WriteToSqlDatabaseAsync(database, message);
 #pragma warning disable PH_P007 // Unused Cancellation Token
                 await Task.Delay(50);
 #pragma warning restore PH_P007 // Unused Cancellation Token
@@ -223,9 +223,9 @@ namespace MqttSql
             }
         }
 
-        private Task WriteToSQLiteDatabaseTask(BaseConfiguration db, string message)
+        private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration db, string message)
         {
-            return new Task(() =>
+            await Task.Run(() =>
             {
                 if (cancellationToken.IsCancellationRequested) return;
                 DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
@@ -253,9 +253,9 @@ namespace MqttSql
             }, cancellationToken.Token);
         }
 
-        private Task WriteToSqlDatabaseTask(BaseConfiguration db, string message)
+        private async Task WriteToSqlDatabaseAsync(BaseConfiguration db, string message)
         {
-            return new Task(() =>
+            await Task.Run(() =>
             {
                 throw new NotImplementedException(); // TODO!
             });
