@@ -9,6 +9,7 @@ using MQTTnet.Client.Subscribing;
 using MQTTnet.Protocol;
 using MqttSql.Configurations;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -120,6 +121,7 @@ namespace MqttSql
         public void Stop()
         {
             cancellationToken.Cancel(false);
+            DebugLog("Stopping", true);
         }
 
         private void LoadConfiguration()
@@ -358,31 +360,48 @@ namespace MqttSql
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
 #endif
-        private void DebugLog(string message)
+        private void DebugLog(string message, bool flush = false)
         {
 #if LOG
             try
             {
-                Console.WriteLine(message + Environment.NewLine);
-                if ((logWrites = logWrites > 1000 ? 0 : logWrites + 1) > 1000
-                    && (new FileInfo(logPath) is var file) && file.Length > 100_000_000)
+                Console.WriteLine(message);
+                logBuffer.Enqueue(message);
+
+                if (logBuffer.Count >= 1000)
                 {
-                    byte[] buffer;
-                    using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                    string[] logBufferArray = logBuffer.ToArray();
+                    logBuffer.Clear();
+                    string stringBuffer = string.Join(Environment.NewLine, logBufferArray);
+
+                    if ((new FileInfo(logPath) is var file) && file.Length > 100_000_000)
                     {
-                        reader.BaseStream.Position = file.Length - 1_000_000;
-                        buffer = reader.ReadBytes(1_000_000);
+                        byte[] buffer;
+                        using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                        {
+                            reader.BaseStream.Position = file.Length - 1_000_000;
+                            buffer = reader.ReadBytes(1_000_000);
+                        }
+                        using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                        {
+                            writer.BaseStream.Position = 0;
+                            writer.Write(buffer);
+                            writer.Write(Encoding.UTF8.GetBytes(stringBuffer));
+                        }
                     }
-                    using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                    else
                     {
-                        writer.BaseStream.Position = 0;
-                        writer.Write(buffer);
-                        writer.Write(Encoding.UTF8.GetBytes(message + Environment.NewLine));
+                        flush = true;
                     }
                 }
-                else
+
+                if (flush)
                 {
-                    File.AppendAllText(logPath, message + Environment.NewLine);
+                    string[] logBufferArray = logBuffer.ToArray();
+                    logBuffer.Clear();
+                    string stringBuffer = string.Join(Environment.NewLine, logBufferArray);
+
+                    File.AppendAllText(logPath, stringBuffer);
                 }
             }
             catch (Exception ex)
@@ -391,7 +410,6 @@ namespace MqttSql
                 Console.BackgroundColor = ConsoleColor.White;
                 Console.WriteLine(ex.ToString());
                 Console.ResetColor();
-                Console.WriteLine();
             }
 #endif
         }
@@ -430,7 +448,7 @@ namespace MqttSql
 
 #if LOG
         private readonly string logPath;
-        private int logWrites;
+        private readonly ConcurrentQueue<string> logBuffer = new();
 #endif
 
         private FileSystemWatcher? configFileChangeWatcher;
