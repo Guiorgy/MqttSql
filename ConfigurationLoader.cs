@@ -59,6 +59,7 @@ namespace MqttSql
             Action<string>? logger = null)
         {
             var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length);
+            HashSet<string>? connStrings = logger != null ? new(databases.Keys.Count) : null;
             foreach (var db in configuration.Databases)
             {
                 if (!databases.ContainsKey(db.Name))
@@ -67,6 +68,18 @@ namespace MqttSql
                     {
                         if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
                             databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString ?? ""));
+
+                        if (db.ConnectionString != null)
+                        {
+                            if (connStrings?.Contains(db.ConnectionString) ?? false)
+                                logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
+                            else
+                                connStrings?.Add(db.ConnectionString);
+                        }
+                        else
+                        {
+                            logger?.Invoke($"The \"{db.Name}\" database is missing a ConnectionString! Expect undefined behaviour!");
+                        }
                     }
                     else
                     {
@@ -82,9 +95,14 @@ namespace MqttSql
                                 $"$1{path}$3") :
                                 $"Data Source={path};{connectionString}";
                         databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
+
+                        if (connStrings?.Contains(connectionString) ?? false)
+                            logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
+                        else
+                            connStrings?.Add(connectionString);
                     }
                 }
-                else logger?.Invoke($"Duplicate database names ({db.Name}) in the service configuration file. Some settings will be ignored!");
+                else logger?.Invoke($"Duplicate database names ({db.Name}) in the service configuration file will be discarded!");
             }
 
             var brokers = new List<BrokerConfiguration>(configuration.Brokers.Length);
