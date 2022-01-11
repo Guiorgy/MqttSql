@@ -60,7 +60,7 @@ namespace MqttSql
             sqliteMessageQueues = new(sqliteBases.Count());
             foreach (var sqlite in sqliteBases)
             {
-                sqliteMessageQueues.Add(sqlite, Channel.CreateUnbounded<string>());
+                sqliteMessageQueues.Add(sqlite, Channel.CreateUnbounded<string>(channelOptions));
                 EnsureSqliteTablesExist(sqlite);
             }
             foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql))
@@ -457,8 +457,14 @@ namespace MqttSql
         private List<IMqttClient>? mqttClients;
         private BrokerConfiguration[]? brokers;
 
+        private static readonly UnboundedChannelOptions channelOptions = new();
         private Dictionary<BaseConfiguration, Channel<string>>? sqliteMessageQueues;
         private readonly Channel<(BaseConfiguration, string)> messageQueue =
-            Channel.CreateUnbounded<(BaseConfiguration, string)>();
+            Channel.CreateUnbounded<(BaseConfiguration, string)>(channelOptions);
+
+        static Service()
+        {
+            channelOptions.SingleReader = true;
+        }
     }
 }
