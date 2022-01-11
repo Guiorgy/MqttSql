@@ -7,7 +7,7 @@ using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionCon
 
 namespace MqttSql.Configurations
 {
-    public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>
+    public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>, IMergeable<List<SubscriptionConfiguration>, string, string>
     {
         public string Host { get; }
         public int Port { get; }
@@ -57,11 +57,16 @@ namespace MqttSql.Configurations
             if (jsonConfig.Subscriptions.Length == 0) return;
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
             var newSubscriptions = MakeSubscriptions(topicGroups, databases);
-            var client = Clients.Find(cl => cl.User == jsonConfig.User && cl.Password == jsonConfig.Password);
+            Merge(newSubscriptions, jsonConfig.User, jsonConfig.Password);
+        }
+
+        public void Merge(List<SubscriptionConfiguration> subscriptions, string user, string password)
+        {
+            var client = Clients.Find(cl => cl.User == user && cl.Password == password);
             if (client == null)
-                Clients.Add(new ClientConfiguration(jsonConfig.User, jsonConfig.Password, newSubscriptions));
+                Clients.Add(new ClientConfiguration(user, password, subscriptions));
             else
-                client.Merge(newSubscriptions);
+                client.Merge(subscriptions);
         }
 
         public override string ToString()
@@ -99,7 +104,7 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class ClientConfiguration
+    public sealed class ClientConfiguration : IMergeable<List<SubscriptionConfiguration>>
     {
         public string User { get; }
         public string Password { get; }
@@ -139,7 +144,7 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class SubscriptionConfiguration
+    public sealed class SubscriptionConfiguration : IMergeable<SubscriptionConfiguration>
     {
         public string Topic { get; }
         public int QOS { get; private set; }
@@ -177,7 +182,7 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>
+    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>, IMergeable<List<string>>
     {
         public DatabaseType Type { get; }
         public string ConnectionString { get; }
