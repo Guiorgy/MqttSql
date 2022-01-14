@@ -23,7 +23,7 @@ namespace MqttSql.Configurations
                 if (string.IsNullOrWhiteSpace(topicGroup.Key)) continue;
                 IEnumerable<BaseConfiguration> allbases =
                     topicGroup
-                    .Select(sub => databases.GetValueOrNull(sub.Database)?.Clone()?.WithTables(sub.Table))
+                    .Select(sub => databases.GetValueOrNull(sub.Database)?.EmptyClone()?.WithTables(sub.Table))
                     .Where(db => db != null && db.Tables.Count != 0)!;
                 List<BaseConfiguration> bases = new(allbases.Count());
                 foreach (var adb in allbases)
@@ -205,17 +205,23 @@ namespace MqttSql.Configurations
             Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
         }
 
-        internal BaseConfiguration Clone()
+        internal BaseConfiguration EmptyClone()
         {
             return new BaseConfiguration(Type, ConnectionString);
         }
 
         object ICloneable.Clone()
         {
-            return Clone();
+            return EmptyClone().WithTables(Tables);
         }
 
         internal BaseConfiguration WithTables(params string[] tables)
+        {
+            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            return this;
+        }
+
+        internal BaseConfiguration WithTables(List<string> tables)
         {
             Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
             return this;

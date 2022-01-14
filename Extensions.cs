@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Channels;
 
 namespace MqttSql
 {
@@ -175,13 +178,14 @@ namespace MqttSql
         // Exceptions:
         //   T:System.ArgumentNullException:
         //     source is null.
-        public static IEnumerable<TSource> DistinctMerge<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer = null) where TSource : IMergeable<TSource>
+        public static IEnumerable<TSource> DistinctMerge<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer = null) where TSource : ICloneable, IMergeable<TSource>
         {
             if (source == null) throw new ArgumentNullException("source");
+            if (comparer != null) throw new NotImplementedException("comparer");
             return DistinctMergeIterator(source, comparer);
         }
 
-        private static IEnumerable<TSource> DistinctMergeIterator<TSource>(IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer) where TSource : IMergeable<TSource>
+        private static IEnumerable<TSource> DistinctMergeIterator<TSource>(IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer) where TSource : ICloneable, IMergeable<TSource>
         {
             HashSet<TSource> set = new(comparer);
             foreach (TSource element in source)
@@ -192,10 +196,36 @@ namespace MqttSql
                 }
                 else
                 {
-                    set.Add(element);
-                    yield return element;
+                    TSource newElement = (TSource)(element as ICloneable)!.Clone();
+                    set.Add(newElement);
+                    yield return newElement;
                 }
             }
+        }
+
+        //
+        // Summary:
+        //     Creates an IAsyncEnumerable<IEnumerable<T>> that enables reading all of
+        //     the data from the channel in batches.
+        //
+        // Parameters:
+        //   reader:
+        //     The ChannelReader to read from.
+        //   cancellationToken:
+        //     The Task cancellation token.
+        // Source: https://stackoverflow.com/a/70698445/11427841
+        public static async IAsyncEnumerable<List<T>> ReadBatchesAsync<T>(
+            this ChannelReader<T> reader,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                yield return reader.Flush().ToList();
+        }
+
+        public static IEnumerable<T> Flush<T>(this ChannelReader<T> reader)
+        {
+            while (reader.TryRead(out T? item))
+                yield return item;
         }
     }
 }

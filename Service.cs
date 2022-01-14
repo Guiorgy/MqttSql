@@ -56,14 +56,14 @@ namespace MqttSql
         {
             LoadConfiguration();
             var bases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases))).DistinctMerge();
-            var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite);
-            sqliteMessageQueues = new(sqliteBases.Count());
+            var sqliteBases = bases.Where(db => db.Type == DatabaseType.SQLite).ToList();
+            sqliteMessageQueues = new(sqliteBases.Count);
             foreach (var sqlite in sqliteBases)
             {
-                sqliteMessageQueues.Add(sqlite, Channel.CreateUnbounded<string>(channelOptions));
+                sqliteMessageQueues.Add(sqlite.ConnectionString, Channel.CreateUnbounded<(BaseConfiguration db, DateTime timestamp, string message)>(channelOptions));
                 EnsureSqliteTablesExist(sqlite);
             }
-            foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql))
+            foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql).ToList())
                 EnsureSqlTablesExist(general);
             SubscribeToBrokers();
         }
@@ -96,16 +96,26 @@ namespace MqttSql
         {
             LoadAndStartService();
 
-            foreach (var (sqlite, queue) in sqliteMessageQueues!)
+            foreach (var queue in sqliteMessageQueues!.Values)
             {
                 _ = Task.Run(async () =>
-                  {
-                      await foreach (string message in queue.Reader.ReadAllAsync(cancellationToken.Token))
-                      {
-                          await WriteToSQLiteDatabaseAsync(sqlite, message);
-                          await Task.Delay(1000, cancellationToken.Token);
-                      }
-                  }, cancellationToken.Token);
+                {
+                    await foreach (
+                        List<(BaseConfiguration db, DateTime timestamp, string message)> entries
+                            in queue.Reader.ReadBatchesAsync(cancellationToken.Token))
+                    {
+                        if (entries.Count == 1)
+                        {
+                            var (db, timestamp, message) = entries[0];
+                            await WriteToSQLiteDatabaseAsync(db, message, timestamp);
+                        }
+                        else
+                        {
+                            await WriteToSQLiteDatabaseAsync(entries);
+                        }
+                        await Task.Delay(1000, cancellationToken.Token);
+                    }
+                }, cancellationToken.Token);
             }
 
             await foreach ((BaseConfiguration database, string message)
@@ -178,7 +188,8 @@ namespace MqttSql
                                 created.Add(table);
                             DebugLog($"Checking the existence of table \"{table}\"");
                             command.CommandText = "CREATE TABLE IF NOT EXISTS " + table + "(" +
-                                                      "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY," +
+                                                      "id INTEGER NOT NULL PRIMARY KEY," +
+                                                      "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL," +
                                                       "Message VARCHAR NOT NULL" +
                                                   ");";
                             command.ExecuteNonQuery();
@@ -225,32 +236,82 @@ namespace MqttSql
             }
         }
 
-        private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration db, string message)
+        private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration db, string message, DateTime? timestamp = null)
         {
             await Task.Run(() =>
             {
-                if (cancellationToken.IsCancellationRequested) return;
-                DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
-                using (var sqlCon = new SQLiteConnection(db.ConnectionString))
+                try
                 {
-                    sqlCon.Open();
-                    using (var transaction = sqlCon.BeginTransaction())
+                    if (cancellationToken.IsCancellationRequested) return;
+                    DebugLog($"Writing to the database with connection string \"{db.ConnectionString}\" the message: \"{message}\"");
+                    using (var sqlCon = new SQLiteConnection(db.ConnectionString))
                     {
-                        using (var command = new SQLiteCommand(sqlCon))
+                        sqlCon.Open();
+                        using (var transaction = sqlCon.BeginTransaction())
                         {
-                            if (cancellationToken.IsCancellationRequested) return;
-                            command.Transaction = transaction;
-
-                            foreach (string table in db.Tables)
+                            using (var command = new SQLiteCommand(sqlCon))
                             {
-                                DebugLog($"Writing to the \"{table}\" table");
-                                command.CommandText = "INSERT INTO " + table + "(Message) values ('" + message + "')";
-                                command.ExecuteNonQuery();
-                            }
+                                if (cancellationToken.IsCancellationRequested) return;
+                                command.Transaction = transaction;
 
-                            transaction.Commit();
+                                foreach (string table in db.Tables)
+                                {
+                                    DebugLog($"Writing to the \"{table}\" table");
+                                    command.CommandText =
+                                    timestamp == null
+                                        ? "INSERT INTO " + table + "(Message) values ('" + message + "')"
+                                        : "INSERT INTO " + table + "(Timestamp, Message) values ('" + ((DateTime)timestamp).ToString("yyyy-MM-dd HH:mm:ss") + "', '" + message + "')";
+                                    command.ExecuteNonQuery();
+                                }
+
+                                transaction.Commit();
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    DebugLog(ex);
+                }
+            }, cancellationToken.Token);
+        }
+
+        private async Task WriteToSQLiteDatabaseAsync(List<(BaseConfiguration db, DateTime timestamp, string message)> entries)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+                    DebugLog($"Writing to the database with connection string \"{entries[0].db.ConnectionString}\" {entries.Count} messages");
+                    using (var sqlCon = new SQLiteConnection(entries[0].db.ConnectionString))
+                    {
+                        sqlCon.Open();
+                        using (var transaction = sqlCon.BeginTransaction())
+                        {
+                            using (var command = new SQLiteCommand(sqlCon))
+                            {
+                                foreach ((BaseConfiguration db, DateTime? timestamp, string message) in entries)
+                                {
+                                    if (cancellationToken.IsCancellationRequested) return;
+                                    command.Transaction = transaction;
+
+                                    foreach (string table in db.Tables)
+                                    {
+                                        DebugLog($"Writing to the \"{table}\" table the message: \"{message}\"");
+                                        command.CommandText = "INSERT INTO " + table + "(Timestamp, Message) values ('" + ((DateTime)timestamp).ToString("yyyy-MM-dd HH:mm:ss") + "', '" + message + "')";
+                                        command.ExecuteNonQuery();
+                                    }
+                                }
+
+                                transaction.Commit();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DebugLog(ex);
                 }
             }, cancellationToken.Token);
         }
@@ -339,7 +400,7 @@ namespace MqttSql
                             (List<BaseConfiguration> bases, string message) = getMessageAndDbs(e);
                             foreach (var db in bases)
                                 if (db.Type == DatabaseType.SQLite)
-                                    Task.Run(() => sqliteMessageQueues![db].Writer.WriteAsync(message, cancellationToken.Token));
+                                    Task.Run(() => sqliteMessageQueues![db.ConnectionString].Writer.WriteAsync((db, DateTime.Now, message), cancellationToken.Token));
                                 else
                                     Task.Run(() => messageQueue.Writer.WriteAsync((db, message), cancellationToken.Token));
                         });
@@ -368,7 +429,7 @@ namespace MqttSql
                 Console.WriteLine(message);
                 logBuffer.Enqueue(message);
 
-                if (logBuffer.Count >= 1000)
+                if (logBuffer.Count >= logBufferSize)
                 {
                     string[] logBufferArray = logBuffer.ToArray();
                     logBuffer.Clear();
@@ -414,6 +475,18 @@ namespace MqttSql
 #endif
         }
 
+        private void DebugLog(Exception exception)
+        {
+#if LOG
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.BackgroundColor = ConsoleColor.Yellow;
+            DebugLog(exception.Message);
+            if (exception.StackTrace != null)
+                DebugLog(exception.StackTrace);
+            Console.ResetColor();
+#endif
+        }
+
 #if !LOG
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
@@ -448,6 +521,7 @@ namespace MqttSql
 
 #if LOG
         private readonly string logPath;
+        private const int logBufferSize = 1000;
         private readonly ConcurrentQueue<string> logBuffer = new();
 #endif
 
@@ -458,7 +532,7 @@ namespace MqttSql
         private BrokerConfiguration[]? brokers;
 
         private static readonly UnboundedChannelOptions channelOptions = new();
-        private Dictionary<BaseConfiguration, Channel<string>>? sqliteMessageQueues;
+        private Dictionary<string, Channel<(BaseConfiguration db, DateTime timestamp, string message)>>? sqliteMessageQueues;
         private readonly Channel<(BaseConfiguration, string)> messageQueue =
             Channel.CreateUnbounded<(BaseConfiguration, string)>(channelOptions);
 
