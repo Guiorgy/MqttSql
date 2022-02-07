@@ -150,12 +150,12 @@ namespace MqttSql
         //     The key of the value to get.
         //
         // Returns:
-        //     The value associated with the specified key, if the key is found;
-        //     otherwise, null.
+        //     The value associated with the specified key, if the key is
+        //     found; otherwise, null.
         [return: MaybeNull]
         public static TValue GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class
         {
-            return dict.TryGetValue(key, out TValue value) ? value : null;
+            return dict.TryGetValue(key, out TValue? value) ? value : null;
         }
 
         //
