@@ -34,8 +34,8 @@ namespace Tests
         //     Compares two strings line-by-line for differences.
         public static IEnumerable<string> Difference(this string first, string second)
         {
-            return first.SplitLines().Select((s, i) => $"Line {i + 1}: {s}")
-                .Except(second.SplitLines().Select((s, i) => $"Line {i + 1}: {s}"));
+            return first.SplitLines().Zip(second.SplitLines()).Select((ss, i) => $"Line {i + 1}:\n\t{ss.First}\n\t{ss.Second}")
+                .Except(first.SplitLines().Select((s, i) => $"Line {i + 1}:\n\t{s}\n\t{s}"));
         }
 
         //
