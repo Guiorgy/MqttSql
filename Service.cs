@@ -136,7 +136,7 @@ namespace MqttSql
 
         private void LoadConfiguration()
         {
-            string GetSQLiteDbPath(string path)
+            string GetSQLiteDbPath(string? path)
             {
                 if (string.IsNullOrWhiteSpace(path))
                     path = homeDir + "database.sqlite";

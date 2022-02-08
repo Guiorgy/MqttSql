@@ -15,7 +15,7 @@ namespace MqttSql
     {
         public static BrokerConfiguration[] LoadBrokersFromJson(
             string configPath,
-            Func<string, string>? GetSQLiteDbPath = null,
+            Func<string?, string>? GetSQLiteDbPath = null,
             Action<string>? logger = null)
         {
             return GetBrokersFromConfig(LoadJsonConfig(configPath, logger), GetSQLiteDbPath, logger);
@@ -55,54 +55,61 @@ namespace MqttSql
 
         private static BrokerConfiguration[] GetBrokersFromConfig(
             ServiceConfigurationJson configuration,
-            Func<string, string>? GetSQLiteDbPath = null,
+            Func<string?, string>? GetSQLiteDbPath = null,
             Action<string>? logger = null)
         {
-            var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length);
-            HashSet<string>? connStrings = logger != null ? new(databases.Keys.Count) : null;
-            foreach (var db in configuration.Databases)
+            var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length + 1);
+            if (configuration.Databases.Length == 0)
             {
-                if (!databases.ContainsKey(db.Name))
+                databases.Add("sqlite", new BaseConfiguration(DatabaseType.SQLite, $"Data Source={GetSQLiteDbPath?.Invoke(null) ?? "./database.sqlite"};Version=3;"));
+            }
+            else
+            {
+                HashSet<string>? connStrings = logger != null ? new(databases.Keys.Count) : null;
+                foreach (var db in configuration.Databases)
                 {
-                    if (db.Type != nameof(DatabaseType.SQLite))
+                    if (!databases.ContainsKey(db.Name))
                     {
-                        if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
-                            databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString ?? ""));
-
-                        if (db.ConnectionString != null)
+                        if (db.Type != nameof(DatabaseType.SQLite))
                         {
-                            if (connStrings?.Contains(db.ConnectionString) ?? false)
+                            if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
+                                databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString ?? ""));
+
+                            if (db.ConnectionString != null)
+                            {
+                                if (connStrings?.Contains(db.ConnectionString) ?? false)
+                                    logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
+                                else
+                                    connStrings?.Add(db.ConnectionString);
+                            }
+                            else
+                            {
+                                logger?.Invoke($"The \"{db.Name}\" database is missing a ConnectionString! Expect undefined behaviour!");
+                            }
+                        }
+                        else
+                        {
+                            string connectionString = string.IsNullOrWhiteSpace(db.ConnectionString) ? "Version=3;" : db.ConnectionString;
+                            string path =
+                                Regex.Match(connectionString,
+                                "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
+                            path = GetSQLiteDbPath?.Invoke(path) ?? path;
+                            connectionString =
+                                Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
+                                    Regex.Replace(connectionString,
+                                    "(Data Source\\s*=\\s*)(.*?)(;|$)",
+                                    $"$1{path}$3") :
+                                    $"Data Source={path};{connectionString}";
+                            databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
+
+                            if (connStrings?.Contains(connectionString) ?? false)
                                 logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
                             else
-                                connStrings?.Add(db.ConnectionString);
-                        }
-                        else
-                        {
-                            logger?.Invoke($"The \"{db.Name}\" database is missing a ConnectionString! Expect undefined behaviour!");
+                                connStrings?.Add(connectionString);
                         }
                     }
-                    else
-                    {
-                        string connectionString = string.IsNullOrWhiteSpace(db.ConnectionString) ? "Version=3;" : db.ConnectionString;
-                        string path =
-                            Regex.Match(connectionString,
-                            "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
-                        path = GetSQLiteDbPath?.Invoke(path) ?? path;
-                        connectionString =
-                            Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
-                                Regex.Replace(connectionString,
-                                "(Data Source\\s*=\\s*)(.*?)(;|$)",
-                                $"$1{path}$3") :
-                                $"Data Source={path};{connectionString}";
-                        databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
-
-                        if (connStrings?.Contains(connectionString) ?? false)
-                            logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
-                        else
-                            connStrings?.Add(connectionString);
-                    }
+                    else logger?.Invoke($"Duplicate database names ({db.Name}) in the service configuration file will be discarded!");
                 }
-                else logger?.Invoke($"Duplicate database names ({db.Name}) in the service configuration file will be discarded!");
             }
 
             var brokers = new List<BrokerConfiguration>(configuration.Brokers.Length);
