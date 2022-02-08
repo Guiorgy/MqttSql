@@ -67,6 +67,11 @@ namespace Tests
                 $"{Environment.NewLine}{Environment.NewLine}Differences:{Environment.NewLine}{expectedLoadedConfig.DifferenceString(loadedConfig)}");
 
             var brokers = GetBrokersFromConfig(configuration);
+
+            DirectoryInfo resultsDir = new DirectoryInfo(configResultsDirPath);
+            var brokerResults = resultsDir.GetFiles($"config{number}broker*.txt");
+            Assert.AreEqual(brokerResults.Length, brokers.Length, $"The number of parsed Brokers, {brokers.Length} didn't match the expected {brokerResults.Length}!");
+
             foreach (var (broker, index) in brokers.Select((broker, index) => (broker, index)))
             {
                 string str = broker.ToString();
