@@ -344,6 +344,7 @@ namespace MqttSql
                             .WithClientId(clientId + (broker.Clients.Count != 1 ? $"-{index}" : ""))
                             .WithTcpServer(broker.Host, broker.Port)
                             .WithCredentials(client.User, client.Password)
+                            .WithKeepAlivePeriod(TimeSpan.FromHours(1))
                             .Build();
 
                         bool connectionFailed = false;
