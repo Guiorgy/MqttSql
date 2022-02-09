@@ -1,8 +1,7 @@
 {
+	// Minimal configuration. The database, host, port and QOS are all set to the default values.
 	"brokers": [
 		{
-			"host": "localhost",
-			"port": 1883,
 			"user": "user",
 			"password": "password",
 			"subscriptions": [
