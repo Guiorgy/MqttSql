@@ -139,7 +139,7 @@ namespace MqttSql
 
                 host.SetServiceName("MqttSql");
                 host.SetDisplayName("MQTT to SQL");
-                host.SetDescription("Subscribes to a MQTT topic and writes the data into a local SQLite database");
+                host.SetDescription("Subscribes to MQTT brokers and writes the messages to local SQLite databases");
                 host.EnableServiceRecovery(src => src.RestartService(TimeSpan.FromSeconds(10)));
                 host.StartAutomatically();
 
@@ -182,7 +182,7 @@ namespace MqttSql
         private readonly static string systemdServiceText =
             @"
             [Unit]
-            Description=Subscribes to a MQTT topic and writes the data into a local SQLite database
+            Description=Subscribes to MQTT brokers and writes the messages to local SQLite databases
 
             [Service]
             Type=simple
