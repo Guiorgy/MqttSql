@@ -65,11 +65,11 @@ namespace MqttSql
         // Exceptions:
         //   T:System.ArgumentNullException:
         //     source or values is null.
-        public static bool ContainsAal<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values)
+        public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values)
         {
             return source.Intersect(values).Count() == values.Count();
         }
-        public static bool ContainsAal<TSource>(this IEnumerable<TSource> source, params TSource[] values)
+        public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, params TSource[] values)
         {
             return source.Intersect(values).Count() == values.Count();
         }
