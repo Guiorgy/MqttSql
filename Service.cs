@@ -430,40 +430,38 @@ namespace MqttSql
                 Console.WriteLine(message);
                 logBuffer.Enqueue(message);
 
-                if (logBuffer.Count >= logBufferSize)
+                if (flush || logBuffer.Count >= logBufferSize)
                 {
                     string[] logBufferArray = logBuffer.ToArray();
                     logBuffer.Clear();
                     string stringBuffer = string.Join(Environment.NewLine, logBufferArray);
 
-                    if ((new FileInfo(logPath) is var file) && file.Length > 100_000_000)
+                    if (logBuffer.Count >= logBufferSize)
                     {
-                        byte[] buffer;
-                        using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                        if ((new FileInfo(logPath) is var file) && file.Length > 100_000_000)
                         {
-                            reader.BaseStream.Position = file.Length - 1_000_000;
-                            buffer = reader.ReadBytes(1_000_000);
+                            byte[] buffer;
+                            using (BinaryReader reader = new(file.Open(FileMode.Open)))
+                            {
+                                reader.BaseStream.Position = file.Length - 1_000_000;
+                                buffer = reader.ReadBytes(1_000_000);
+                            }
+                            using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                            {
+                                writer.BaseStream.Position = 0;
+                                writer.Write(buffer);
+                                writer.Write(Encoding.UTF8.GetBytes(stringBuffer));
+                            }
+                            flush = false;
                         }
-                        using (BinaryWriter writer = new(file.Open(FileMode.Truncate)))
+                        else
                         {
-                            writer.BaseStream.Position = 0;
-                            writer.Write(buffer);
-                            writer.Write(Encoding.UTF8.GetBytes(stringBuffer));
+                            flush = true;
                         }
                     }
-                    else
-                    {
-                        flush = true;
-                    }
-                }
 
-                if (flush)
-                {
-                    string[] logBufferArray = logBuffer.ToArray();
-                    logBuffer.Clear();
-                    string stringBuffer = string.Join(Environment.NewLine, logBufferArray);
-
-                    File.AppendAllText(logPath, stringBuffer);
+                    if (flush)
+                        File.AppendAllText(logPath, stringBuffer);
                 }
             }
             catch (Exception ex)
