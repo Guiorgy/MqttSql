@@ -71,7 +71,7 @@ namespace MqttSql
         }
         public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, params TSource[] values)
         {
-            return source.Intersect(values).Count() == values.Count();
+            return source.Intersect(values).Count() == values.Length;
         }
 
         //
@@ -180,7 +180,7 @@ namespace MqttSql
         //     source is null.
         public static IEnumerable<TSource> DistinctMerge<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer = null) where TSource : ICloneable, IMergeable<TSource>
         {
-            if (source == null) throw new ArgumentNullException("source");
+            if (source == null) throw new ArgumentNullException(nameof(source));
             if (comparer != null) throw new NotImplementedException("comparer");
             return DistinctMergeIterator(source, comparer);
         }

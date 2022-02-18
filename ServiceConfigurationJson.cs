@@ -20,13 +20,6 @@ namespace MqttSql.ConfigurationsJson
 
         public override string ToString()
         {
-            /*return
-                $"Databases:{Environment.NewLine}" +
-                string.Join(Environment.NewLine,
-                    Databases.Select(database => database.ToString().AppendBeforeLines("\t"))) +
-                $"{Environment.NewLine}Brokers:{Environment.NewLine}" +
-                string.Join(Environment.NewLine,
-                    Brokers.Select(broker => broker.ToString().AppendBeforeLines("\t")));*/
             var builder = new StringBuilder()
                 .AppendLine("Databases:");
             foreach (var database in Databases)

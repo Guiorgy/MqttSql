@@ -31,7 +31,6 @@ namespace MqttSql
 
 #if LINUX
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1199:Nested code blocks should not be used")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3626:Jump statements should not be redundant")]
 #endif
         public static async Task Main(string[] args)
         {
@@ -165,15 +164,13 @@ namespace MqttSql
                 CreateNoWindow = true
             };
 
-            using (Process process = new())
-            {
-                process.StartInfo = procStartInfo;
-                process.Start();
-                process.WaitForExit();
+            using Process process = new();
+            process.StartInfo = procStartInfo;
+            process.Start();
+            process.WaitForExit();
 
-                string result = process.StandardOutput.ReadToEnd();
-                Console.WriteLine(result);
-            }
+            string result = process.StandardOutput.ReadToEnd();
+            Console.WriteLine(result);
         }
 
         private readonly static string systemctlPath = "/usr/bin/systemctl";

@@ -2,6 +2,10 @@
 #define LOG
 #endif
 
+#if DEBUG
+using System.Collections.Concurrent;
+#endif
+
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
@@ -9,7 +13,6 @@ using MQTTnet.Client.Subscribing;
 using MQTTnet.Protocol;
 using MqttSql.Configurations;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -37,7 +40,7 @@ namespace MqttSql
 #if DEBUG
             this.homeDir = homeDir ?? Directory.GetCurrentDirectory();
 #else
-            this.homeDir = homeDir ?? Environment.GetEnvironmentVariable("MqttSqlHome");
+            this.homeDir = homeDir ?? Environment.GetEnvironmentVariable("MqttSqlHome") ?? Directory.GetCurrentDirectory();
 #endif
             if (!this.homeDir.EndsWith(dirSep)) this.homeDir += dirSep;
 
@@ -122,9 +125,7 @@ namespace MqttSql
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
                 await WriteToSqlDatabaseAsync(database, message);
-#pragma warning disable PH_P007 // Unused Cancellation Token
                 await Task.Delay(50);
-#pragma warning restore PH_P007 // Unused Cancellation Token
             }
         }
 
@@ -168,6 +169,7 @@ namespace MqttSql
             configFileChangeWatcher.EnableRaisingEvents = true;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
         private void EnsureSqliteTablesExist(BaseConfiguration sqliteDb)
         {
             using (var sqlCon = new SQLiteConnection(sqliteDb.ConnectionString))
@@ -201,6 +203,7 @@ namespace MqttSql
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
         private void EnsureSqlTablesExist(BaseConfiguration db)
         {
             using (var sqlCon = new SQLiteConnection(db.ConnectionString))
@@ -236,6 +239,7 @@ namespace MqttSql
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
         private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration db, string message, DateTime? timestamp = null)
         {
             await Task.Run(() =>
@@ -276,6 +280,7 @@ namespace MqttSql
             }, cancellationToken.Token);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
         private async Task WriteToSQLiteDatabaseAsync(List<(BaseConfiguration db, DateTime timestamp, string message)> entries)
         {
             await Task.Run(() =>
@@ -421,6 +426,7 @@ namespace MqttSql
 #if !LOG
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "It can't be static when logging is enabled.")]
 #endif
         private void DebugLog(string message, bool flush = false)
         {
@@ -474,6 +480,11 @@ namespace MqttSql
 #endif
         }
 
+#if !LOG
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "It can't be static when logging is enabled.")]
+#endif
         private void DebugLog(Exception exception)
         {
 #if LOG
@@ -489,7 +500,9 @@ namespace MqttSql
 #if !LOG
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "It can't be static when logging is enabled.")]
 #endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "May be used in the future.")]
         private void DebugLog(string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
         {
 #if LOG
@@ -504,6 +517,8 @@ namespace MqttSql
 #if !LOG
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S1186:Methods should not be empty")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "It can't be static when logging is enabled.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Used in the Debug configuration.")]
 #endif
         private void DebugLog(object messageObj)
         {
