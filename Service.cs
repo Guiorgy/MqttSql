@@ -99,6 +99,7 @@ namespace MqttSql
         public async Task StartAsync()
         {
             LoadAndStartService();
+            if (cancellationToken.IsCancellationRequested) return;
 
             foreach (var queue in sqliteMessageQueues!.Values)
             {
@@ -152,22 +153,31 @@ namespace MqttSql
                 return path;
             }
 
+            try
+            {
 #if DEBUG
-            this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath, DebugLog);
+                this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath, DebugLog);
 #else
-            this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath);
+                this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath);
 #endif
 
-            if (configFileChangeWatcher != null)
+                if (this.brokers.Length == 0) Stop();
+
+                if (configFileChangeWatcher != null)
+                {
+                    configFileChangeWatcher.Dispose();
+                    configFileChangeWatcher = null;
+                }
+                configFileChangeWatcher = new(homeDir);
+                configFileChangeWatcher.Filter = "config.json";
+                configFileChangeWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+                configFileChangeWatcher.Changed += ConfigurationFileChanged;
+                configFileChangeWatcher.EnableRaisingEvents = true;
+            } catch (System.Text.Json.JsonException ex)
             {
-                configFileChangeWatcher.Dispose();
-                configFileChangeWatcher = null;
+                DebugLog(ex);
+                Stop();
             }
-            configFileChangeWatcher = new(homeDir);
-            configFileChangeWatcher.Filter = "config.json";
-            configFileChangeWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-            configFileChangeWatcher.Changed += ConfigurationFileChanged;
-            configFileChangeWatcher.EnableRaisingEvents = true;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
