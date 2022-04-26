@@ -1,4 +1,10 @@
 {
+	// Custom timestamp formats are defined.
+	// table1 has the default DateTime format.
+	// table2 also stores the milliseconds.
+	// table3 defines the timestamp formats twice. After the first valid format the subsequent ones will be discarded.
+	// table5 has an invalid timestamp format, thus the subscription will be discarded.
+	// For more information on DateTime formats visit: https://docs.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings
 	"databases": [
 		{
 			"name": "db1",
