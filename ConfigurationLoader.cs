@@ -67,7 +67,12 @@ namespace MqttSql
                 HashSet<string>? connStrings = logger != null ? new(databases.Keys.Count) : null;
                 foreach (var db in configuration.Databases)
                 {
-                    if (!databases.ContainsKey(db.Name))
+                    if (string.IsNullOrEmpty(db.Name))
+                    {
+                        logger?.Invoke($"A database with the ConnectionString: \"{db.ConnectionString}\" was defined with an empty name, thus it's been discarded. This may lead to unwanted behaviour!");
+                        continue;
+                    }
+                    else if (!databases.ContainsKey(db.Name))
                     {
                         if (db.Type != nameof(DatabaseType.SQLite))
                         {
@@ -77,7 +82,7 @@ namespace MqttSql
                             if (db.ConnectionString != null)
                             {
                                 if (connStrings?.Contains(db.ConnectionString) ?? false)
-                                    logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
+                                    logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to unwanted behaviour!");
                                 else
                                     connStrings?.Add(db.ConnectionString);
                             }
@@ -101,7 +106,7 @@ namespace MqttSql
                             databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
 
                             if (connStrings?.Contains(connectionString) ?? false)
-                                logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to undefined behaviour!");
+                                logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to unwanted behaviour!");
                             else
                                 connStrings?.Add(connectionString);
                         }
