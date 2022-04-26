@@ -13,6 +13,7 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table_1_1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -23,11 +24,13 @@ Brokers:
 		QOS: 1
 		Database: db1
 		Table: table_2_1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
 		Table: table_2_2
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -38,11 +41,13 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table_1_1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 2
 		Database: db1
 		Table: table_1_2
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -53,11 +58,13 @@ Brokers:
 		QOS: 1
 		Database: db1
 		Table: table_3_1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
 		Table: table_3_2
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
 
 	Host: localhost
 	Port: 1883

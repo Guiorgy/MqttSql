@@ -158,14 +158,16 @@ namespace MqttSql.ConfigurationsJson
         [JsonPropertyName("base")]
         public string Database { get; }
         public string Table { get; }
+        public string TimestampFormat { get; }
 
         [JsonConstructor]
         public SubscriptionConfiguration(
             string topic = "sql",
             int qos = 2,
             string database = "sqlite",
-            string table = "mqtt") =>
-            (Topic, QOS, Database, Table) = (topic, qos, database, table);
+            string table = "mqtt",
+            string timestampFormat = "yyyy-MM-dd-HH:mm:ss") =>
+            (Topic, QOS, Database, Table, TimestampFormat) = (topic, qos, database, table, timestampFormat);
 
         public override string ToString()
         {
@@ -173,7 +175,8 @@ namespace MqttSql.ConfigurationsJson
                 $"Topic: {Topic}{Environment.NewLine}" +
                 $"QOS: {QOS}{Environment.NewLine}" +
                 $"Database: {Database}{Environment.NewLine}" +
-                $"Table: {Table}{Environment.NewLine}";
+                $"Table: {Table}{Environment.NewLine}" +
+                $"TimestampFormat: {TimestampFormat}{Environment.NewLine}";
         }
 
         internal StringBuilder ToStringBuilder()
@@ -182,7 +185,8 @@ namespace MqttSql.ConfigurationsJson
                 .Append("\t\tTopic: ").AppendLine(Topic)
                 .Append("\t\tQOS: ").AppendLine(QOS.ToString())
                 .Append("\t\tDatabase: ").AppendLine(Database)
-                .Append("\t\tTable: ").AppendLine(Table);
+                .Append("\t\tTable: ").AppendLine(Table)
+                .Append("\t\tTimestampFormat: ").AppendLine(TimestampFormat);
         }
     }
 }

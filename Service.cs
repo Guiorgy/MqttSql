@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using static MqttSql.Configurations.BaseConfiguration;
+using System.Globalization;
 
 namespace MqttSql
 {
@@ -63,7 +64,7 @@ namespace MqttSql
             sqliteMessageQueues = new(sqliteBases.Count);
             foreach (var sqlite in sqliteBases)
             {
-                sqliteMessageQueues.Add(sqlite.ConnectionString, Channel.CreateUnbounded<(BaseConfiguration database, string? timestamp, string message)>(channelOptions));
+                sqliteMessageQueues.Add(sqlite.ConnectionString, Channel.CreateUnbounded<(BaseConfiguration database, DateTime timestamp, string message)>(channelOptions));
                 EnsureSqliteTablesExist(sqlite);
             }
             foreach (var general in bases.Where(db => db.Type == DatabaseType.GeneralSql).ToList())
@@ -104,13 +105,13 @@ namespace MqttSql
                 _ = Task.Run(async () =>
                 {
                     await foreach (
-                        List<(BaseConfiguration database, string? timestamp, string message)> entries
+                        List<(BaseConfiguration database, DateTime timestamp, string message)> entries
                             in queue.Reader.ReadBatchesAsync(cancellationToken.Token))
                     {
                         if (entries.Count == 1)
                         {
                             var (database, timestamp, message) = entries[0];
-                            await WriteToSQLiteDatabaseAsync(database, message, timestamp);
+                            await WriteToSQLiteDatabaseAsync(database, timestamp, message);
                         }
                         else
                         {
@@ -121,7 +122,7 @@ namespace MqttSql
                 }, cancellationToken.Token);
             }
 
-            await foreach ((BaseConfiguration database, string? timestamp, string message)
+            await foreach ((BaseConfiguration database, DateTime timestamp, string message)
                 in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
             {
                 await WriteToSqlDatabaseAsync(database, message);
@@ -182,7 +183,7 @@ namespace MqttSql
                         command.Transaction = transaction;
 
                         var created = new HashSet<string>();
-                        foreach (string table in sqliteDb.Tables)
+                        foreach ((string table, string _) in sqliteDb.Tables)
                         {
                             if (created.Contains(table))
                                 continue;
@@ -216,7 +217,7 @@ namespace MqttSql
                         command.Transaction = transaction;
 
                         var created = new HashSet<string>();
-                        foreach (string table in db.Tables)
+                        foreach ((string table, string _) in db.Tables)
                         {
                             if (created.Contains(table))
                                 continue;
@@ -240,7 +241,7 @@ namespace MqttSql
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
-        private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration database, string message, string? timestamp = null)
+        private async Task WriteToSQLiteDatabaseAsync(BaseConfiguration database, DateTime timestamp, string message)
         {
             await Task.Run(() =>
             {
@@ -258,13 +259,12 @@ namespace MqttSql
                                 if (cancellationToken.IsCancellationRequested) return;
                                 command.Transaction = transaction;
 
-                                foreach (string table in database.Tables)
+                                foreach ((string table, string timeFormat) in database.Tables)
                                 {
                                     DebugLog($"Writing to the \"{table}\" table");
                                     command.CommandText =
-                                        timestamp == null
-                                            ? "INSERT INTO " + table + "(Message) values ('" + message + "')"
-                                            : "INSERT INTO " + table + "(Timestamp, Message) values ('" + timestamp + "', '" + message + "')";
+                                        "INSERT INTO " + table + "(Timestamp, Message) values ('"
+                                        + timestamp.ToString(timeFormat, CultureInfo.InvariantCulture) + "', '" + message + "')";
                                     command.ExecuteNonQuery();
                                 }
 
@@ -281,7 +281,7 @@ namespace MqttSql
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "Preferred.")]
-        private async Task WriteToSQLiteDatabaseAsync(List<(BaseConfiguration database, string? timestamp, string message)> entries)
+        private async Task WriteToSQLiteDatabaseAsync(List<(BaseConfiguration database, DateTime timestamp, string message)> entries)
         {
             await Task.Run(() =>
             {
@@ -296,18 +296,17 @@ namespace MqttSql
                         {
                             using (var command = new SQLiteCommand(sqlCon))
                             {
-                                foreach ((BaseConfiguration db, string? timestamp, string message) in entries)
+                                foreach ((BaseConfiguration db, ref DateTime timestamp, string message) in entries)
                                 {
                                     if (cancellationToken.IsCancellationRequested) return;
                                     command.Transaction = transaction;
 
-                                    foreach (string table in db.Tables)
+                                    foreach ((string table, string timeFormat) in db.Tables)
                                     {
                                         DebugLog($"Writing to the \"{table}\" table the message: \"{message}\"");
                                         command.CommandText =
-                                            timestamp == null
-                                                ? "INSERT INTO " + table + "(Message) values ('" + message + "')"
-                                                : "INSERT INTO " + table + "(Timestamp, Message) values ('" + timestamp + "', '" + message + "')";
+                                            "INSERT INTO " + table + "(Timestamp, Message) values ('"
+                                            + timestamp.ToString(timeFormat, CultureInfo.InvariantCulture) + "', '" + message + "')";
                                         command.ExecuteNonQuery();
                                     }
                                 }
@@ -396,17 +395,18 @@ namespace MqttSql
                             }
                         });
 
-                        (List<BaseConfiguration>, string, string?) getMessageAndDbs(MqttApplicationMessageReceivedEventArgs e)
+                        (List<BaseConfiguration> bases, string message) getMessageAndDbs(MqttApplicationMessageReceivedEventArgs e)
                         {
                             string topic = e.ApplicationMessage.Topic;
                             string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                             DebugLog($"Message from \"{topic}\" topic recieved: \"{message}\"");
-                            return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
+                            return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
                         }
 
                         mqttClient.UseApplicationMessageReceivedHandler(e =>
                         {
-                            (List<BaseConfiguration> bases, string message, string? timestamp) = getMessageAndDbs(e);
+                            (List<BaseConfiguration> bases, string message) = getMessageAndDbs(e);
+                            var timestamp = DateTime.Now;
                             foreach (var db in bases)
                                 if (db.Type == DatabaseType.SQLite)
                                     Task.Run(() => sqliteMessageQueues![db.ConnectionString].Writer.WriteAsync((db, timestamp, message), cancellationToken.Token));
@@ -549,9 +549,9 @@ namespace MqttSql
         private BrokerConfiguration[]? brokers;
 
         private static readonly UnboundedChannelOptions channelOptions = new();
-        private Dictionary<string, Channel<(BaseConfiguration database, string? timestamp, string message)>>? sqliteMessageQueues;
-        private readonly Channel<(BaseConfiguration database, string? timestamp, string message)> messageQueue =
-            Channel.CreateUnbounded<(BaseConfiguration database, string? timestamp, string message)>(channelOptions);
+        private Dictionary<string, Channel<(BaseConfiguration database, DateTime timestamp, string message)>>? sqliteMessageQueues;
+        private readonly Channel<(BaseConfiguration database, DateTime timestamp, string message)> messageQueue =
+            Channel.CreateUnbounded<(BaseConfiguration database, DateTime timestamp, string message)>(channelOptions);
 
         static Service()
         {

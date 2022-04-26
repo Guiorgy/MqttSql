@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
 using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionConfiguration;
@@ -23,7 +24,7 @@ namespace MqttSql.Configurations
                 if (string.IsNullOrWhiteSpace(topicGroup.Key)) continue;
                 IEnumerable<BaseConfiguration> allbases =
                     topicGroup
-                    .Select(sub => databases.GetValueOrNull(sub.Database)?.EmptyClone()?.WithTables(sub.Table))
+                    .Select(sub => databases.GetValueOrNull(sub.Database)?.EmptyClone()?.WithTable(sub.Table, sub.TimestampFormat))
                     .Where(db => db != null && db.Tables.Count != 0)!;
                 List<BaseConfiguration> bases = new(allbases.Count());
                 foreach (var adb in allbases)
@@ -182,27 +183,27 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>, IMergeable<List<string>>
+    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>, IMergeable<List<BaseConfiguration.TableConfiguration>>
     {
         public DatabaseType Type { get; }
         public string ConnectionString { get; }
-        public List<string> Tables { get; }
+        public List<TableConfiguration> Tables { get; }
 
-        public BaseConfiguration(DatabaseType type, string connectionString, params string[] tables)
+        public BaseConfiguration(DatabaseType type, string connectionString, params TableConfiguration[] tables)
         {
             Type = type;
             ConnectionString = connectionString;
-            Tables = new List<string>(tables.Where(table => !string.IsNullOrWhiteSpace(table)));
+            Tables = new(tables.Where(table => table.IsValid));
         }
 
         public void Merge(BaseConfiguration other)
         {
-            Tables.AddRange(other.Tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            Merge(other.Tables);
         }
 
-        public void Merge(List<string> tables)
+        public void Merge(List<TableConfiguration> tables)
         {
-            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            Tables.AddRange(tables.Where(table => table.IsValid && !Tables.Contains(table)));
         }
 
         internal BaseConfiguration EmptyClone()
@@ -215,15 +216,21 @@ namespace MqttSql.Configurations
             return EmptyClone().WithTables(Tables);
         }
 
-        internal BaseConfiguration WithTables(params string[] tables)
+        internal BaseConfiguration WithTable(string Name, string TimestampFormat)
         {
-            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            var table = new TableConfiguration(Name, TimestampFormat);
+            if (table.IsValid && !Tables.Contains(table)) Tables.Add(table);
             return this;
         }
 
-        internal BaseConfiguration WithTables(List<string> tables)
+        internal BaseConfiguration WithTables(params TableConfiguration[] tables)
         {
-            Tables.AddRange(tables.Where(table => !string.IsNullOrWhiteSpace(table) && !Tables.Contains(table)));
+            return WithTables(tables.ToList());
+        }
+
+        internal BaseConfiguration WithTables(List<TableConfiguration> tables)
+        {
+            Tables.AddRange(tables.Where(table => table.IsValid && !Tables.Contains(table)));
             return this;
         }
 
@@ -241,8 +248,7 @@ namespace MqttSql.Configurations
 
         public bool Equals([AllowNull] BaseConfiguration other)
         {
-            return
-                other?.ConnectionString.Equals(this.ConnectionString) == true;
+            return other?.ConnectionString.Equals(this.ConnectionString) == true;
         }
 
         public override bool Equals(object? obj)
@@ -260,6 +266,74 @@ namespace MqttSql.Configurations
             None = -1,
             SQLite = 0,
             GeneralSql = 1
+        }
+
+        public sealed class TableConfiguration : IEquatable<TableConfiguration>
+        {
+            public string Name { get; }
+            public string TimestampFormat { get; }
+
+            public TableConfiguration(string name, string timestampFormat)
+            {
+                Name = name;
+                TimestampFormat = timestampFormat;
+            }
+
+            public void Deconstruct(out string Name, out string TimestampFormat)
+            {
+                Name = this.Name;
+                TimestampFormat = this.TimestampFormat;
+            }
+
+            private static readonly DateTime SampleDateTime = new(2022, 04, 26, 16, 10, 30, 500);
+            /*
+             * A DateTime format will be considered valid if:
+             * - The format string is not empty/white space.
+             * - Converting DateTime.Now to string and parsing it back doesn't throw an exception.
+             * - Converting DateTime.Now to string and parsing it back retains at least some information,
+             *   i.e. the round-trip parsed DateTime shouldn't be equal to the default.
+             *   ((DateTime)default).ToString("yyyy/MM/dd-HH:mm:ss.fff", CultureInfo.InvariantCulture) = "0001/01/01-00:00:00.000"
+             */
+            public bool IsValid
+            {
+                get
+                {
+                    if (string.IsNullOrWhiteSpace(Name)) return false;
+                    try
+                    {
+                        var dt = DateTime.ParseExact(
+                            SampleDateTime.ToString(TimestampFormat, CultureInfo.InvariantCulture),
+                            TimestampFormat,
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.NoCurrentDateDefault);
+                        return dt != default;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            public override string ToString()
+            {
+                return $"(Name: {Name}, TimestampFormat: {TimestampFormat})";
+            }
+
+            public bool Equals([AllowNull] TableConfiguration other)
+            {
+                return other?.Name.Equals(this.Name) == true;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return Equals(obj as TableConfiguration);
+            }
+
+            public override int GetHashCode()
+            {
+                return Name.GetHashCode();
+            }
         }
     }
 }

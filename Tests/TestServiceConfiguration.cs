@@ -123,5 +123,11 @@ namespace Tests
         {
             TestSampleConfigNumber(6);
         }
+
+        [TestMethod]
+        public void TestConfig7()
+        {
+            TestSampleConfigNumber(7);
+        }
     }
 }

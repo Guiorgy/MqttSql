@@ -1,11 +1,11 @@
 Databases:
 	Name: db1
 	Type: SQLite
-	ConnectionString: C:\Windows\Temp\MQTTSql
+	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
 
 	Name: db2
 	Type: SQLite
-	ConnectionString: C:\Windows\Temp\MQTTSql
+	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
 
 Brokers:
 	Host: localhost
