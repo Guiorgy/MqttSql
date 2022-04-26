@@ -1,0 +1,61 @@
+{
+	"databases": [
+		{
+			"name": "db1",
+			"type": "SQLite"
+			// For help creating connection strings visit: https://www.connectionstrings.com/
+		}
+	],
+	"brokers": [
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user",
+			"password": "password",
+			"subscriptions": [
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table1",
+					"timestampFormat": "yyyy-MM-dd-HH:mm:ss"
+				},
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table2",
+					"timestampFormat": "yyyy-MM-dd-HH:mm:ss.fff"
+				},
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table3",
+					"timestampFormat": "yyyy/MM/dd-HH:mm:ss"
+				},
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table3",
+					"timestampFormat": "yyyy-MM-dd"
+				},
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table4",
+					"timestampFormat": "HH:mm:ss dd-MM-yy"
+				},
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "db1",
+					"table": "table5",
+					"timestampFormat": "abc"
+				}
+			]
+		}
+	]
+}

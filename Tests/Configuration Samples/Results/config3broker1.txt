@@ -9,14 +9,14 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Tables: [table1, table_1_1]
+			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table_1_1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)]
 			
 		Topic: some/topic/2
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Tables: [table2, table_2_1]
+			Tables: [(Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table_2_1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)]
 			
 	User: user3
 	Password: password3
@@ -26,12 +26,12 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: table_1_1
+			Table: (Name: table_1_1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
 			
 		Topic: some/topic/2
 		QOS: 1
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: table_2_1
+			Table: (Name: table_2_1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
 			
