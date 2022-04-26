@@ -25,18 +25,17 @@ namespace MqttSql
         {
             logger?.Invoke($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
-            json = Regex.Replace(
+            json = ConnectionStringRegex.Replace(
                 json,
-                "(\"connectionString\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
-                m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + '"' + m.Groups[4].Value),
-                RegexOptions.IgnoreCase
+                m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + m.Groups[3].Value)
             );
 #if DEBUG
             logger?.Invoke(json);
 #else
-            logger?.Invoke(Regex.Replace(json,
-                "(\"password\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
-                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + '"' + m.Groups[4].Value));
+            logger?.Invoke(PasswordRegex.Replace(
+                json,
+                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value)
+            );
 #endif
             var jsonOptions = new JsonSerializerOptions()
             {
@@ -90,15 +89,14 @@ namespace MqttSql
                         else
                         {
                             string connectionString = string.IsNullOrWhiteSpace(db.ConnectionString) ? "Version=3;" : db.ConnectionString;
-                            string path =
-                                Regex.Match(connectionString,
-                                "(Data Source\\s*=\\s*)(.*?)(;|$)").Groups[2].Value;
+                            string path = DataSourceRegex.Match(connectionString).Groups[2].Value;
                             path = GetSQLiteDbPath?.Invoke(path) ?? path;
                             connectionString =
-                                Regex.IsMatch(connectionString, "(Data Source\\s*=\\s*)(.*?)(;|$)") ?
-                                    Regex.Replace(connectionString,
-                                    "(Data Source\\s*=\\s*)(.*?)(;|$)",
-                                    $"$1{path}$3") :
+                                DataSourceRegex.IsMatch(connectionString) ?
+                                    DataSourceRegex.Replace(
+                                        connectionString,
+                                        $"$1{path}$3"
+                                    ) :
                                     $"Data Source={path};{connectionString}";
                             databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
 
@@ -130,5 +128,13 @@ namespace MqttSql
 
             return brokers.ToArray();
         }
+
+        #region Regex Patterns
+#if !DEBUG
+        private static readonly Regex PasswordRegex = new("(\"password\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+#endif
+        private static readonly Regex ConnectionStringRegex = new("(\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex DataSourceRegex = new("(Data Source\\s*=\\s*)(.*?)(;|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        #endregion
     }
 }

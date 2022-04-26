@@ -20,6 +20,10 @@ namespace Tests
         private readonly MethodInfo LoadJsonConfigMethodInfo;
         private readonly MethodInfo GetBrokersFromConfigMethodInfo;
 
+#if !DEBUG
+        private static readonly Regex PasswordRegex = new("(Password: )(.*?)($|\n|\r)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+#endif
+
         public TestServiceConfiguration()
         {
             var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
@@ -57,9 +61,10 @@ namespace Tests
             string loadedConfig = configuration.ToString();
             string expectedLoadedConfig = File.ReadAllText(configResultsDirPath + $"config{number}loaded.txt");
 #if !DEBUG
-            expectedLoadedConfig = Regex.Replace(expectedLoadedConfig,
-                "(Password: )(.*?)(\n|\r)",
-                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
+            expectedLoadedConfig = PasswordRegex.Replace(
+                expectedLoadedConfig,
+                m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value
+            );
 #endif
             Assert.AreEqual(
                 expectedLoadedConfig,
@@ -77,9 +82,10 @@ namespace Tests
                 string str = broker.ToString();
                 string expected = File.ReadAllText(configResultsDirPath + $"config{number}broker{index + 1}.txt");
 #if !DEBUG
-                expected = Regex.Replace(expected,
-                    "(Password: )(.*?)(\n|\r)",
-                    m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value);
+                expected = PasswordRegex.Replace(
+                    expected,
+                    m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value
+                );
 #endif
                 Assert.AreEqual(
                     expected,
