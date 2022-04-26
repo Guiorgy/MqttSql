@@ -1,4 +1,5 @@
 {
+	// The 2 configurations for the first client will be merged, and client 4 discarded, since it has no subscriptions.
 	"databases": [
 		{
 			"name": "db1",

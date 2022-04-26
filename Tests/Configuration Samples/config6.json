@@ -1,14 +1,15 @@
 {
+	// Since the only client in the only broker has no subscriptions, the whole configuration will be discarded and no service will be run.
 	"databases": [
 		{
 			"name": "db1",
 			"type": "SQLite",
-			"connectionString": "C:\Windows\Temp\MQTTSql"
+			"connectionString": "Data Source=C:\Windows\Temp\MQTTSql"
 		},
 		{
 			"name": "db2",
 			"type": "SQLite",
-			"connectionString": "C:\\Windows\\Temp\\MQTTSql"
+			"connectionString": "Data Source=C:\\Windows\\Temp\\MQTTSql"
 		}
 	],
 	"brokers": [

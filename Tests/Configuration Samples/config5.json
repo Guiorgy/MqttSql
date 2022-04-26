@@ -1,4 +1,6 @@
 {
+	// The databases will be merged, since the type and connection string are equal.
+	// The clients will be merged and subscriptions grouped by the MQTT topics.
 	"databases": [
 		{
 			"name": "db1",
@@ -21,7 +23,7 @@
 				{
 					"topic": "some/topic/1",
 					"qos": 2,
-					"base": "db2",
+					"base": "db1",
 					"table": "table1"
 				},
 				{
@@ -41,7 +43,7 @@
 				{
 					"topic": "some/topic/2",
 					"qos": 2,
-					"base": "db2",
+					"base": "db1",
 					"table": "table1"
 				},
 				{
@@ -61,7 +63,7 @@
 				{
 					"topic": "some/topic/1",
 					"qos": 2,
-					"base": "db2",
+					"base": "db1",
 					"table": "table3"
 				},
 				{

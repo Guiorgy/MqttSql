@@ -88,42 +88,49 @@ namespace Tests
             }
         }
 
+        // Test the minimal configuration
         [TestMethod]
         public void TestConfig1()
         {
             TestSampleConfigNumber(1);
         }
 
+        // Test the merging and discarding of clients
         [TestMethod]
         public void TestConfig2()
         {
             TestSampleConfigNumber(2);
         }
 
+        // Test the merging of subscriptions.
         [TestMethod]
         public void TestConfig3()
         {
             TestSampleConfigNumber(3);
         }
 
+        // Test when the referenced database isn't defined.
         [TestMethod]
         public void TestConfig4()
         {
             TestSampleConfigNumber(4);
         }
 
+        // Test the merging of databases of same type with the same connection string.
         [TestMethod]
         public void TestConfig5()
         {
             TestSampleConfigNumber(5);
         }
 
+        // Test configuration with no brokers.
         [TestMethod]
         public void TestConfig6()
         {
             TestSampleConfigNumber(6);
         }
 
+        // Test timestamp formats.
         [TestMethod]
         public void TestConfig7()
         {
