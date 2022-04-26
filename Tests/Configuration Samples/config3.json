@@ -1,4 +1,8 @@
 {
+	// 2 brokers will be subscribed to (localhost and 192.168.0.101).
+	// The 2 configurations of the first client of localhost broker will be merged.
+	// The empty client configuration of the 192.168.0.101 broker will be discarded.
+	// The subscriptions of the client of the 192.168.0.101 broker will be grouped by the MQTT topics and databases.
 	"databases": [
 		{
 			"name": "db1",

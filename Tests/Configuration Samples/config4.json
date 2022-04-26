@@ -1,4 +1,6 @@
 {
+	// The database with the name "db2" isn't defined, thus the subscription and then the emtpy client/broker are discarded.
+	// With an empty configuration the service does not start.
 	"databases": [
 		{
 			"name": "db1",
