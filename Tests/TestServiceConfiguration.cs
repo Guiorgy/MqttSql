@@ -142,5 +142,12 @@ namespace Tests
         {
             TestSampleConfigNumber(7);
         }
+
+        // Test empty database name and the redefinition databases with the same name.
+        [TestMethod]
+        public void TestConfig8()
+        {
+            TestSampleConfigNumber(8);
+        }
     }
 }
