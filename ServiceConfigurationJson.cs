@@ -155,7 +155,11 @@ namespace MqttSql.ConfigurationsJson
     {
         public string Topic { get; }
         public int QOS { get; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [Obsolete("This is defined as a workaround to map 2 different names onto the same property when deserializing, while only serializing one."
+            + "Use the `Database` property instead.", true)]
         [JsonPropertyName("base")]
+        public string? Db { get => default; }
         public string Database { get; }
         public string Table { get; }
         public string TimestampFormat { get; }
@@ -164,10 +168,11 @@ namespace MqttSql.ConfigurationsJson
         public SubscriptionConfiguration(
             string topic = "sql",
             int qos = 2,
-            string database = "sqlite",
+            string? db = null,
+            string? database = null,
             string table = "mqtt",
             string timestampFormat = "yyyy-MM-dd-HH:mm:ss") =>
-            (Topic, QOS, Database, Table, TimestampFormat) = (topic, qos, database, table, timestampFormat);
+            (Topic, QOS, Database, Table, TimestampFormat) = (topic, qos, database ?? db ?? "sqlite", table, timestampFormat);
 
         public override string ToString()
         {
