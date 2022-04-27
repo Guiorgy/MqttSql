@@ -1,0 +1,42 @@
+{
+	// Databases with empty name will be discarded. The databaswe names must be unique, thus the second definition of 'db1' is discarded.
+	"databases": [
+		{
+			"name": "",
+			"type": "SQLite",
+			"connectionString": "Data Source=C:\empty\db.sqlite"
+		},
+		{
+			"name": "db1",
+			"type": "SQLite",
+			"connectionString": "Data Source=C:\db1\db.sqlite"
+		},
+		{
+			"name": "db1",
+			"type": "SQLite",
+			"connectionString": "Data Source=C:\db1_repeat\db.sqlite"
+		}
+	],
+	"brokers": [
+		{
+			"host": "localhost",
+			"port": 1883,
+			"user": "user",
+			"password": "password",
+			"subscriptions": [
+				{
+					"topic": "some/topic/1",
+					"qos": 2,
+					"base": "",
+					"table": "table1"
+				},
+				{
+					"topic": "some/topic/2",
+					"qos": 2,
+					"base": "db1",
+					"table": "table2"
+				}
+			]
+		}
+	]
+}
