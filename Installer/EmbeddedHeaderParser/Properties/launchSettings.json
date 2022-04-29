@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EmbeddedHeaderParser": {
+      "commandName": "Project",
+      "commandLineArgs": "$(ProjectDir)..\\include"
+    }
+  }
+}

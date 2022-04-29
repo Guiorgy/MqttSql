@@ -59,8 +59,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Installer\**" />
+    <Compile Remove="Publish\**" />
     <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Installer\**" />
+    <EmbeddedResource Remove="Publish\**" />
     <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Installer\**" />
+    <None Remove="Publish\**" />
     <None Remove="Tests\**" />
     <None Include="LICENSE">
       <Pack>True</Pack>
@@ -79,5 +85,9 @@
     <PackageReference Include="System.Text.Json" Version="6.0.2" />
     <PackageReference Include="Topshelf" Version="4.3.0" Condition="'$(Configuration)' != 'Linux Release'" />
   </ItemGroup>
+
+  <Target Name="PostPublish" AfterTargets="Publish">
+    <Exec Command="cd Installer &amp;&amp; call make-installer.bat" />
+  </Target>
 
 </Project>

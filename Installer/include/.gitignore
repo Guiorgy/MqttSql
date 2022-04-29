@@ -1,0 +1,4 @@
+# Generated embeaded file headers
+embedded.hpp
+embedded-extractor.hpp
+embedded-mqttsql.hpp
