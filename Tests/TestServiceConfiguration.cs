@@ -149,5 +149,12 @@ namespace Tests
         {
             TestSampleConfigNumber(8);
         }
+
+        // Test defining Subscriptions and Databases both as a single object, and as an array of objects.
+        [TestMethod]
+        public void TestConfig9()
+        {
+            TestSampleConfigNumber(9);
+        }
     }
 }

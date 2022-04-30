@@ -1,0 +1,127 @@
+Databases:
+	Name: db1
+	Type: SQLite
+	ConnectionString: 
+
+	Name: db2
+	Type: GeneralSql
+	ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+
+	Name: db3
+	Type: SQLite
+	ConnectionString: 
+
+	Name: db4
+	Type: SQLite
+	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
+
+Brokers:
+	Host: localhost
+	Port: 1883
+	User: user1
+	Password: password1
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+		Topic: some/topic/2
+		QOS: 2
+		Database: db1
+		Table: table2
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+		Topic: some/topic/3
+		QOS: 2
+		Databases: 
+			DatabaseName: db1
+			Table: table3
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+			DatabaseName: db2
+			Table: table3
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+
+	Host: localhost
+	Port: 1883
+	User: user2
+	Password: password2
+	Subscriptions:
+		Topic: some/topic/4
+		QOS: 2
+		Database: db1
+		Table: table4
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user2
+	Password: password2
+	Subscriptions:
+		Topic: some/topic/5
+		QOS: 2
+		Database: db1
+		Table: table5
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user3
+	Password: password3
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table1
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+		Topic: some/topic/1
+		QOS: 2
+		Databases: 
+			DatabaseName: db2
+			Table: table1
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+			DatabaseName: db3
+			Table: table1
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+
+		Topic: some/topic/2
+		QOS: 2
+		Database: db1
+		Table: table2
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+		Topic: some/topic/3
+		QOS: 2
+		Database: db1
+		Table: table3
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user4
+	Password: password4
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Databases: 
+			DatabaseName: db1
+			Table: table1
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+			DatabaseName: db2
+			Table: table1
+			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
+

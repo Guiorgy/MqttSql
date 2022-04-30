@@ -16,17 +16,17 @@ namespace MqttSql.Configurations
 
         private static List<SubscriptionConfiguration> MakeSubscriptions(
             IEnumerable<IGrouping<string, SubscriptionConfigurationJson>> topicGroups,
-            Dictionary<string, BaseConfiguration> databases)
+            Dictionary<string, DatabaseConfiguration> databases)
         {
             var subscriptions = new List<SubscriptionConfiguration>(topicGroups.Count());
             foreach (var topicGroup in topicGroups)
             {
                 if (string.IsNullOrWhiteSpace(topicGroup.Key)) continue;
-                IEnumerable<BaseConfiguration> allbases =
+                IEnumerable<DatabaseConfiguration> allbases =
                     topicGroup
-                    .Select(sub => databases.GetValueOrNull(sub.Database)?.EmptyClone()?.WithTable(sub.Table, sub.TimestampFormat))
+                    .SelectMany(sub => sub.Databases.Select(db => databases.GetValueOrNull(db.DatabaseName)?.EmptyClone()?.WithTable(db.Table, db.TimestampFormat)))
                     .Where(db => db != null && db.Tables.Count != 0)!;
-                List<BaseConfiguration> bases = new(allbases.Count());
+                List<DatabaseConfiguration> bases = new(allbases.Count());
                 foreach (var adb in allbases)
                 {
                     var db = bases.Find(db => db.ConnectionString.Equals(adb.ConnectionString));
@@ -43,7 +43,7 @@ namespace MqttSql.Configurations
             return subscriptions;
         }
 
-        public BrokerConfiguration(Dictionary<string, BaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
+        public BrokerConfiguration(Dictionary<string, DatabaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
         {
             Host = jsonConfig.Host;
             Port = jsonConfig.Port;
@@ -53,7 +53,7 @@ namespace MqttSql.Configurations
             };
         }
 
-        public void Merge(Dictionary<string, BaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
+        public void Merge(Dictionary<string, DatabaseConfiguration> databases, BrokerConfigurationJson jsonConfig)
         {
             if (jsonConfig.Subscriptions.Length == 0) return;
             var topicGroups = jsonConfig.Subscriptions.GroupBy(sub => sub.Topic);
@@ -149,9 +149,9 @@ namespace MqttSql.Configurations
     {
         public string Topic { get; }
         public int QOS { get; private set; }
-        public List<BaseConfiguration> Databases { get; }
+        public List<DatabaseConfiguration> Databases { get; }
 
-        public SubscriptionConfiguration(string topic, int qos, IEnumerable<BaseConfiguration> bases)
+        public SubscriptionConfiguration(string topic, int qos, IEnumerable<DatabaseConfiguration> bases)
         {
             Topic = topic;
             QOS = qos;
@@ -183,20 +183,20 @@ namespace MqttSql.Configurations
         }
     }
 
-    public sealed class BaseConfiguration : IEquatable<BaseConfiguration>, ICloneable, IMergeable<BaseConfiguration>, IMergeable<List<BaseConfiguration.TableConfiguration>>
+    public sealed class DatabaseConfiguration : IEquatable<DatabaseConfiguration>, ICloneable, IMergeable<DatabaseConfiguration>, IMergeable<List<DatabaseConfiguration.TableConfiguration>>
     {
         public DatabaseType Type { get; }
         public string ConnectionString { get; }
         public List<TableConfiguration> Tables { get; }
 
-        public BaseConfiguration(DatabaseType type, string connectionString, params TableConfiguration[] tables)
+        public DatabaseConfiguration(DatabaseType type, string connectionString, params TableConfiguration[] tables)
         {
             Type = type;
             ConnectionString = connectionString;
             Tables = new(tables.Where(table => table.IsValid));
         }
 
-        public void Merge(BaseConfiguration other)
+        public void Merge(DatabaseConfiguration other)
         {
             Merge(other.Tables);
         }
@@ -206,9 +206,9 @@ namespace MqttSql.Configurations
             Tables.AddRange(tables.Where(table => table.IsValid && !Tables.Contains(table)));
         }
 
-        internal BaseConfiguration EmptyClone()
+        internal DatabaseConfiguration EmptyClone()
         {
-            return new BaseConfiguration(Type, ConnectionString);
+            return new DatabaseConfiguration(Type, ConnectionString);
         }
 
         object ICloneable.Clone()
@@ -216,19 +216,19 @@ namespace MqttSql.Configurations
             return EmptyClone().WithTables(Tables);
         }
 
-        internal BaseConfiguration WithTable(string Name, string TimestampFormat)
+        internal DatabaseConfiguration WithTable(string Name, string TimestampFormat)
         {
             var table = new TableConfiguration(Name, TimestampFormat);
             if (table.IsValid && !Tables.Contains(table)) Tables.Add(table);
             return this;
         }
 
-        internal BaseConfiguration WithTables(params TableConfiguration[] tables)
+        internal DatabaseConfiguration WithTables(params TableConfiguration[] tables)
         {
             return WithTables(tables.ToList());
         }
 
-        internal BaseConfiguration WithTables(List<TableConfiguration> tables)
+        internal DatabaseConfiguration WithTables(List<TableConfiguration> tables)
         {
             Tables.AddRange(tables.Where(table => table.IsValid && !Tables.Contains(table)));
             return this;
@@ -246,14 +246,14 @@ namespace MqttSql.Configurations
                 );
         }
 
-        public bool Equals([AllowNull] BaseConfiguration other)
+        public bool Equals([AllowNull] DatabaseConfiguration other)
         {
             return other?.ConnectionString.Equals(this.ConnectionString) == true;
         }
 
         public override bool Equals(object? obj)
         {
-            return Equals(obj as BaseConfiguration);
+            return Equals(obj as DatabaseConfiguration);
         }
 
         public override int GetHashCode()
