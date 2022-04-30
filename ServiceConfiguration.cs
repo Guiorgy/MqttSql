@@ -3,11 +3,79 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using SettingsJson = MqttSql.ConfigurationsJson.Settings;
 using BrokerConfigurationJson = MqttSql.ConfigurationsJson.BrokerConfiguration;
 using SubscriptionConfigurationJson = MqttSql.ConfigurationsJson.SubscriptionConfiguration;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace MqttSql.Configurations
 {
+    public sealed class Settings
+    {
+        public TimeSpan SQLiteWriteDelay { get; }
+        public string PythonPath { get; }
+        public string[] PythonParserScripts { get; }
+
+        public Settings(SettingsJson settings){
+            try
+            {
+                if (settings.SQLiteWriteDelay.All(char.IsDigit))
+                {
+                    SQLiteWriteDelay = TimeSpan.FromMilliseconds(int.Parse(settings.SQLiteWriteDelay));
+                }
+                else
+                {
+                    SQLiteWriteDelay = TimeSpan.Parse(settings.SQLiteWriteDelay);
+                }
+            } catch
+            {
+                SQLiteWriteDelay = TimeSpan.FromSeconds(1);
+            }
+
+            //PythonParserScript = File.ReadAllText(@"D:\git\GitignoreParserNet\bin\Release\t\test.py");
+            //PythonParserScript = PythonParserScript.Replace("\"", "\\\"").Replace("\n", "\\n");
+
+            try
+            {
+                var testScript = @"print(\""Python works!\"")";
+                var result = ExecutePythonScript(PythonPath, testScript).Result;
+                if (result?.Contains("Python works!") != true)
+                {
+                    //
+                }
+
+            } catch (Exception ex) {
+                PythonPath = "";
+            }
+        }
+
+        [SuppressMessage("Major Code Smell", "S112:General exceptions should never be thrown", Justification = "<Pending>")]
+        public Task<string> ExecutePythonScript(string pythonPath, string script, TimeSpan? timeout = null)
+        {
+            return Task.Run(() =>
+            {
+                if (timeout == null) timeout = TimeSpan.FromSeconds(1);
+                ProcessStartInfo start = new()
+                {
+                    FileName = @"C:\Windows\system32\cmd.exe",
+                    Arguments = $"/C printf \"{script}\" | \"C:\\Program Files\\Python310\\python.exe\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                using Process process = Process.Start(start)!;
+                if (!process.WaitForExit((int)timeout.Value.TotalMilliseconds)) throw new TimeoutException();
+                using StreamReader reader = process.StandardOutput;
+                string stderr = process.StandardError.ReadToEnd();
+                if (process.ExitCode != 0 || !string.IsNullOrEmpty(stderr)) throw new ApplicationException(stderr);
+                return reader.ReadToEnd();
+            });
+        }
+    }
+
     public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>, IEquatable<BrokerConfigurationJson>, IMergeable<List<SubscriptionConfiguration>, string, string>
     {
         public string Host { get; }

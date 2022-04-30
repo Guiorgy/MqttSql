@@ -1,0 +1,28 @@
+{
+	"settings": {
+		"SQLiteWriteDelay": "500",
+		"pythonPath": "C:\Program Files\Python310\python.exe",
+		"pythonParserScriptPaths": [
+			"D:\git\GitignoreParserNet\bin\Release\t\test.py"
+		]
+	},
+	"databases": [
+		{
+			"name": "db1",
+			"type": "SQLite",
+			"connectionString": "Version = 3;"
+		}
+	],
+	"brokers": [
+		{
+			"user": "user",
+			"password": "password",
+			"subscriptions": [
+				{
+					"topic": "some/topic",
+					"table": "table"
+				}
+			]
+		}
+	]
+}

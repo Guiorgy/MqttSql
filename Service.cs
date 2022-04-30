@@ -156,9 +156,9 @@ namespace MqttSql
             try
             {
 #if DEBUG
-                this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath, DebugLog);
+                (this.settings, this.brokers) = ConfigurationLoader.LoadJsonConfig(configPath, GetSQLiteDbPath, DebugLog);
 #else
-                this.brokers = ConfigurationLoader.LoadBrokersFromJson(configPath, GetSQLiteDbPath);
+                (this.settings, this.brokers) = ConfigurationLoader.LoadJsonConfig(configPath, GetSQLiteDbPath);
 #endif
 
                 if (this.brokers.Length == 0) Stop();
@@ -556,6 +556,7 @@ namespace MqttSql
         private bool serviceLoaded;
 
         private List<IMqttClient>? mqttClients;
+        private Settings? settings;
         private BrokerConfiguration[]? brokers;
 
         private static readonly UnboundedChannelOptions channelOptions = new();
