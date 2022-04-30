@@ -14,8 +14,29 @@ namespace MqttSql.ConfigurationsJson
         internal const string Postfix = "` property instead.";
     }
 
+    public sealed class Settings
+    {
+        public string SQLiteWriteDelay { get; }
+        public string PythonPath { get; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonConverter(typeof(SingleOrArrayJsonConverter))]
+        [Obsolete(DeprecationMessage.Prefix + nameof(PythonParserScriptPaths) + DeprecationMessage.Postfix, true)]
+        public string[]? PythonParserScriptPath { get => default; }
+        [JsonConverter(typeof(SingleOrArrayJsonConverter))]
+        public string[] PythonParserScriptPaths { get; }
+
+        public Settings(
+            string sQLiteWriteDelay = "1000",
+            string pythonPath = "",
+            string[]? pythonParserScriptPath = default,
+            string[]? pythonParserScriptPaths = default) =>
+            (SQLiteWriteDelay, PythonPath, PythonParserScriptPaths)
+                = (sQLiteWriteDelay, pythonPath, pythonParserScriptPaths ?? pythonParserScriptPath ?? Array.Empty<string>());
+    }
+
     public sealed class ServiceConfiguration
     {
+        public Settings Settings { get; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [Obsolete(DeprecationMessage.Prefix + nameof(Databases) + DeprecationMessage.Postfix, true)]
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
@@ -31,11 +52,16 @@ namespace MqttSql.ConfigurationsJson
 
         [JsonConstructor]
         public ServiceConfiguration(
+            Settings? settings = default,
             DatabaseConfiguration[]? database = default,
             DatabaseConfiguration[]? databases = default,
             BrokerConfiguration[]? broker = default,
             BrokerConfiguration[]? brokers = default) =>
-            (Databases, Brokers) = (databases ?? database ?? Array.Empty<DatabaseConfiguration>(), brokers ?? broker ?? Array.Empty<BrokerConfiguration>());
+            (Settings, Databases, Brokers) = (
+                settings ?? new Settings(),
+                databases ?? database ?? Array.Empty<DatabaseConfiguration>(),
+                brokers ?? broker ?? Array.Empty<BrokerConfiguration>()
+            );
 
         public override string ToString()
         {

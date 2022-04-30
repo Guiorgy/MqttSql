@@ -13,22 +13,35 @@ namespace MqttSql
 {
     public static class ConfigurationLoader
     {
-        public static BrokerConfiguration[] LoadBrokersFromJson(
+        public static (Settings Settings, BrokerConfiguration[] Brokers) LoadJsonConfig(
             string configPath,
             Func<string?, string>? GetSQLiteDbPath = null,
             Action<string>? logger = null)
         {
-            return GetBrokersFromConfig(LoadJsonConfig(configPath, logger), GetSQLiteDbPath, logger);
+            var serviceConfig = LoadServiceConfigurationJson(configPath, logger);
+            return (new Settings(serviceConfig.Settings), GetBrokersFromConfig(serviceConfig, GetSQLiteDbPath, logger));
         }
 
-        private static ServiceConfigurationJson LoadJsonConfig(string configPath, Action<string>? logger = null)
+        private static ServiceConfigurationJson LoadServiceConfigurationJson(string configPath, Action<string>? logger = null)
         {
             logger?.Invoke($"Loading configuration \"{configPath}\":");
             string json = File.ReadAllText(configPath);
-            json = ConnectionStringRegex.Replace(
+
+            foreach (var regex in new Regex[3] { ConnectionStringRegex, PythonPathRegex, PythonParserScriptPathRegex })
+            {
+                json = regex.Replace(
+                    json,
+                    m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + m.Groups[3].Value)
+                );
+            }
+            json = PythonParserScriptPathsArrayRegex.Replace(
                 json,
-                m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + m.Groups[3].Value)
+                m => m.Groups[1].Value
+                    + string.Concat(m.Groups[2].Captures.Zip(m.Groups[3].Captures,
+                        (path, delimiter) => (path.Value.Contains(@"\\") ? path.Value : path.Value.Replace(@"\", @"\\")) + delimiter.Value))
+                    + m.Groups[4].Value
             );
+
 #if DEBUG
             logger?.Invoke(json);
 #else
@@ -37,6 +50,7 @@ namespace MqttSql
                 m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value)
             );
 #endif
+
             var jsonOptions = new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
@@ -139,6 +153,9 @@ namespace MqttSql
         private static readonly Regex PasswordRegex = new("(\"password\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 #endif
         private static readonly Regex ConnectionStringRegex = new("(\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex PythonPathRegex = new("(\"pythonPath\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex PythonParserScriptPathRegex = new("(\"pythonParserScriptPath(?:s?)\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex PythonParserScriptPathsArrayRegex = new("(\"pythonParserScriptPath(?:s?)\"\\s*:\\s*\\[)(?:(\\s*\".*?\"\\s*)(,|$|\n|\r|))*((?:\\s*\\]\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
         private static readonly Regex DataSourceRegex = new("(Data Source\\s*=\\s*)(.*?)(;|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         #endregion
     }

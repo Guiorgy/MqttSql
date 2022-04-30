@@ -17,7 +17,7 @@ namespace Tests
         private readonly string sampleConfigDirPath;
         private readonly string configResultsDirPath;
         private const string dummyDirPath = @"Some\Path\";
-        private readonly MethodInfo LoadJsonConfigMethodInfo;
+        private readonly MethodInfo LoadServiceConfigurationJsonMethodInfo;
         private readonly MethodInfo GetBrokersFromConfigMethodInfo;
 
 #if !DEBUG
@@ -29,13 +29,13 @@ namespace Tests
             var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
             sampleConfigDirPath = Path.GetFullPath(@"..\..\..\Configuration Samples\", directory);
             configResultsDirPath = Path.Combine(sampleConfigDirPath, @"Results\");
-            LoadJsonConfigMethodInfo = typeof(ConfigurationLoader).GetMethod("LoadJsonConfig", BindingFlags.Static | BindingFlags.NonPublic)!;
+            LoadServiceConfigurationJsonMethodInfo = typeof(ConfigurationLoader).GetMethod("LoadServiceConfigurationJson", BindingFlags.Static | BindingFlags.NonPublic)!;
             GetBrokersFromConfigMethodInfo = typeof(ConfigurationLoader).GetMethod("GetBrokersFromConfig", BindingFlags.Static | BindingFlags.NonPublic)!;
         }
 
         private MqttSql.ConfigurationsJson.ServiceConfiguration LoadJsonConfig(string configPath)
         {
-            return (LoadJsonConfigMethodInfo.Invoke(null, new object?[]{ configPath, null }) as MqttSql.ConfigurationsJson.ServiceConfiguration)!;
+            return (LoadServiceConfigurationJsonMethodInfo.Invoke(null, new object?[]{ configPath, null }) as MqttSql.ConfigurationsJson.ServiceConfiguration)!;
         }
 
         private MqttSql.Configurations.BrokerConfiguration[] GetBrokersFromConfig(MqttSql.ConfigurationsJson.ServiceConfiguration config)
@@ -57,6 +57,8 @@ namespace Tests
         private void TestSampleConfigNumber(int number)
         {
             var configuration = LoadJsonConfig($"{sampleConfigDirPath}config{number}.json");
+
+            var settings = new MqttSql.Configurations.Settings(configuration.Settings);
 
             string loadedConfig = configuration.ToString();
             string expectedLoadedConfig = File.ReadAllText(configResultsDirPath + $"config{number}loaded.txt");
