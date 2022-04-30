@@ -8,18 +8,34 @@ using static MqttSql.Configurations.DatabaseConfiguration;
 
 namespace MqttSql.ConfigurationsJson
 {
+    internal static class DeprecationMessage
+    {
+        internal const string Prefix = "This is defined as a workaround to map 2 different names onto the same property when deserializing, while only serializing one. Use the `";
+        internal const string Postfix = "` property instead.";
+    }
+
     public sealed class ServiceConfiguration
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [Obsolete(DeprecationMessage.Prefix + nameof(Databases) + DeprecationMessage.Postfix, true)]
+        [JsonConverter(typeof(SingleOrArrayJsonConverter))]
+        public DatabaseConfiguration[]? Database { get => default; }
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
         public DatabaseConfiguration[] Databases { get; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [Obsolete(DeprecationMessage.Prefix + nameof(Brokers) + DeprecationMessage.Postfix, true)]
+        [JsonConverter(typeof(SingleOrArrayJsonConverter))]
+        public BrokerConfiguration[]? Broker { get => default; }
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
         public BrokerConfiguration[] Brokers { get; }
 
         [JsonConstructor]
         public ServiceConfiguration(
+            DatabaseConfiguration[]? database = default,
             DatabaseConfiguration[]? databases = default,
+            BrokerConfiguration[]? broker = default,
             BrokerConfiguration[]? brokers = default) =>
-            (Databases, Brokers) = (databases ?? Array.Empty<DatabaseConfiguration>(), brokers ?? Array.Empty<BrokerConfiguration>());
+            (Databases, Brokers) = (databases ?? database ?? Array.Empty<DatabaseConfiguration>(), brokers ?? broker ?? Array.Empty<BrokerConfiguration>());
 
         public override string ToString()
         {
@@ -84,14 +100,12 @@ namespace MqttSql.ConfigurationsJson
 
     public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>
     {
-        private const string DeprecationMessage = "This is defined as a workaround to map 2 different names onto the same property when deserializing, while only serializing one. Use the `Subscriptions` property instead.";
-
         public string Host { get; }
         public int Port { get; }
         public string User { get; }
         public string Password { get; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        [Obsolete(DeprecationMessage, true)]
+        [Obsolete(DeprecationMessage.Prefix + nameof(Subscriptions) + DeprecationMessage.Postfix, true)]
         [JsonConverter(typeof(SingleOrArrayJsonConverter<SubscriptionConfiguration, SubscriptionConfiguration.SubscriptionConfigurationJsonConverter>))]
         public SubscriptionConfiguration[]? Subscription { get => default; }
         [JsonConverter(typeof(SingleOrArrayJsonConverter<SubscriptionConfiguration, SubscriptionConfiguration.SubscriptionConfigurationJsonConverter>))]
@@ -164,7 +178,7 @@ namespace MqttSql.ConfigurationsJson
 
     public sealed class SubscriptionConfiguration
     {
-        private const string DeprecationMessage = "This is defined as a workaround to map 2 different names onto the same property when deserializing, while only serializing one. Use the `Databases` property instead.";
+        private const string DatabasesDeprecationMessage = DeprecationMessage.Prefix + nameof(Databases) + DeprecationMessage.Postfix;
 
         private const string TopicDefault = "sql";
         private const int QOSDefault = 2;
@@ -176,16 +190,16 @@ namespace MqttSql.ConfigurationsJson
         public string Topic { get; }
         public int QOS { get; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        [Obsolete(DeprecationMessage, true)]
+        [Obsolete(DatabasesDeprecationMessage, true)]
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
         [JsonPropertyName("base")]
         public TableConfiguration[]? Db { get => default; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        [Obsolete(DeprecationMessage, true)]
+        [Obsolete(DatabasesDeprecationMessage, true)]
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
         public TableConfiguration[]? Database { get => default; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        [Obsolete(DeprecationMessage, true)]
+        [Obsolete(DatabasesDeprecationMessage, true)]
         [JsonConverter(typeof(SingleOrArrayJsonConverter))]
         [JsonPropertyName("bases")]
         public TableConfiguration[]? Dbs { get => default; }
@@ -314,7 +328,7 @@ namespace MqttSql.ConfigurationsJson
                 public string? Topic { get; }
                 public int? QOS { get; }
                 [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-                [Obsolete(DeprecationMessage, true)]
+                [Obsolete(DatabasesDeprecationMessage, true)]
                 [JsonPropertyName("base")]
                 public string? Db { get => default; }
                 public string? Database { get; }

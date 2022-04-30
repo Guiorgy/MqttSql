@@ -1,0 +1,11 @@
+{
+	// Minimal configuration. The database, host, port, QOS and timestamp format are all set to the default values.
+	"broker": {
+		"user": "user",
+		"password": "password",
+		"subscription": {
+			"topic": "some/topic",
+			"table": "table"
+		}
+	}
+}
