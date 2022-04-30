@@ -23,27 +23,27 @@ using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration
 
 namespace Tests
 {
-	[TestClass]
-	public class TestService
-	{
-		private readonly CancellationTokenSource cancellationToken = new();
-		private readonly Random rand = new();
-		private readonly int port = 20000;
-		private readonly string? homeDir;
-		private const int maxReplaceCount = 10;
-		private readonly string[]? sqlitePaths;
-		private readonly IMqttClientOptions? mqttClientOptions;
-		private readonly IMqttClient? mqttClient;
-		private readonly Service? service;
-		private readonly string[]? topics;
-		private readonly Dictionary<string, List<string>[]>? topicDestinations;
-		private readonly Dictionary<string, List<string>>[]? inMemoryDatabases;
-		private IMqttServer? mqttServer = null;
+    [TestClass]
+    public class TestService
+    {
+        private readonly CancellationTokenSource cancellationToken = new();
+        private readonly Random rand = new();
+        private readonly int port = 20000;
+        private readonly string? homeDir;
+        private const int maxReplaceCount = 10;
+        private readonly string[]? sqlitePaths;
+        private readonly IMqttClientOptions? mqttClientOptions;
+        private readonly IMqttClient? mqttClient;
+        private readonly Service? service;
+        private readonly string[]? topics;
+        private readonly Dictionary<string, List<string>[]>? topicDestinations;
+        private readonly Dictionary<string, List<string>>[]? inMemoryDatabases;
+        private IMqttServer? mqttServer = null;
 
-		[TestMethod]
-		public async Task TestSimulation()
+        [TestMethod]
+        public async Task TestSimulation()
         {
-			if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested)
                 Assert.Inconclusive(mqttServer == null ? "Test setup failed!" : "Test cancelled!");
 
             try
@@ -221,34 +221,33 @@ namespace Tests
                     }
                 });
 
-                config = Regex.Replace(
+                config = ConnectionStringRegex.Replace(
                     config,
-                    "(\"connectionString\"\\s*:\\s*\")(.*?)(\")(,|\n|\r)",
-                    m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + '"' + m.Groups[4].Value),
-                    RegexOptions.IgnoreCase
+                    m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + m.Groups[3].Value)
                 );
 
                 var jsonOptions = new JsonSerializerOptions()
                 {
                     PropertyNameCaseInsensitive = true,
                     ReadCommentHandling = JsonCommentHandling.Skip,
-                    MaxDepth = 5
+                    MaxDepth = 7
                 };
                 ServiceConfigurationJson? configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(config, jsonOptions);
                 if (configuration == null)
                     throw new JsonException($"Failed the deserialization of the configuration!{Environment.NewLine}Configuration text:{Environment.NewLine}{config}");
 
                 var subscriptions = configuration.Brokers.SelectMany(b => b.Subscriptions);
-                topicDestinations = new(subscriptions.Count());
+                topicDestinations = new(subscriptions.Count() * 5);
                 foreach (var sub in subscriptions)
                 {
                     if (!topicDestinations.TryGetValue(sub.Topic, out List<string>[]? bases))
                     {
-                        bases = new List<string>[10];
+                        bases = new List<string>[dbs];
                         for (int i = 0; i < bases.Length; i++) bases[i] = new();
                         topicDestinations.Add(sub.Topic, bases);
                     }
-                    bases[int.Parse(sub.Database[2..]) - 1].Add(sub.Table);
+                    foreach (var db in sub.Databases)
+                        bases[int.Parse(db.DatabaseName[2..]) - 1].Add(db.Table);
                 }
 
                 topics = topicDestinations.Keys.ToArray();
@@ -316,29 +315,31 @@ namespace Tests
         }
 
         [TestCleanup]
-		public async Task TestServiceCleanup()
-		{
-			cancellationToken.Cancel();
+        public async Task TestServiceCleanup()
+        {
+            cancellationToken.Cancel();
             service?.Stop();
             if (mqttServer != null)
                 await mqttServer.StopAsync();
         }
 
-		public class MqttLogger : IMqttNetLogger
-		{
+        public class MqttLogger : IMqttNetLogger
+        {
             public bool IsEnabled => true;
 
             public void Publish(MqttNetLogLevel logLevel, string source, string message, object[] parameters, Exception? exception)
-			{
-				Console.WriteLine($"{logLevel}: {source} -> {message}");
-				Console.WriteLine(parameters);
-				if (exception != null)
-				{
-					Console.WriteLine(exception.Message);
-					Console.WriteLine(exception.StackTrace);
-				}
-			}
-		}
+            {
+                Console.WriteLine($"{logLevel}: {source} -> {message}");
+                Console.WriteLine(parameters);
+                if (exception != null)
+                {
+                    Console.WriteLine(exception.Message);
+                    Console.WriteLine(exception.StackTrace);
+                }
+            }
+        }
+
+        private static readonly Regex ConnectionStringRegex = new("(\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         private static readonly string configurationTemplate =
             @"{
