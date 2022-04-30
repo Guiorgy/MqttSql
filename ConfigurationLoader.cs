@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using static MqttSql.Configurations.BaseConfiguration;
+using static MqttSql.Configurations.DatabaseConfiguration;
 
 using ServiceConfigurationJson = MqttSql.ConfigurationsJson.ServiceConfiguration;
 
@@ -41,7 +41,7 @@ namespace MqttSql
             {
                 PropertyNameCaseInsensitive = true,
                 ReadCommentHandling = JsonCommentHandling.Skip,
-                MaxDepth = 5
+                MaxDepth = 7
             };
             ServiceConfigurationJson? configuration = JsonSerializer.Deserialize<ServiceConfigurationJson>(json, jsonOptions);
             if (configuration == null) throw new JsonException($"Failed to Deserialize the service configuration file \"{configPath}\"");
@@ -57,10 +57,10 @@ namespace MqttSql
             Func<string?, string>? GetSQLiteDbPath = null,
             Action<string>? logger = null)
         {
-            var databases = new Dictionary<string, BaseConfiguration>(configuration.Databases.Length + 1);
+            var databases = new Dictionary<string, DatabaseConfiguration>(configuration.Databases.Length + 1);
             if (configuration.Databases.Length == 0)
             {
-                databases.Add("sqlite", new BaseConfiguration(DatabaseType.SQLite, $"Data Source={GetSQLiteDbPath?.Invoke(null) ?? "./database.sqlite"};Version=3;"));
+                databases.Add("sqlite", new DatabaseConfiguration(DatabaseType.SQLite, $"Data Source={GetSQLiteDbPath?.Invoke(null) ?? "./database.sqlite"};Version=3;"));
             }
             else
             {
@@ -77,7 +77,7 @@ namespace MqttSql
                         if (db.Type != nameof(DatabaseType.SQLite))
                         {
                             if (Enum.TryParse(db.Type, true, out DatabaseType type) && type != DatabaseType.None)
-                                databases.Add(db.Name, new BaseConfiguration(type, db.ConnectionString ?? ""));
+                                databases.Add(db.Name, new DatabaseConfiguration(type, db.ConnectionString ?? ""));
 
                             if (db.ConnectionString != null)
                             {
@@ -103,7 +103,7 @@ namespace MqttSql
                                         $"$1{path}$3"
                                     ) :
                                     $"Data Source={path};{connectionString}";
-                            databases.Add(db.Name, new BaseConfiguration(DatabaseType.SQLite, connectionString));
+                            databases.Add(db.Name, new DatabaseConfiguration(DatabaseType.SQLite, connectionString));
 
                             if (connStrings?.Contains(connectionString) ?? false)
                                 logger?.Invoke($"Multiple databases have the same ConnectionString: \"{db.ConnectionString}\". This may lead to unwanted behaviour!");
