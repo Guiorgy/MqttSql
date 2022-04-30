@@ -156,5 +156,12 @@ namespace Tests
         {
             TestSampleConfigNumber(9);
         }
+
+        // Test the minimal configuration
+        [TestMethod]
+        public void TestConfig10()
+        {
+            TestSampleConfigNumber(10);
+        }
     }
 }
