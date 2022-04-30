@@ -1,0 +1,13 @@
+Databases:
+Brokers:
+	Host: localhost
+	Port: 1883
+	User: user
+	Password: password
+	Subscriptions:
+		Topic: some/topic
+		QOS: 2
+		Database: sqlite
+		Table: table
+		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+
