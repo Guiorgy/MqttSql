@@ -9,5 +9,5 @@ Brokers:
 		QOS: 2
 		Database: sqlite
 		Table: table
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 

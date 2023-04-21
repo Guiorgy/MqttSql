@@ -9,25 +9,25 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/2
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/3
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table3, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Table: (Name: table3, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 	User: user2
 	Password: password2
@@ -37,21 +37,21 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table4, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/5
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table5, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/1
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 	User: user3
 	Password: password3
@@ -61,25 +61,25 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/2
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/3
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table3, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 	User: user4
 	Password: password4
@@ -89,9 +89,9 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Table: (Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			

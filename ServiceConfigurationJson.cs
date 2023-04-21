@@ -352,7 +352,7 @@ namespace MqttSql.ConfigurationsJson
     {
         internal const string DatabaseNameDefault = "sqlite";
         internal const string TableDefault = "mqtt";
-        internal const string TimestampFormatDefault = "yyyy-MM-dd-HH:mm:ss";
+        internal const string TimestampFormatDefault = "yyyy-MM-dd HH:mm:ss";
 
         [JsonPropertyName("name")]
         public string DatabaseName { get; }

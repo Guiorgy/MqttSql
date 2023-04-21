@@ -292,7 +292,7 @@ namespace MqttSql.Configurations
              * - Converting DateTime.Now to string and parsing it back doesn't throw an exception.
              * - Converting DateTime.Now to string and parsing it back retains at least some information,
              *   i.e. the round-trip parsed DateTime shouldn't be equal to the default.
-             *   ((DateTime)default).ToString("yyyy/MM/dd-HH:mm:ss.fff", CultureInfo.InvariantCulture) = "0001/01/01-00:00:00.000"
+             *   ((DateTime)default).ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) = "0001/01/01 00:00:00.000"
              */
             public bool IsValid
             {

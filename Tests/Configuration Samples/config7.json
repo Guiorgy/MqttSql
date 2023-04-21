@@ -24,21 +24,21 @@
 					"qos": 2,
 					"base": "db1",
 					"table": "table1",
-					"timestampFormat": "yyyy-MM-dd-HH:mm:ss"
+					"timestampFormat": "yyyy-MM-dd HH:mm:ss"
 				},
 				{
 					"topic": "some/topic/1",
 					"qos": 2,
 					"base": "db1",
 					"table": "table2",
-					"timestampFormat": "yyyy-MM-dd-HH:mm:ss.fff"
+					"timestampFormat": "yyyy-MM-dd HH:mm:ss.fff"
 				},
 				{
 					"topic": "some/topic/1",
 					"qos": 2,
 					"base": "db1",
 					"table": "table3",
-					"timestampFormat": "yyyy/MM/dd-HH:mm:ss"
+					"timestampFormat": "yyyy/MM/dd HH:mm:ss"
 				},
 				{
 					"topic": "some/topic/1",
