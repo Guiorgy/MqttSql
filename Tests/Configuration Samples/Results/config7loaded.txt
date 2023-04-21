@@ -13,19 +13,19 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/1
 		QOS: 2
 		Database: db1
 		Table: table2
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss.fff
+		TimestampFormat: yyyy-MM-dd HH:mm:ss.fff
 
 		Topic: some/topic/1
 		QOS: 2
 		Database: db1
 		Table: table3
-		TimestampFormat: yyyy/MM/dd-HH:mm:ss
+		TimestampFormat: yyyy/MM/dd HH:mm:ss
 
 		Topic: some/topic/1
 		QOS: 2

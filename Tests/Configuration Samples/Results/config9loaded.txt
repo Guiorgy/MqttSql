@@ -25,24 +25,24 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 2
 		Database: db1
 		Table: table2
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/3
 		QOS: 2
 		Databases: 
 			DatabaseName: db1
 			Table: table3
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 			DatabaseName: db2
 			Table: table3
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 
 	Host: localhost
@@ -54,7 +54,7 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table4
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -65,13 +65,13 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table5
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/1
 		QOS: 2
 		Database: db1
 		Table: table1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -82,31 +82,31 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/1
 		QOS: 2
 		Databases: 
 			DatabaseName: db2
 			Table: table1
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 			DatabaseName: db3
 			Table: table1
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 
 		Topic: some/topic/2
 		QOS: 2
 		Database: db1
 		Table: table2
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/3
 		QOS: 2
 		Database: db1
 		Table: table3
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -118,10 +118,10 @@ Brokers:
 		Databases: 
 			DatabaseName: db1
 			Table: table1
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 			DatabaseName: db2
 			Table: table1
-			TimestampFormat: yyyy-MM-dd-HH:mm:ss
+			TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 

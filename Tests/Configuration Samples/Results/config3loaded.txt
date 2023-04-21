@@ -17,13 +17,13 @@ Brokers:
 		QOS: 2
 		Database: db1
 		Table: table1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 2
 		Database: db1
 		Table: table2
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: 192.168.0.101
 	Port: 1883
@@ -34,13 +34,13 @@ Brokers:
 		QOS: 0
 		Database: db2
 		Table: table3
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/4
 		QOS: 0
 		Database: db2
 		Table: table4
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: 192.168.0.101
 	Port: 1883
@@ -57,25 +57,25 @@ Brokers:
 		QOS: 1
 		Database: db2
 		Table: table3
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/5
 		QOS: 1
 		Database: db2
 		Table: table4
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/5
 		QOS: 2
 		Database: db2
 		Table: table5
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/5
 		QOS: 0
 		Database: db1
 		Table: table5
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -86,13 +86,13 @@ Brokers:
 		QOS: 1
 		Database: db1
 		Table: table_1_1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
 		Table: table_2_1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 	Host: localhost
 	Port: 1883
@@ -103,11 +103,11 @@ Brokers:
 		QOS: 1
 		Database: db1
 		Table: table_1_1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 
 		Topic: some/topic/2
 		QOS: 1
 		Database: db1
 		Table: table_2_1
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 

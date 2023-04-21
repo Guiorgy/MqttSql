@@ -9,23 +9,23 @@ Clients:
 		Databases:
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Table: (Name: table3, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/4
 		QOS: 0
 		Databases:
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Table: (Name: table4, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/5
 		QOS: 2
 		Databases:
 			Type: GeneralSql
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-			Tables: [(Name: table4, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table5, TimestampFormat: yyyy-MM-dd-HH:mm:ss)]
+			Tables: [(Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
 			
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Table: (Name: table5, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			

@@ -13,5 +13,5 @@ Brokers:
 		QOS: 2
 		Database: db2
 		Table: table
-		TimestampFormat: yyyy-MM-dd-HH:mm:ss
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
 

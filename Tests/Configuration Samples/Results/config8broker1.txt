@@ -9,5 +9,5 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=C:\db1\db.sqlite
-			Table: (Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss)
+			Table: (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			

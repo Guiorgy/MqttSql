@@ -9,12 +9,12 @@ Clients:
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table3, TimestampFormat: yyyy-MM-dd-HH:mm:ss)]
+			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
 			
 		Topic: some/topic/2
 		QOS: 2
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
-			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd-HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd-HH:mm:ss)]
+			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
 			
