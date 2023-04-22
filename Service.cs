@@ -74,10 +74,14 @@ namespace MqttSql
 
         private async void ConfigurationFileChanged(object sender, FileSystemEventArgs e)
         {
+            if (configFileChangeWatcher == null) return;
+            configFileChangeWatcher.Changed -= ConfigurationFileChanged;
             configFileChangeWatcher = null;
             DebugLog("Configuration file changed.");
+
             while (!serviceLoaded)
                 await Task.Delay(1000, cancellationToken.Token);
+
             DebugLog($"Disconnecting {mqttClients!.Count} clients.");
             foreach (var client in mqttClients)
             {
@@ -85,10 +89,56 @@ namespace MqttSql
                 client.Dispose();
             }
             mqttClients = null;
-            await Task.Delay(10000, cancellationToken.Token);
+
+            configChangedOrCanceledTokenSource?.Cancel();
+            sqliteMessageQueues = null;
             serviceLoaded = false;
+
+            await Task.Delay(10000, cancellationToken.Token);
+
             DebugLog("Loading new configuration.");
             LoadAndStartService();
+
+            while (!serviceLoaded)
+                await Task.Delay(1000, cancellationToken.Token);
+
+            HandleSqliteMessages();
+        }
+
+        private void HandleSqliteMessages()
+        {
+            configChangedOrCanceledTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Token);
+            foreach (var queue in sqliteMessageQueues!.Values)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await foreach (
+                        List<(DatabaseConfiguration database, DateTime timestamp, string message)> entries
+                            in queue.Reader.ReadBatchesAsync(configChangedOrCanceledTokenSource.Token))
+                    {
+                        if (entries.Count == 1)
+                        {
+                            var (database, timestamp, message) = entries[0];
+                            await WriteToSQLiteDatabaseAsync(database, timestamp, message);
+                        }
+                        else
+                        {
+                            await WriteToSQLiteDatabaseAsync(entries);
+                        }
+                        await Task.Delay(1000, configChangedOrCanceledTokenSource.Token);
+                    }
+                }, configChangedOrCanceledTokenSource.Token);
+            }
+        }
+
+        private async Task HandleSqlMessagesAsync()
+        {
+            await foreach ((DatabaseConfiguration database, DateTime timestamp, string message)
+                in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
+            {
+                await WriteToSqlDatabaseAsync(database, message);
+                await Task.Delay(50);
+            }
         }
 
         public void Start()
@@ -101,34 +151,8 @@ namespace MqttSql
             LoadAndStartService();
             if (cancellationToken.IsCancellationRequested) return;
 
-            foreach (var queue in sqliteMessageQueues!.Values)
-            {
-                _ = Task.Run(async () =>
-                {
-                    await foreach (
-                        List<(DatabaseConfiguration database, DateTime timestamp, string message)> entries
-                            in queue.Reader.ReadBatchesAsync(cancellationToken.Token))
-                    {
-                        if (entries.Count == 1)
-                        {
-                            var (database, timestamp, message) = entries[0];
-                            await WriteToSQLiteDatabaseAsync(database, timestamp, message);
-                        }
-                        else
-                        {
-                            await WriteToSQLiteDatabaseAsync(entries);
-                        }
-                        await Task.Delay(1000, cancellationToken.Token);
-                    }
-                }, cancellationToken.Token);
-            }
-
-            await foreach ((DatabaseConfiguration database, DateTime timestamp, string message)
-                in messageQueue.Reader.ReadAllAsync(cancellationToken.Token))
-            {
-                await WriteToSqlDatabaseAsync(database, message);
-                await Task.Delay(50);
-            }
+            HandleSqliteMessages();
+            await HandleSqlMessagesAsync();
         }
 
         public void Stop()
@@ -553,6 +577,7 @@ namespace MqttSql
 #endif
 
         private FileSystemWatcher? configFileChangeWatcher;
+        private CancellationTokenSource? configChangedOrCanceledTokenSource;
         private bool serviceLoaded;
 
         private List<IMqttClient>? mqttClients;
