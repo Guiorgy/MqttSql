@@ -5,7 +5,7 @@ Clients:
 	Password: password
 	Subscriptions:
 		Topic: some/topic
-		QOS: 2
+		QOS: Exactly Once
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;

@@ -4,7 +4,7 @@ Databases:
 	ConnectionString: 
 
 	Name: db2
-	Type: GeneralSql
+	Type: GenericSql
 	ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
 
 Brokers:

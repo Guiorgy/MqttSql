@@ -8,7 +8,7 @@
 		},
 		{
 			"name": "db2",
-			"type": "GeneralSql",
+			"type": "GenericSql",
 			"connectionString": "Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;"
 		},
 		{

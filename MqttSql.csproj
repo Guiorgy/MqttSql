@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -60,10 +60,19 @@
 
   <ItemGroup>
     <Compile Remove="Extractor\**" />
+    <Compile Remove="Installer\**" />
+    <Compile Remove="LoggerExtensionsGeneratorAttributes\**" />
+    <Compile Remove="LoggerExtensionsGenerator\**" />
     <Compile Remove="Tests\**" />
     <EmbeddedResource Remove="Extractor\**" />
+    <EmbeddedResource Remove="Installer\**" />
+    <EmbeddedResource Remove="LoggerExtensionsGeneratorAttributes\**" />
+    <EmbeddedResource Remove="src\Logging\**" />
     <EmbeddedResource Remove="Tests\**" />
     <None Remove="Extractor\**" />
+    <None Remove="Installer\**" />
+    <None Remove="LoggerExtensionsGeneratorAttributes\**" />
+    <None Remove="LoggerExtensionsGenerator\**" />
     <None Remove="Tests\**" />
     <None Include="LICENSE">
       <Pack>True</Pack>
@@ -76,11 +85,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="JsonMultiNameModifier" Version="1.0.2" />
     <PackageReference Include="MQTTnet" Version="3.1.2" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
-    <PackageReference Include="System.Text.Json" Version="6.0.2" />
+    <PackageReference Include="SingleOrArrayJsonConverter" Version="1.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
     <PackageReference Include="Topshelf" Version="4.3.0" Condition="'$(Configuration)' != 'Linux Release'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="LoggerExtensionsGeneratorAttributes\LoggerExtensionsGeneratorAttributes.csproj" />
+    <ProjectReference Include="LoggerExtensionsGenerator\LoggerExtensionsGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

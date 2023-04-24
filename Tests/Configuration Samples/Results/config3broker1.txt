@@ -5,14 +5,14 @@ Clients:
 	Password: password1
 	Subscriptions:
 		Topic: some/topic/1
-		QOS: 2
+		QOS: Exactly Once
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table_1_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
 			
 		Topic: some/topic/2
-		QOS: 2
+		QOS: Exactly Once
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
@@ -22,14 +22,14 @@ Clients:
 	Password: password3
 	Subscriptions:
 		Topic: some/topic/1
-		QOS: 1
+		QOS: At Least Once
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
 			Table: (Name: table_1_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/2
-		QOS: 1
+		QOS: At Least Once
 		Databases:
 			Type: SQLite
 			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
