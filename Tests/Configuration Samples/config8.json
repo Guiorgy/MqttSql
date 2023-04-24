@@ -1,5 +1,5 @@
 {
-	// Databases with empty name will be discarded. The databaswe names must be unique, thus the second definition of 'db1' is discarded.
+	// Databases with empty name will be discarded. The database names must be unique, thus the second definition of 'db1' is discarded.
 	"databases": [
 		{
 			"name": "",

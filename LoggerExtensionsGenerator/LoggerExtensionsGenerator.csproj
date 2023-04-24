@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>11</LangVersion>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+
+<!-- 
+  <ItemGroup>
+    <ProjectReference Include="..\LoggerExtensionsGeneratorAttributes\LoggerExtensionsGeneratorAttributes.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GetDependencyTargetPaths">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\$(OutputPath)\*.dll" IncludeRuntimeDependency="false" />
+
+      <TargetPathWithTargetPlatformMoniker Condition="'$(Configuration)' == 'Debug'" Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\bin\Debug\netstandard2.0\LoggerExtensionsGeneratorAttributes.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Condition="'$(Configuration)' == 'Release'" Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\bin\Release\netstandard2.0\LoggerExtensionsGeneratorAttributes.dll" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+  </Target>
+-->
+
+</Project>

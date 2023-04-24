@@ -4,7 +4,7 @@ Databases:
 	ConnectionString: 
 
 	Name: db2
-	Type: GeneralSql
+	Type: GenericSql
 	ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
 
 	Name: db3
@@ -35,7 +35,7 @@ Brokers:
 
 		Topic: some/topic/3
 		QOS: 2
-		Databases: 
+		Databases:
 			DatabaseName: db1
 			Table: table3
 			TimestampFormat: yyyy-MM-dd HH:mm:ss
@@ -86,7 +86,7 @@ Brokers:
 
 		Topic: some/topic/1
 		QOS: 2
-		Databases: 
+		Databases:
 			DatabaseName: db2
 			Table: table1
 			TimestampFormat: yyyy-MM-dd HH:mm:ss
@@ -115,7 +115,7 @@ Brokers:
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: 2
-		Databases: 
+		Databases:
 			DatabaseName: db1
 			Table: table1
 			TimestampFormat: yyyy-MM-dd HH:mm:ss

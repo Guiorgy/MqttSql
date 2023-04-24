@@ -5,23 +5,23 @@ Clients:
 	Password: password2
 	Subscriptions:
 		Topic: some/topic/3
-		QOS: 1
+		QOS: At Least Once
 		Databases:
-			Type: GeneralSql
+			Type: Generic SQL
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
 			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/4
-		QOS: 0
+		QOS: At Most Once
 		Databases:
-			Type: GeneralSql
+			Type: Generic SQL
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
 			Table: (Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss)
 			
 		Topic: some/topic/5
-		QOS: 2
+		QOS: Exactly Once
 		Databases:
-			Type: GeneralSql
+			Type: Generic SQL
 			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
 			Tables: [(Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
 			
