@@ -22,7 +22,7 @@ public sealed class ServiceConfiguration : IAppendStringBuilder
 
     [JsonConstructor]
     public ServiceConfiguration(DatabaseConfiguration[]? databases = default, BrokerConfiguration[]? brokers = default) =>
-        (Databases, Brokers) = (databases ?? Array.Empty<DatabaseConfiguration>(), brokers ?? Array.Empty<BrokerConfiguration>());
+        (Databases, Brokers) = (databases ?? [], brokers ?? []);
 
     public override string ToString()
     {
@@ -100,7 +100,7 @@ public sealed class BrokerConfiguration : IAppendStringBuilder
         string? user = default,
         string password = PasswordDefault,
         SubscriptionConfiguration[]? subscriptions = default) =>
-        (Host, Port, User, Password, Subscriptions) = (host, port, user ?? UserDefault, password, subscriptions ?? Array.Empty<SubscriptionConfiguration>());
+        (Host, Port, User, Password, Subscriptions) = (host, port, user ?? UserDefault, password, subscriptions ?? []);
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
@@ -142,7 +142,7 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
         string topic = TopicDefault,
         int qos = QOSDefault,
         TableConfiguration[]? databases = DatabasesDefault) =>
-        (Topic, QOS, Databases) = (topic, qos, databases ?? Array.Empty<TableConfiguration>());
+        (Topic, QOS, Databases) = (topic, qos, databases ?? []);
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
@@ -224,14 +224,14 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
                     return new SubscriptionConfiguration(
                         topic: flat.Topic ?? TopicDefault,
                         qos: flat.QOS ?? QOSDefault,
-                        databases: new TableConfiguration[]
-                        {
-                            new TableConfiguration(
+                        databases:
+                        [
+                            new(
                                 databaseName: flat.Database ?? TableConfiguration.DatabaseNameDefault,
                                 table: flat.Table ?? TableConfiguration.TableDefault,
                                 timestampFormat: flat.TimestampFormat ?? TableConfiguration.TimestampFormatDefault
                             )
-                        }
+                        ]
                     );
                 }
                 else

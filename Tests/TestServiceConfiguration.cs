@@ -14,10 +14,11 @@ using System.Text.RegularExpressions;
 namespace Tests;
 
 [TestClass]
-public sealed class TestServiceConfiguration
+public sealed partial class TestServiceConfiguration
 {
 #if !DEBUG
-    private static readonly Regex PasswordRegex = new("(Password: )(.*?)($|\n|\r)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    [GeneratedRegex("(Password: )(.*?)($|\n|\r)", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex PasswordRegex();
 #endif
 
     private static readonly string sampleConfigDirPath;
@@ -37,7 +38,7 @@ public sealed class TestServiceConfiguration
 
     private static ServiceConfigurationJson LoadJsonConfig(string configPath)
     {
-        return (LoadJsonConfigMethodInfo.Invoke(null, new object?[] { logger, configPath }) as ServiceConfigurationJson)!;
+        return (LoadJsonConfigMethodInfo.Invoke(null, [logger, configPath]) as ServiceConfigurationJson)!;
     }
 
     private static BrokerConfiguration[] GetBrokersFromConfig(ServiceConfigurationJson config)
@@ -52,7 +53,7 @@ public sealed class TestServiceConfiguration
         string loadedConfig = configuration.ToString();
         string expectedLoadedConfig = File.ReadAllText(configResultsDirPath + $"config{number}loaded.txt");
 #if !DEBUG
-        expectedLoadedConfig = PasswordRegex.Replace(
+        expectedLoadedConfig = PasswordRegex().Replace(
             expectedLoadedConfig,
             m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value
         );
@@ -73,7 +74,7 @@ public sealed class TestServiceConfiguration
             string str = broker.ToString();
             string expected = File.ReadAllText(configResultsDirPath + $"config{number}broker{index + 1}.txt");
 #if !DEBUG
-            expected = PasswordRegex.Replace(
+            expected = PasswordRegex().Replace(
                 expected,
                 m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value
             );

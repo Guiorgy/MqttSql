@@ -7,7 +7,7 @@ namespace Tests;
 
 public static class Extensions
 {
-    private static readonly string[] LineEndings = new[] { "\r\n", "\r", "\n" };
+    private static readonly string[] LineEndings = ["\r\n", "\r", "\n"];
 
     //
     // Summary:

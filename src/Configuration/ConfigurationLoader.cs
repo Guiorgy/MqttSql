@@ -8,7 +8,7 @@ using ServiceConfigurationJson = MqttSql.Configuration.Json.ServiceConfiguration
 
 namespace MqttSql.Configuration;
 
-public static class ConfigurationLoader
+public static partial class ConfigurationLoader
 {
     public static BrokerConfiguration[] LoadBrokersFromJson(
         string configPath,
@@ -37,7 +37,7 @@ public static class ConfigurationLoader
 
         if (Path.DirectorySeparatorChar == '\\')
         {
-            json = ConnectionStringRegex.Replace(
+            json = ConnectionStringRegex().Replace(
                 json,
                 m => m.Groups[2].Value.Contains(@"\\") ? m.Value : (m.Groups[1].Value + m.Groups[2].Value.Replace(@"\", @"\\") + m.Groups[3].Value)
             );
@@ -47,7 +47,7 @@ public static class ConfigurationLoader
 #if DEBUG
         jsonToLog = json;
 #else
-        jsonToLog = PasswordRegex.Replace(
+        jsonToLog = PasswordRegex().Replace(
             json,
             m => m.Groups[1].Value + new string('*', m.Groups[2].Length) + m.Groups[3].Value
         );
@@ -65,9 +65,12 @@ public static class ConfigurationLoader
     #region Regex Patterns
 
 #if !DEBUG
-    private static readonly Regex PasswordRegex = new("(\\s*\"password\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    [GeneratedRegex("(\\s*\"password\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex PasswordRegex();
 #endif
-    private static readonly Regex ConnectionStringRegex = new("(\\s*\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+    [GeneratedRegex("(\\s*\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex ConnectionStringRegex();
 
     #endregion Regex Patterns
 }

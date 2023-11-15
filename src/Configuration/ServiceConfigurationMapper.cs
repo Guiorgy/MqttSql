@@ -10,7 +10,7 @@ using ServiceConfigurationJson = MqttSql.Configuration.Json.ServiceConfiguration
 
 namespace MqttSql.Configuration;
 
-public static class ServiceConfigurationMapper
+public static partial class ServiceConfigurationMapper
 {
     private const string SqliteDatabaseFileNameDefault = "database.sqlite";
 
@@ -67,12 +67,12 @@ public static class ServiceConfigurationMapper
                     {
                         connectionString = string.IsNullOrWhiteSpace(db.ConnectionString) ? "Version=3;" : db.ConnectionString;
 
-                        string path = DataSourceRegex.Match(connectionString).Groups[2].Value;
+                        string path = DataSourceRegex().Match(connectionString).Groups[2].Value;
                         path = GetAbsolutePath(baseDirectory, !string.IsNullOrEmpty(path) ? path : SqliteDatabaseFileNameDefault);
 
                         connectionString =
-                            DataSourceRegex.IsMatch(connectionString) ?
-                                DataSourceRegex.Replace(
+                            DataSourceRegex().IsMatch(connectionString) ?
+                                DataSourceRegex().Replace(
                                     connectionString,
                                     $"$1{path}$3"
                                 ) :
@@ -199,7 +199,7 @@ public static class ServiceConfigurationMapper
                             continue;
                         }
 
-                        databases.Add(new DatabaseConfiguration(databaseType, connectionString, tables.ToArray()));
+                        databases.Add(new DatabaseConfiguration(databaseType, connectionString, [..tables]));
                     }
 
                     if (databases.Count == 0)
@@ -208,7 +208,7 @@ public static class ServiceConfigurationMapper
                         continue;
                     }
 
-                    subscriptions.Add(new SubscriptionConfiguration(topic, (MqttQualityOfService)qos, databases.ToArray()));
+                    subscriptions.Add(new SubscriptionConfiguration(topic, (MqttQualityOfService)qos, [..databases]));
                 }
 
                 if (subscriptions.Count == 0)
@@ -223,7 +223,7 @@ public static class ServiceConfigurationMapper
                     continue;
                 }
 
-                clients.Add(new ClientConfiguration(user, password, subscriptions.ToArray()));
+                clients.Add(new ClientConfiguration(user, password, [..subscriptions]));
             }
 
             if (clients.Count == 0)
@@ -232,15 +232,16 @@ public static class ServiceConfigurationMapper
                 continue;
             }
 
-            brokers.Add(new BrokerConfiguration(host, port, clients.ToArray()));
+            brokers.Add(new BrokerConfiguration(host, port, [..clients]));
         }
 
-        return brokers.ToArray();
+        return [..brokers];
     }
 
     #region Regex Patterns
 
-    private static readonly Regex DataSourceRegex = new("(\\s*Data Source\\s*=\\s*)(.*?)(;|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    [GeneratedRegex("(\\s*Data Source\\s*=\\s*)(.*?)(;|$)", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex DataSourceRegex();
 
     #endregion Regex Patterns
 }
