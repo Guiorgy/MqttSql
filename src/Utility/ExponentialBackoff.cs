@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,7 +47,6 @@ public sealed partial class ExponentialBackoff
         retriesRemaining = maxRetries == 0 ? -1 : maxRetries;
     }
 
-    [Serializable]
     public sealed class MaxRetriesReachedException : Exception
     {
         public MaxRetriesReachedException()
@@ -56,10 +54,6 @@ public sealed partial class ExponentialBackoff
         }
 
         public MaxRetriesReachedException(string? message) : base(message)
-        {
-        }
-
-        private MaxRetriesReachedException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

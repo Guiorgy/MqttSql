@@ -24,8 +24,8 @@ public sealed class DatabaseMessageHandler
     }
 
     private static readonly UnboundedChannelOptions channelOptions = new();
-    private readonly Dictionary<DatabaseType, IDatabaseManager> databaseManagers = new();
-    private readonly Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues = new();
+    private readonly Dictionary<DatabaseType, IDatabaseManager> databaseManagers = [];
+    private readonly Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues = [];
     private readonly Logger logger;
     private readonly CancellationToken cancellationToken;
 
@@ -47,7 +47,7 @@ public sealed class DatabaseMessageHandler
                 ?.GroupBy(database => database.ConnectionString)
                 ?.Select(group => (group.Key, group.SelectMany(database => database.Tables).Distinct().ToArray()))
                 ?.ToList()
-                ?? new();
+                ?? [];
         }
 
         foreach (var databaseType in Enum.GetValues<DatabaseType>())

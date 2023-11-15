@@ -178,25 +178,23 @@ public static partial class Program
     private const string systemctlPath = "/usr/bin/systemctl";
     private const string systemdServiceName = "mqtt-sql";
     private const string systemdServicePath = "/etc/systemd/system/" + systemdServiceName + ".service";
-
-    private static readonly string systemdServiceText =
-        @"
-            [Unit]
-            Description=Subscribes to MQTT brokers and writes the messages to local SQLite databases
-
-            [Service]
-            Type=simple
-            WorkingDirectory={DIR}
-            ExecStart={EXE}
-            User={USER}
-            Restart=always
-            Restart=on-failure
-            RestartSec=10
-            StandardOutput=syslog
-            StandardError=syslog
-            SyslogIdentifier=%n
-
-            [Install]
-            WantedBy=multi-user.target
-            ".Replace("            ", "");
+    private const string systemdServiceText = """
+        [Unit]
+        Description=Subscribes to MQTT brokers and writes the messages to local SQLite databases
+        
+        [Service]
+        Type=simple
+        WorkingDirectory={DIR}
+        ExecStart={EXE}
+        User={USER}
+        Restart=always
+        Restart=on-failure
+        RestartSec=10
+        StandardOutput=syslog
+        StandardError=syslog
+        SyslogIdentifier=%n
+        
+        [Install]
+        WantedBy=multi-user.target
+        """;
 }

@@ -3,18 +3,11 @@ using System;
 
 namespace MqttSql.Configuration;
 
-public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>
+public sealed class BrokerConfiguration(string host, int port, params ClientConfiguration[] clients) : IEquatable<BrokerConfiguration>
 {
-    public string Host { get; }
-    public int Port { get; }
-    public ClientConfiguration[] Clients { get; }
-
-    public BrokerConfiguration(string host, int port, params ClientConfiguration[] clients)
-    {
-        Host = host;
-        Port = port;
-        Clients = clients;
-    }
+    public string Host { get; } = host;
+    public int Port { get; } = port;
+    public ClientConfiguration[] Clients { get; } = clients;
 
     public override string ToString()
     {
@@ -43,20 +36,13 @@ public sealed class BrokerConfiguration : IEquatable<BrokerConfiguration>
     }
 }
 
-public sealed class ClientConfiguration : IEquatable<ClientConfiguration>
+public sealed class ClientConfiguration(string user, string password, params SubscriptionConfiguration[] subscriptions) : IEquatable<ClientConfiguration>
 {
     private const string salt = "8c57bbe4-147e-4a7b-b1be-8037de032bf0";
 
-    public string User { get; }
-    public string Password { get; }
-    public SubscriptionConfiguration[] Subscriptions { get; }
-
-    public ClientConfiguration(string user, string password, params SubscriptionConfiguration[] subscriptions)
-    {
-        User = user;
-        Password = password;
-        Subscriptions = subscriptions;
-    }
+    public string User { get; } = user;
+    public string Password { get; } = password;
+    public SubscriptionConfiguration[] Subscriptions { get; } = subscriptions;
 
     public override string ToString()
     {
@@ -89,18 +75,11 @@ public sealed class ClientConfiguration : IEquatable<ClientConfiguration>
     }
 }
 
-public sealed class SubscriptionConfiguration : IEquatable<SubscriptionConfiguration>
+public sealed class SubscriptionConfiguration(string topic, SubscriptionConfiguration.MqttQualityOfService qos, params DatabaseConfiguration[] bases) : IEquatable<SubscriptionConfiguration>
 {
-    public string Topic { get; }
-    public MqttQualityOfService QOS { get; }
-    public DatabaseConfiguration[] Databases { get; }
-
-    public SubscriptionConfiguration(string topic, MqttQualityOfService qos, params DatabaseConfiguration[] bases)
-    {
-        Topic = topic;
-        QOS = qos;
-        Databases = bases;
-    }
+    public string Topic { get; } = topic;
+    public MqttQualityOfService QOS { get; } = qos;
+    public DatabaseConfiguration[] Databases { get; } = bases;
 
     public override string ToString()
     {
@@ -134,18 +113,11 @@ public sealed class SubscriptionConfiguration : IEquatable<SubscriptionConfigura
     }
 }
 
-public sealed class DatabaseConfiguration : IEquatable<DatabaseConfiguration>
+public sealed class DatabaseConfiguration(DatabaseType type, string connectionString, params TableConfiguration[] tables) : IEquatable<DatabaseConfiguration>
 {
-    public DatabaseType Type { get; }
-    public string ConnectionString { get; }
-    public TableConfiguration[] Tables { get; }
-
-    public DatabaseConfiguration(DatabaseType type, string connectionString, params TableConfiguration[] tables)
-    {
-        Type = type;
-        ConnectionString = connectionString;
-        Tables = tables;
-    }
+    public DatabaseType Type { get; } = type;
+    public string ConnectionString { get; } = connectionString;
+    public TableConfiguration[] Tables { get; } = tables;
 
     public override string ToString()
     {
@@ -175,16 +147,10 @@ public sealed class DatabaseConfiguration : IEquatable<DatabaseConfiguration>
     }
 }
 
-public sealed class TableConfiguration : IEquatable<TableConfiguration>
+public sealed class TableConfiguration(string name, string timestampFormat) : IEquatable<TableConfiguration>
 {
-    public string Name { get; }
-    public string TimestampFormat { get; }
-
-    public TableConfiguration(string name, string timestampFormat)
-    {
-        Name = name;
-        TimestampFormat = timestampFormat;
-    }
+    public string Name { get; } = name;
+    public string TimestampFormat { get; } = timestampFormat;
 
     public void Deconstruct(out string Name, out string TimestampFormat)
     {

@@ -14,7 +14,7 @@ public interface IDatabaseManager
 
     public static IDatabaseManager GetDatabaseManager(Logger logger, CancellationToken cancellationToken) => throw new NotImplementedException();
 
-    private static readonly Dictionary<DatabaseType, Func<Logger, CancellationToken, IDatabaseManager>> MakeManagerMappings = new();
+    private static readonly Dictionary<DatabaseType, Func<Logger, CancellationToken, IDatabaseManager>> MakeManagerMappings = [];
 
     static IDatabaseManager()
     {

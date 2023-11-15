@@ -10,20 +10,14 @@ using System.Threading.Tasks;
 
 namespace MqttSql.Database.Managers;
 
-public sealed class GeneralDatabaseManager : IDatabaseManager
+public sealed class GeneralDatabaseManager(Logger logger, CancellationToken cancellationToken) : IDatabaseManager
 {
     public static DatabaseType GetDatabaseType() => DatabaseType.GenericSql;
 
     public static IDatabaseManager GetDatabaseManager(Logger logger, CancellationToken cancellationToken) => new GeneralDatabaseManager(logger, cancellationToken);
 
-    private readonly CancellationToken cancellationToken;
-    private readonly Logger logger;
-
-    public GeneralDatabaseManager(Logger logger, CancellationToken cancellationToken)
-    {
-        this.logger = logger;
-        this.cancellationToken = cancellationToken;
-    }
+    private readonly CancellationToken cancellationToken = cancellationToken;
+    private readonly Logger logger = logger;
 
     public void EnsureTablesExist(string connectionString, TableConfiguration[] tables)
     {
