@@ -4,6 +4,7 @@ Brokers:
 	Port: 1883
 	User: user
 	Password: password
+	Tls: None
 	Subscriptions:
 		Topic: some/topic
 		QOS: 2

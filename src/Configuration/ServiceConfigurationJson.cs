@@ -89,6 +89,9 @@ public sealed class BrokerConfiguration : IAppendStringBuilder
 
     public string Password { get; }
 
+    [JsonPropertyNames("Tls", "TlsConfig", "TlsConfiguration")]
+    public TlsConfiguration? Tls { get; }
+
     [JsonConverter(typeof(SingleOrArrayJsonConverter<SubscriptionConfiguration.SubscriptionConfigurationJsonConverter>))]
     [JsonPropertyNames("Subscriptions", "Subscription")]
     public SubscriptionConfiguration[] Subscriptions { get; }
@@ -99,8 +102,9 @@ public sealed class BrokerConfiguration : IAppendStringBuilder
         int port = PortDefault,
         string? user = default,
         string password = PasswordDefault,
+        TlsConfiguration? tls = default,
         SubscriptionConfiguration[]? subscriptions = default) =>
-        (Host, Port, User, Password, Subscriptions) = (host, port, user ?? UserDefault, password, subscriptions ?? []);
+        (Host, Port, User, Password, Tls, Subscriptions) = (host, port, user ?? UserDefault, password, tls, subscriptions ?? []);
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
@@ -116,7 +120,77 @@ public sealed class BrokerConfiguration : IAppendStringBuilder
             .Append(tabs).Append(nameof(Password)).Append(": ").AppendLine(new string('*', Password.Length));
 #endif
 
+        builder.Append(tabs).Append(nameof(Tls));
+        if (Tls == null) builder.AppendLine(": None");
+        else builder.AppendLine(":").AppendLine(Tls);
+
         builder.Append(tabs).Append(nameof(Subscriptions)).AppendLine(":").AppendLine(Subscriptions, true, true);
+
+        return builder;
+    }
+}
+
+public sealed class TlsConfiguration : IAppendStringBuilder
+{
+    private const bool EnabledDefault = false;
+    private const string SslProtocolDefault = "auto";
+    private const string? CaCertPathDefault = null;
+    private const bool SelfSignedCaCertDefault = false;
+    private const string? ClientCertPathDefault = null;
+    private const string? ClientCertPassDefault = null;
+    private const bool AllowUntrustedCertificatesDefault = false;
+    private const bool IgnoreCertificateChainErrorsDefault = false;
+    private const bool IgnoreCertificateRevocationErrorsDefault = false;
+
+    [JsonPropertyNames("Enable", "Enabled")]
+    public bool Enable { get; }
+    [JsonPropertyNames("SslProtocol", "Protocol", "SSL", "TLS", "TlsVersion", "Version")]
+    public string SslProtocol { get; }
+    [JsonPropertyNames("CaCertPath", "CaCert", "CaPath", "Ca", "CaCertificatePath", "CaCertificate", "CertificateAuthorityCertificatePath", "CertificateAuthorityCertificate", "CertificateAuthorityPath", "CertificateAuthority")]
+    public string? CaCertPath { get; }
+    [JsonPropertyNames("SelfSignedCaCert", "SelfSigned", "SelfSignedCa", "SelfSignedCaCertificate", "SelfSignedCertificateAuthorityCertificate", "SelfSignedCertificateAuthority")]
+    public bool SelfSignedCaCert { get; }
+    [JsonPropertyNames("ClientCertPath", "ClientCert", "ClientPath", "Client", "ClientCertificatePath", "ClientCertificate")]
+    public string? ClientCertPath { get; }
+    [JsonPropertyNames("ClientCertPass", "ClientCertPassword", "ClientPass", "ClientPassword", "ClientCertificatePass", "ClientCertificatePassword")]
+    public string? ClientCertPass { get; }
+    [JsonPropertyNames("AllowUntrustedCertificates", "UntrustedCertificates")]
+    public bool AllowUntrustedCertificates { get; }
+    public bool IgnoreCertificateChainErrors { get; }
+    public bool IgnoreCertificateRevocationErrors { get; }
+
+    [JsonConstructor]
+    public TlsConfiguration(
+        bool enable = EnabledDefault,
+        string sslProtocol = SslProtocolDefault,
+        string? caCertPath = CaCertPathDefault,
+        bool selfSignedCaCert = SelfSignedCaCertDefault,
+        string? clientCertPath = ClientCertPathDefault,
+        string? clientCertPass = ClientCertPassDefault,
+        bool allowUntrustedCertificates = AllowUntrustedCertificatesDefault,
+        bool ignoreCertificateChainErrors = IgnoreCertificateChainErrorsDefault,
+        bool ignoreCertificateRevocationErrors = IgnoreCertificateRevocationErrorsDefault) =>
+        (Enable, SslProtocol, CaCertPath, SelfSignedCaCert, ClientCertPath, ClientCertPass, AllowUntrustedCertificates, IgnoreCertificateChainErrors, IgnoreCertificateRevocationErrors)
+            = (enable, sslProtocol, caCertPath, selfSignedCaCert, clientCertPath, clientCertPass, allowUntrustedCertificates, ignoreCertificateChainErrors, ignoreCertificateRevocationErrors);
+
+    public StringBuilder AppendStringBuilder(StringBuilder builder)
+    {
+        const string tabs = "\t\t";
+
+        builder
+            .Append(tabs).Append(nameof(Enable)).Append(": ").AppendLine(Enable)
+            .Append(tabs).Append(nameof(SslProtocol)).Append(": ").AppendLine(SslProtocol)
+            .Append(tabs).Append(nameof(CaCertPath)).Append(": ").AppendLine(CaCertPath)
+            .Append(tabs).Append(nameof(SelfSignedCaCert)).Append(": ").AppendLine(SelfSignedCaCert)
+            .Append(tabs).Append(nameof(ClientCertPath)).Append(": ").AppendLine(ClientCertPath)
+#if DEBUG
+            .Append(tabs).Append(nameof(ClientCertPass)).Append(": ").AppendLine(ClientCertPass ?? "")
+#else
+            .Append(tabs).Append(nameof(ClientCertPass)).Append(": ").AppendLine(ClientCertPass == null ? "" : new string('*', ClientCertPass.Length))
+#endif
+            .Append(tabs).Append(nameof(AllowUntrustedCertificates)).Append(": ").AppendLine(AllowUntrustedCertificates)
+            .Append(tabs).Append(nameof(IgnoreCertificateChainErrors)).Append(": ").AppendLine(IgnoreCertificateChainErrors)
+            .Append(tabs).Append(nameof(IgnoreCertificateRevocationErrors)).Append(": ").AppendLine(IgnoreCertificateRevocationErrors);
 
         return builder;
     }

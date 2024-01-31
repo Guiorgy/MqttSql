@@ -1,5 +1,5 @@
 {
-	// Minimal configuration without arrays. The database, host, port, QOS and timestamp format are all set to the default values.
+	// Minimal configuration without arrays. The database, host, port, TLS, QOS and timestamp format are all set to the default values.
 	"broker": {
 		"user": "user",
 		"password": "password",

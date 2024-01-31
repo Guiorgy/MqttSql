@@ -12,5 +12,6 @@ Brokers:
 	Port: 1883
 	User: user
 	Password: password
+	Tls: None
 	Subscriptions:
 

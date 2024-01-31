@@ -2,17 +2,21 @@
 using MqttSql.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using static MqttSql.Configuration.SubscriptionConfiguration;
 using ServiceConfigurationJson = MqttSql.Configuration.Json.ServiceConfiguration;
+using TlsConfigurationJson = MqttSql.Configuration.Json.TlsConfiguration;
 
 namespace MqttSql.Configuration;
 
 public static partial class ServiceConfigurationMapper
 {
     private const string SqliteDatabaseFileNameDefault = "database.sqlite";
+    private static readonly TlsConfigurationJson JsonTlsConfigurationDefault = new();
 
     private static string GetAbsolutePath(string baseDirectory, string relativePath)
     {
@@ -32,6 +36,9 @@ public static partial class ServiceConfigurationMapper
             return Path.Combine(baseDirectory, relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
         }
     }
+
+    [SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "Gets replaced in unittests, however readonly fields can't be set using reflection")]
+    private static Func<string?, string?, X509Certificate2?> LoadCertificate = (string? path, string? password) => path == null ? null : new X509Certificate2(path, password);
 
     public static BrokerConfiguration[] ToServiceConfiguration(
         this ServiceConfigurationJson configuration,
@@ -124,7 +131,45 @@ public static partial class ServiceConfigurationMapper
             {
                 var user = jsonBrokersWithSameCredentials.Key.User;
                 var password = jsonBrokersWithSameCredentials.Key.Password;
+                TlsConfiguration? tlsConfiguration = null;
                 var subscriptions = new List<SubscriptionConfiguration>();
+
+                TlsConfigurationJson? jsonTlsConfiguration;
+                var uniqueJsonTlsConfigurations = jsonBrokersWithSameCredentials.Select(jsonBroker => jsonBroker.Tls).Distinct().ToArray();
+                if (uniqueJsonTlsConfigurations.Length > 1)
+                {
+                    string passwordToLog;
+#if DEBUG
+                    passwordToLog = password;
+#else
+                    passwordToLog = new string('*', password.Length);
+#endif
+                    logger.Warning("More than one TlsConfiguration given for the \"", user, '|', passwordToLog, '@', host, ':', port, "\" client");
+
+                    jsonTlsConfiguration = uniqueJsonTlsConfigurations.FirstOrDefault(tls => tls?.Enable == true, JsonTlsConfigurationDefault)!;
+                }
+                else if (uniqueJsonTlsConfigurations.Length == 1)
+                {
+                    jsonTlsConfiguration = uniqueJsonTlsConfigurations[0] ?? JsonTlsConfigurationDefault;
+                }
+                else
+                {
+                    jsonTlsConfiguration = JsonTlsConfigurationDefault;
+                }
+
+                var caCertPath = jsonTlsConfiguration.CaCertPath != null ? GetAbsolutePath(baseDirectory, jsonTlsConfiguration.CaCertPath) : null;
+                var clientCertPath = jsonTlsConfiguration.ClientCertPath != null ? GetAbsolutePath(baseDirectory, jsonTlsConfiguration.ClientCertPath) : null;
+                tlsConfiguration = new(
+                    enabled: jsonTlsConfiguration.Enable,
+                    sslProtocol: ParseSslProtocol(jsonTlsConfiguration.SslProtocol),
+                    certificateAuthorityCertificate: LoadCertificate(caCertPath, null),
+                    selfSignedCertificateAuthority: jsonTlsConfiguration.SelfSignedCaCert,
+                    clientCertificate: LoadCertificate(clientCertPath, jsonTlsConfiguration.ClientCertPass),
+                    clientCertificatePassword: jsonTlsConfiguration.ClientCertPass,
+                    allowUntrustedCertificates: jsonTlsConfiguration.AllowUntrustedCertificates,
+                    ignoreCertificateChainErrors: jsonTlsConfiguration.IgnoreCertificateChainErrors,
+                    ignoreCertificateRevocationErrors: jsonTlsConfiguration.IgnoreCertificateRevocationErrors
+                );
 
                 var jsonSubscriptions = jsonBrokersWithSameCredentials.SelectMany(jsonBroker => jsonBroker.Subscriptions);
 
@@ -223,7 +268,7 @@ public static partial class ServiceConfigurationMapper
                     continue;
                 }
 
-                clients.Add(new ClientConfiguration(user, password, [..subscriptions]));
+                clients.Add(new ClientConfiguration(user, password, tlsConfiguration, [..subscriptions]));
             }
 
             if (clients.Count == 0)
@@ -236,6 +281,32 @@ public static partial class ServiceConfigurationMapper
         }
 
         return [..brokers];
+    }
+
+    private static TlsConfiguration.SslProtocols ParseSslProtocol(string protocol)
+    {
+        var _protocol = protocol.ToLowerInvariant();
+
+        if (_protocol == "auto")
+        {
+            return TlsConfiguration.SslProtocols.Auto;
+        }
+        else if (_protocol.IsIn("1", "1.1", "v1.1", "tls1.1", "tls 1.1", "tlsv1.1", "tls v1.1"))
+        {
+            return TlsConfiguration.SslProtocols.TlsV1point1;
+        }
+        else if (_protocol.IsIn("2", "1.2", "v1.2", "tls1.2", "tls 1.2", "tlsv1.2", "tls v1.2"))
+        {
+            return TlsConfiguration.SslProtocols.TlsV1point2;
+        }
+        else if (_protocol.IsIn("3", "1.3", "v1.3", "tls1.3", "tls 1.3", "tlsv1.3", "tls v1.3"))
+        {
+            return TlsConfiguration.SslProtocols.TlsV1point3;
+        }
+        else
+        {
+            throw new FormatException($"Couldn't parse \"{protocol}\" to {nameof(TlsConfiguration.SslProtocols)}");
+        }
     }
 
     #region Regex Patterns

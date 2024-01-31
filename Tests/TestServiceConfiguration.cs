@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using MqttSql.Logging;
+using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using ServiceConfigurationJson = MqttSql.Configuration.Json.ServiceConfiguration;
 
 #if !DEBUG
@@ -23,6 +25,7 @@ public sealed partial class TestServiceConfiguration
 
     private static readonly string sampleConfigDirPath;
     private static readonly string configResultsDirPath;
+    private static readonly string sampleCertificatesPath;
     private const string dummyDirPath = @"Some\Path\";
     private static readonly MethodInfo LoadJsonConfigMethodInfo;
     private static readonly Logger logger;
@@ -32,8 +35,28 @@ public sealed partial class TestServiceConfiguration
         var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         sampleConfigDirPath = Path.GetFullPath(@"..\..\..\Configuration Samples\", directory);
         configResultsDirPath = Path.Combine(sampleConfigDirPath, @"Results\");
+        sampleCertificatesPath = Path.Combine(sampleConfigDirPath, @"Certificates\");
         LoadJsonConfigMethodInfo = typeof(ConfigurationLoader).GetMethod("LoadJsonConfig", BindingFlags.Static | BindingFlags.NonPublic)!;
         logger = new Logger(null, false, Logger.LogLevel.None);
+
+        LoadCertificates();
+    }
+
+    private static void LoadCertificates()
+    {
+        DirectoryInfo certsDir = new(sampleCertificatesPath);
+        var certs = certsDir.GetFiles();
+
+        Dictionary<string, string?> CertificatePathMapping = new(certs.Length);
+        foreach (var cert in certs)
+            CertificatePathMapping.Add(Path.Combine(dummyDirPath, "certs", cert.Name), cert.FullName);
+
+        var loadCertificateField = typeof(ServiceConfigurationMapper).GetField("LoadCertificate", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var loadCertificateFunc = (Func<string?, string?, X509Certificate2?>)loadCertificateField.GetValue(null)!;
+        loadCertificateField.SetValue(null, (string? path, string? password) =>
+        {
+            return loadCertificateFunc(path == null ? null : CertificatePathMapping[path], password);
+        });
     }
 
     private static ServiceConfigurationJson LoadJsonConfig(string configPath)
@@ -154,5 +177,12 @@ public sealed partial class TestServiceConfiguration
     public void TestConfig10()
     {
         TestSampleConfigNumber(10);
+    }
+
+    // Test TLS configurations.
+    [TestMethod]
+    public void TestConfig11()
+    {
+        TestSampleConfigNumber(11);
     }
 }

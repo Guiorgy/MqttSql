@@ -1,0 +1,81 @@
+Databases:
+	Name: db1
+	Type: SQLite
+	ConnectionString: 
+
+Brokers:
+	Host: localhost
+	Port: 1883
+	User: user1
+	Password: password1
+	Tls: None
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table1
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user1
+	Password: password1
+	Tls:
+		Enable: True
+		SslProtocol: auto
+		CaCertPath: 
+		SelfSignedCaCert: False
+		ClientCertPath: 
+		ClientCertPass: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: 2
+		Database: db1
+		Table: table1
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user2
+	Password: password2
+	Tls:
+		Enable: True
+		SslProtocol: tlsv1.2
+		CaCertPath: 
+		SelfSignedCaCert: False
+		ClientCertPath: certs/client_no_pass.pfx
+		ClientCertPass: 
+		AllowUntrustedCertificates: True
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/2
+		QOS: 1
+		Database: db1
+		Table: table2
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
+
+	Host: localhost
+	Port: 1883
+	User: user3
+	Password: password3
+	Tls:
+		Enable: True
+		SslProtocol: 1.3
+		CaCertPath: certs/self_signed_ca.crt
+		SelfSignedCaCert: True
+		ClientCertPath: certs/client.pfx
+		ClientCertPass: client_pass
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/2
+		QOS: 1
+		Database: db1
+		Table: table2
+		TimestampFormat: yyyy-MM-dd HH:mm:ss
+

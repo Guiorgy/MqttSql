@@ -386,3 +386,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Exclude .pfx files inside Tests\Configuration Samples\Certificates
+!/Tests/Configuration Samples/Certificates/*.pfx

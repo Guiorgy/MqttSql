@@ -3,6 +3,16 @@ Port: 1883
 Clients:
 	User: user1
 	Password: password1
+	TlsConfiguration:
+		Enabled: False
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: Exactly Once
@@ -31,6 +41,16 @@ Clients:
 			
 	User: user2
 	Password: password2
+	TlsConfiguration:
+		Enabled: False
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
 	Subscriptions:
 		Topic: some/topic/4
 		QOS: Exactly Once
@@ -55,6 +75,16 @@ Clients:
 			
 	User: user3
 	Password: password3
+	TlsConfiguration:
+		Enabled: False
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: Exactly Once
@@ -83,6 +113,16 @@ Clients:
 			
 	User: user4
 	Password: password4
+	TlsConfiguration:
+		Enabled: False
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: Exactly Once

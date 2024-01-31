@@ -1,0 +1,81 @@
+Host: localhost
+Port: 1883
+Clients:
+	User: user1
+	Password: password1
+	TlsConfiguration:
+		Enabled: True
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/1
+		QOS: Exactly Once
+		Databases:
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+			Table: (Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+			
+	User: user2
+	Password: password2
+	TlsConfiguration:
+		Enabled: True
+		SslProtocol: TLS v1.2
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+			Subject: CN=client, OU=Test Client, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Issuer: CN=self_signed_ca, OU=Test CA, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Serial Number: 7B043BB777773E92762B6BA5781125D55A94C11F
+			Not Before: 2023-10-12 16:51:36
+			Not After: 2123-09-18 16:51:36
+			Thumbprint: A1C9B4E8BA6D77261212740161A2F000EE658821
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: True
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/2
+		QOS: At Least Once
+		Databases:
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+			Table: (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+			
+	User: user3
+	Password: password3
+	TlsConfiguration:
+		Enabled: True
+		SslProtocol: TLS v1.3
+		CertificateAuthorityCertificate:
+			Subject: CN=self_signed_ca, OU=Test CA, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Issuer: CN=self_signed_ca, OU=Test CA, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Serial Number: 03F180A85A2D3B109274E6C71135C5C902BD2F43
+			Not Before: 2023-10-12 16:44:39
+			Not After: 2123-09-18 16:44:39
+			Thumbprint: 7CA5F0E418E36FB5B467AE79B0F0FD0BC9998516
+		SelfSignedCertificateAuthority: True
+		ClientCertificate:
+			Subject: CN=client, OU=Test Client, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Issuer: CN=self_signed_ca, OU=Test CA, O=MqttSql, L=Earth, S=Miky Way, C=ZZ
+			Serial Number: 7B043BB777773E92762B6BA5781125D55A94C11F
+			Not Before: 2023-10-12 16:51:36
+			Not After: 2123-09-18 16:51:36
+			Thumbprint: A1C9B4E8BA6D77261212740161A2F000EE658821
+		ClientCertificatePassword: client_pass
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
+	Subscriptions:
+		Topic: some/topic/2
+		QOS: At Least Once
+		Databases:
+			Type: SQLite
+			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+			Table: (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+			

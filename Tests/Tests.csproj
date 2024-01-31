@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Configuration Samples\Certificates\*">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
     <None Update="Configuration Samples\*">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>

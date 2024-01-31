@@ -3,6 +3,16 @@ Port: 1883
 Clients:
 	User: user
 	Password: password
+	TlsConfiguration:
+		Enabled: False
+		SslProtocol: Auto
+		CertificateAuthorityCertificate:
+		SelfSignedCertificateAuthority: False
+		ClientCertificate:
+		ClientCertificatePassword: 
+		AllowUntrustedCertificates: False
+		IgnoreCertificateChainErrors: False
+		IgnoreCertificateRevocationErrors: False
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: Exactly Once

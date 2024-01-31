@@ -12,6 +12,7 @@ Brokers:
 	Port: 1883
 	User: user1
 	Password: password1
+	Tls: None
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: 2
@@ -29,6 +30,7 @@ Brokers:
 	Port: 1883
 	User: user2
 	Password: password2
+	Tls: None
 	Subscriptions:
 		Topic: some/topic/3
 		QOS: 0
@@ -46,12 +48,14 @@ Brokers:
 	Port: 1883
 	User: user2
 	Password: password2
+	Tls: None
 	Subscriptions:
 
 	Host: 192.168.0.101
 	Port: 1883
 	User: user2
 	Password: password2
+	Tls: None
 	Subscriptions:
 		Topic: some/topic/3
 		QOS: 1
@@ -81,6 +85,7 @@ Brokers:
 	Port: 1883
 	User: user1
 	Password: password1
+	Tls: None
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: 1
@@ -98,6 +103,7 @@ Brokers:
 	Port: 1883
 	User: user3
 	Password: password3
+	Tls: None
 	Subscriptions:
 		Topic: some/topic/1
 		QOS: 1

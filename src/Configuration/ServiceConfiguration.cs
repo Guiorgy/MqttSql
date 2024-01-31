@@ -1,5 +1,8 @@
 ﻿using MqttSql.Database;
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography.X509Certificates;
+using SystemSslProtocols = System.Security.Authentication.SslProtocols;
 
 namespace MqttSql.Configuration;
 
@@ -36,12 +39,13 @@ public sealed class BrokerConfiguration(string host, int port, params ClientConf
     }
 }
 
-public sealed class ClientConfiguration(string user, string password, params SubscriptionConfiguration[] subscriptions) : IEquatable<ClientConfiguration>
+public sealed class ClientConfiguration(string user, string password, TlsConfiguration tlsConfiguration, SubscriptionConfiguration[] subscriptions) : IEquatable<ClientConfiguration>
 {
     private const string salt = "8c57bbe4-147e-4a7b-b1be-8037de032bf0";
 
     public string User { get; } = user;
     public string Password { get; } = password;
+    public TlsConfiguration TlsConfiguration { get; } = tlsConfiguration;
     public SubscriptionConfiguration[] Subscriptions { get; } = subscriptions;
 
     public override string ToString()
@@ -53,6 +57,8 @@ public sealed class ClientConfiguration(string user, string password, params Sub
 #else
             $"{nameof(Password)}: {new string('*', Password.Length)}{Environment.NewLine}" +
 #endif
+            $"{nameof(TlsConfiguration)}:{Environment.NewLine}" +
+                TlsConfiguration.ToString().AppendBeforeLines("\t")[..^1] +
             $"{nameof(Subscriptions)}:{Environment.NewLine}" +
                 Subscriptions.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true);
     }
@@ -72,6 +78,106 @@ public sealed class ClientConfiguration(string user, string password, params Sub
     public override int GetHashCode()
     {
         return HashCode.Combine(User, Password + salt);
+    }
+}
+
+public sealed class TlsConfiguration(
+    bool enabled,
+    TlsConfiguration.SslProtocols sslProtocol,
+    X509Certificate2? certificateAuthorityCertificate,
+    bool selfSignedCertificateAuthority,
+    X509Certificate2? clientCertificate,
+    string? clientCertificatePassword,
+    bool allowUntrustedCertificates,
+    bool ignoreCertificateChainErrors,
+    bool ignoreCertificateRevocationErrors) : IEquatable<TlsConfiguration>
+{
+    private const string salt = "4fa4e62e-5f9f-4ff4-9b8f-542365c533ad";
+
+    public bool Enabled { get; } = enabled;
+    public SslProtocols SslProtocol { get; } = sslProtocol;
+    public X509Certificate2? CertificateAuthorityCertificate { get; } = certificateAuthorityCertificate;
+    public bool SelfSignedCertificateAuthority { get; } = selfSignedCertificateAuthority;
+    public X509Certificate2? ClientCertificate { get; } = clientCertificate;
+    public string? ClientCertificatePassword { get; } = clientCertificatePassword;
+    public bool AllowUntrustedCertificates { get; } = allowUntrustedCertificates;
+    public bool IgnoreCertificateChainErrors { get; } = ignoreCertificateChainErrors;
+    public bool IgnoreCertificateRevocationErrors { get; } = ignoreCertificateRevocationErrors;
+
+    public override string ToString()
+    {
+        return
+            $"Enabled: {Enabled}{Environment.NewLine}" +
+            $"SslProtocol: {SslProtocol.ToFriendlyName()}{Environment.NewLine}" +
+            $"CertificateAuthorityCertificate:{Environment.NewLine}" +
+                CertificateToString(CertificateAuthorityCertificate).AppendBeforeLines("\t")[..^1] +
+            $"SelfSignedCertificateAuthority: {SelfSignedCertificateAuthority}{Environment.NewLine}" +
+            $"ClientCertificate:{Environment.NewLine}" +
+                CertificateToString(ClientCertificate).AppendBeforeLines("\t")[..^1] +
+#if DEBUG
+            $"ClientCertificatePassword: {ClientCertificatePassword}{Environment.NewLine}" +
+#else
+            $"ClientCertificatePassword: {ClientCertificatePassword == null ? "" : new string('*', ClientCertificatePassword.Length)}{Environment.NewLine}" +
+#endif
+            $"AllowUntrustedCertificates: {AllowUntrustedCertificates}{Environment.NewLine}" +
+            $"IgnoreCertificateChainErrors: {IgnoreCertificateChainErrors}{Environment.NewLine}" +
+            $"IgnoreCertificateRevocationErrors: {IgnoreCertificateRevocationErrors}{Environment.NewLine}";
+    }
+
+    private static string CertificateToString(X509Certificate2? certificate)
+    {
+        if (certificate == null) return "";
+
+        return
+            $"Subject: {certificate.Subject}{Environment.NewLine}" +
+            $"Issuer: {certificate.Issuer}{Environment.NewLine}" +
+            $"Serial Number: {certificate.SerialNumber}{Environment.NewLine}" +
+            $"Not Before: {certificate.NotBefore.ToIsoString(milliseconds: false)}{Environment.NewLine}" +
+            $"Not After: {certificate.NotAfter.ToIsoString(milliseconds: false)}{Environment.NewLine}" +
+            $"Thumbprint: {certificate.Thumbprint}{Environment.NewLine}";
+    }
+
+    public bool Equals(TlsConfiguration? other)
+    {
+        return
+            other?.Enabled == this.Enabled
+            && other.SslProtocol == this.SslProtocol
+            && other.CertificateAuthorityCertificate?.Equals(this.CertificateAuthorityCertificate) == true
+            && other.SelfSignedCertificateAuthority == this.SelfSignedCertificateAuthority
+            && other.ClientCertificate?.Equals(this.ClientCertificate) == true
+            && other.ClientCertificatePassword == ClientCertificatePassword
+            && other.AllowUntrustedCertificates == this.AllowUntrustedCertificates
+            && other.IgnoreCertificateChainErrors == this.IgnoreCertificateChainErrors
+            && other.IgnoreCertificateRevocationErrors == this.IgnoreCertificateRevocationErrors;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as TlsConfiguration);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(
+            Enabled,
+            SslProtocol,
+            CertificateAuthorityCertificate,
+            ClientCertificate,
+            ClientCertificatePassword + salt,
+            AllowUntrustedCertificates,
+            IgnoreCertificateChainErrors,
+            IgnoreCertificateRevocationErrors
+        );
+    }
+
+    public enum SslProtocols
+    {
+        Auto = SystemSslProtocols.None,
+        // Mosquitto still supports TLS 1.1
+        [Obsolete("Older versions of SSL / TLS protocol like \"SSLv3\" have been proven to be insecure. Provided for backward compatibility only")]
+        TlsV1point1 = SystemSslProtocols.Tls11,
+        TlsV1point2 = SystemSslProtocols.Tls12,
+        TlsV1point3 = SystemSslProtocols.Tls13
     }
 }
 
