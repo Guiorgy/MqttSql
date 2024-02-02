@@ -108,6 +108,7 @@ public sealed class Service
         await logger.FlushAsync(TimeSpan.FromMinutes(1));
 
         serviceStopped = true;
+        serviceCancellationTokenSource.Dispose();
     }
 
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Private method with the same name")]
@@ -126,7 +127,9 @@ public sealed class Service
         async Task Reset()
         {
             brokers = null;
+            configurationFileChangeTokenSource?.Dispose();
             configurationFileChangeTokenSource = null;
+            serviceCancellationOrConfigurationFileChangeTokenSource?.Dispose();
             serviceCancellationOrConfigurationFileChangeTokenSource = null;
             messageHandler = null;
 
@@ -218,7 +221,9 @@ public sealed class Service
             configFileChangeWatcher = null;
         }
 
+        configurationFileChangeTokenSource?.Dispose();
         configurationFileChangeTokenSource = new CancellationTokenSource();
+        serviceCancellationOrConfigurationFileChangeTokenSource?.Dispose();
         serviceCancellationOrConfigurationFileChangeTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
             ServiceCancellationToken,
             ConfigurationFileChangeToken

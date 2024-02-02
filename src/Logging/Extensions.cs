@@ -106,7 +106,7 @@ public static partial class Extensions
     /// </returns>
     public static async Task<bool> FlushAsync(this Logger logger, TimeSpan timeout)
     {
-        CancellationTokenSource flushCancellationTokenSource = new(timeout);
+        using CancellationTokenSource flushCancellationTokenSource = new(timeout);
 
         try
         {
@@ -134,7 +134,7 @@ public static partial class Extensions
     /// </returns>
     public static async Task<bool> FlushAsync(this Logger logger, TimeSpan timeoutAfterCancellation, CancellationToken cancellationToken)
     {
-        CancellationTokenSource flushCancellationTokenSource = new();
+        using CancellationTokenSource flushCancellationTokenSource = new();
         var registration = cancellationToken.Register(() => flushCancellationTokenSource.CancelAfter(timeoutAfterCancellation));
 
         try
