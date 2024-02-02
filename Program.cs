@@ -108,6 +108,28 @@ public static partial class Program
                 return;
             }
             Service service = new(dir);
+            bool serviceStopped = false;
+
+            // Handle SIGINT (Ctrl+C)
+            Console.CancelKeyPress += (_, eventArgs) =>
+            {
+                // Tell .NET to not terminate the process
+                eventArgs.Cancel = true;
+
+                service.Stop();
+                serviceStopped = true;
+            };
+
+            // Handle SIGTERM
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                if (!serviceStopped)
+                {
+                    Console.WriteLine("Received SIGTERM");
+                    service.Stop();
+                }
+            };
+
             await service.StartAsync();
             return;
         }
