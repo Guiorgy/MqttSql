@@ -19,34 +19,41 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
     private readonly CancellationToken cancellationToken = cancellationToken;
     private readonly Logger logger = logger;
 
-    public void EnsureTablesExist(string connectionString, TableConfiguration[] tables)
+    public Logger GetLogger() => logger;
+
+    public Task EnsureTablesExistAsync(string connectionString, TableConfiguration[] tables)
     {
-        using var sqlConnection = new SQLiteConnection(connectionString);
-        sqlConnection.Open();
-
-        using var transaction = sqlConnection.BeginTransaction();
-
-        using var command = new SQLiteCommand(sqlConnection);
-        command.Transaction = transaction;
-
-        foreach (string table in tables.Select(table => table.Name))
+        return Task.Run(() =>
         {
-            logger.Debug("Checking the existence of table \"", table, '"');
+            using var sqlConnection = new SQLiteConnection(connectionString);
+            sqlConnection.Open();
 
-            command.CommandText = "CREATE TABLE IF NOT EXISTS " + table + "(" +
-                                      "id INTEGER NOT NULL PRIMARY KEY," +
-                                      "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL," +
-                                      "Message VARCHAR NOT NULL" +
-                                  ");";
-            command.ExecuteNonQuery();
-        }
+            using var transaction = sqlConnection.BeginTransaction();
+            using var command = new SQLiteCommand("", sqlConnection, transaction);
 
-        transaction.Commit();
+            foreach (string table in tables.Select(table => table.Name))
+            {
+                logger.Debug("Checking the existence of table \"", table, '"');
+
+                command.CommandText =
+                    $"""
+                    CREATE TABLE IF NOT EXISTS {table} (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
+                        Message VARCHAR NOT NULL
+                    );
+                    """;
+
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }, cancellationToken);
     }
 
-    public async Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
+    public Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
     {
-        await Task.Run(() =>
+        return Task.Run(() =>
         {
             try
             {
@@ -56,14 +63,11 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                 sqlConnection.Open();
 
                 using var transaction = sqlConnection.BeginTransaction();
-
-                using var command = new SQLiteCommand(sqlConnection);
+                using var command = new SQLiteCommand("", sqlConnection, transaction);
 
                 foreach ((TableConfiguration[] tables, DateTime timestamp, string message) in entries)
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-
-                    command.Transaction = transaction;
 
                     Dictionary<string, string>? timestampCache = tables.Length > 10 ? new(tables.Length) : null;
 
@@ -85,10 +89,11 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                             timestampString = timestamp.ToStringFast(timeFormat);
                         }
 
-                        command.CommandText = "INSERT INTO " + table + "(Timestamp, Message) values (@timestamp, @message)";
+                        command.CommandText = $"INSERT INTO {table} (Timestamp, Message) values (@timestamp, @message);";
                         command.Parameters.Clear();
                         command.Parameters.Add("@timestamp", DbType.DateTime).Value = timestampString;
                         command.Parameters.Add("@message", DbType.String).Value = message;
+
                         command.ExecuteNonQuery();
                     }
                 }

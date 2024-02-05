@@ -19,42 +19,49 @@ public sealed class GeneralDatabaseManager(Logger logger, CancellationToken canc
     private readonly CancellationToken cancellationToken = cancellationToken;
     private readonly Logger logger = logger;
 
-    public void EnsureTablesExist(string connectionString, TableConfiguration[] tables)
+    public Logger GetLogger() => logger;
+
+    public Task EnsureTablesExistAsync(string connectionString, TableConfiguration[] tables)
     {
-        using var sqlConnection = new SQLiteConnection(connectionString);
-        sqlConnection.Open();
-
-        using var transaction = sqlConnection.BeginTransaction();
-
-        using var command = new SQLiteCommand(sqlConnection);
-        command.Transaction = transaction;
-
-        var created = new HashSet<string>();
-        foreach (string table in tables.Select(table => table.Name))
+        return Task.Run(() =>
         {
-            if (created.Contains(table))
-                continue;
-            else
-                created.Add(table);
+            using var sqlConnection = new SQLiteConnection(connectionString);
+            sqlConnection.Open();
 
-            logger.Debug("Checking the existence of table \"", table, '"');
+            using var transaction = sqlConnection.BeginTransaction();
 
-            command.CommandText = "IF OBJECT_ID('" + table + "', 'U') IS NULL" +
-                                  "BEGIN" +
-                                      "CREATE TABLE " + table + "(" +
-                                          "Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY," +
-                                          "Message VARCHAR NOT NULL" +
-                                      ")" +
-                                  "END;";
-            command.ExecuteNonQuery();
-        }
+            using var command = new SQLiteCommand(sqlConnection);
+            command.Transaction = transaction;
 
-        transaction.Commit();
+            var created = new HashSet<string>();
+            foreach (string table in tables.Select(table => table.Name))
+            {
+                if (!created.Add(table))
+                    continue;
+
+                logger.Debug("Checking the existence of table \"", table, '"');
+
+                command.CommandText =
+                    $"""
+                    IF OBJECT_ID('{table}', 'U') IS NULL
+                    BEGIN
+                        CREATE TABLE {table} (
+                            Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL PRIMARY KEY,
+                            Message VARCHAR NOT NULL
+                        )
+                    END;
+                    """;
+
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }, cancellationToken);
     }
 
-    public async Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
+    public Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
     {
-        await Task.Run(() =>
+        return Task.Run(() =>
         {
             throw new NotImplementedException(); // TODO
         }, cancellationToken);
