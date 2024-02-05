@@ -15,6 +15,7 @@ public static class Extensions
         {
             DatabaseType.None => nameof(DatabaseType.None),
             DatabaseType.GenericSql => "Generic SQL",
+            DatabaseType.PostgreSql => "PostgreSQL",
             DatabaseType.SQLite => nameof(DatabaseType.SQLite),
             _ => throw new NotImplementedException($"You forgot to update a switch statement after modifying the {nameof(DatabaseType)} enum.")
         };

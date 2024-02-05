@@ -59,7 +59,7 @@ public static partial class ServiceConfigurationMapper
                 {
                     string? connectionString = null;
 
-                    if (db.Type == nameof(DatabaseType.GenericSql))
+                    if (db.Type == nameof(DatabaseType.GenericSql) || db.Type == nameof(DatabaseType.PostgreSql))
                     {
                         connectionString = db.ConnectionString;
                     }
