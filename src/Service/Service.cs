@@ -186,6 +186,8 @@ public sealed class Service
     {
         CalncelService();
 
+        messageHandler?.Dispose();
+
         logger.Information("Stopping service");
 
         var delay = TimeSpan.FromMilliseconds(100);

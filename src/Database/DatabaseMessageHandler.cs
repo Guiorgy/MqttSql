@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MqttSql.Database;
 
-public sealed class DatabaseMessageHandler
+public sealed class DatabaseMessageHandler : IDisposable
 {
     public record struct DatabaseMessage(
         DatabaseConfiguration Database,
@@ -111,5 +111,18 @@ public sealed class DatabaseMessageHandler
         }
 
         return Task.WhenAll(tasks);
+    }
+
+    public void Dispose()
+    {
+        foreach (var databaseManager in databaseManagers.Values)
+        {
+            if (databaseManager is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        databaseManagers.Clear();
     }
 }
