@@ -72,12 +72,26 @@ public sealed class DatabaseMessageHandler : IDisposable
             foreach ((var ConnectionString, var Tables) in tablesByConnectionString)
             {
                 queuesByConnectionString.Add(ConnectionString, Channel.CreateUnbounded<DatabaseMessage>(channelOptions));
-                
+
+                ExponentialBackoff? exponentialBackoff = null;
+
                 while (! await databaseManager.TryEnsureTablesExistAsync(ConnectionString, Tables))
                 {
                     if (cancellationToken.IsCancellationRequested) return null;
 
-                    await Task.Delay(1000, cancellationToken);
+                    exponentialBackoff ??= new ExponentialBackoff(
+                        initialDelay: TimeSpan.FromSeconds(10),
+                        maxDelay: TimeSpan.FromMinutes(15),
+                        multiplier: 1.7,
+                        maxRetries: 0
+                    );
+
+                    if (exponentialBackoff.FirstTime)
+                        logger.Information("Failed to ensure the existence of tables. Retrying until successful");
+
+                    await exponentialBackoff.Delay(cancellationToken);
+
+                    if (cancellationToken.IsCancellationRequested) return null;
                 }
             }
 
