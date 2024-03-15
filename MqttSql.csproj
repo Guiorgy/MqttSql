@@ -60,7 +60,6 @@
     <PackageReference Include="SingleOrArrayJsonConverter" Version="1.0.1.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
     <PackageReference Include="System.Text.Json" Version="8.0.1" />
-    <PackageReference Include="Topshelf" Version="4.3.0" Condition="'$(Configuration)' != 'Linux Release'" />
   </ItemGroup>
 
   <ItemGroup>

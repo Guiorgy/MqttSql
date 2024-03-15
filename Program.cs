@@ -1,54 +1,36 @@
 ﻿using System;
-using System.IO;
-using Topshelf;
-using Topshelf.Runtime.DotNetCore;
-using static System.Runtime.InteropServices.OSPlatform;
-using static System.Runtime.InteropServices.RuntimeInformation;
+using System.Threading.Tasks;
 
 namespace MqttSql;
 
 public static partial class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main()
     {
-        if (Array.Exists(args, arg => arg.Equals("install")))
+        Service service = new();
+
+        bool serviceStopped = false;
+
+        // Handle SIGINT (Ctrl+C)
+        Console.CancelKeyPress += (_, eventArgs) =>
         {
-            string home = Directory.GetCurrentDirectory();
-            Console.WriteLine($"Setting home directory to \"{home}\"");
-            Environment.SetEnvironmentVariable("MqttSqlHome", home, EnvironmentVariableTarget.Machine);
-        }
+            // Tell .NET to not terminate the process
+            eventArgs.Cancel = true;
 
-        var exitCode = HostFactory.Run(host =>
+            service.Stop();
+            serviceStopped = true;
+        };
+
+        // Handle SIGTERM
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
-            if (IsOSPlatform(OSX) || IsOSPlatform(Linux) || IsOSPlatform(FreeBSD))
-                host.UseEnvironmentBuilder(target => new DotNetCoreEnvironmentBuilder(target));
-
-            host.Service<Service>(service =>
+            if (!serviceStopped)
             {
-#if DEBUG
-                service.ConstructUsing(_ => new Service(Directory.GetCurrentDirectory()));
-#else
-                service.ConstructUsing(_ => new Service());
-#endif
-                service.WhenStarted(s => s.Start());
-                service.WhenStopped(s => s.Stop());
-            });
+                Console.WriteLine("Received SIGTERM");
+                service.Stop();
+            }
+        };
 
-            host.RunAsLocalSystem();
-
-            host.SetServiceName("MqttSql");
-            host.SetDisplayName("MQTT to SQL");
-            host.SetDescription("Subscribes to MQTT brokers and writes the messages to local SQLite databases");
-            host.EnableServiceRecovery(src => src.RestartService(TimeSpan.FromSeconds(10)));
-            host.StartAutomatically();
-
-            host.OnException(e =>
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-            });
-        });
-
-        Environment.ExitCode = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+        await service.StartAsync();
     }
 }
