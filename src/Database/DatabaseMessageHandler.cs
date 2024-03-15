@@ -43,11 +43,11 @@ public sealed class DatabaseMessageHandler : IDisposable
 
         List<(string ConnectionString, TableConfiguration[] Tables)> GetTablesForDatabaseType(DatabaseType databaseType)
         {
-            return databasesByType.FirstOrDefault(databases => databases.Key == databaseType)
-                ?.GroupBy(database => database.ConnectionString)
-                ?.Select(group => (group.Key, group.SelectMany(database => database.Tables).Distinct().ToArray()))
-                ?.ToList()
-                ?? [];
+            var databasesForType = databasesByType.FirstOrDefault(databases => databases.Key == databaseType);
+            if (databasesForType == null) return [];
+
+            var databasesByConStr = databasesForType.GroupBy(database => database.ConnectionString);
+            return databasesByConStr.Select(group => (group.Key, group.SelectMany(database => database.Tables).Distinct().ToArray())).ToList();
         }
 
         foreach (var databaseType in Enum.GetValues<DatabaseType>())
