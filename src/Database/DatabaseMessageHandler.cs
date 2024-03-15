@@ -24,8 +24,8 @@ public sealed class DatabaseMessageHandler : IDisposable
     }
 
     private static readonly UnboundedChannelOptions channelOptions = new();
-    private readonly Dictionary<DatabaseType, IDatabaseManager> databaseManagers = [];
-    private readonly Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues = [];
+    private readonly Dictionary<DatabaseType, IDatabaseManager> databaseManagers;
+    private readonly Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues;
     private readonly Logger logger;
     private readonly CancellationToken cancellationToken;
 
@@ -34,10 +34,18 @@ public sealed class DatabaseMessageHandler : IDisposable
         channelOptions.SingleReader = true;
     }
 
-    public DatabaseMessageHandler(IEnumerable<DatabaseConfiguration> databases, Logger logger, CancellationToken cancellationToken)
+    private DatabaseMessageHandler(Dictionary<DatabaseType, IDatabaseManager> databaseManagers, Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues, Logger logger, CancellationToken cancellationToken)
     {
+        this.databaseManagers = databaseManagers;
+        this.messageQueues = messageQueues;
         this.logger = logger;
         this.cancellationToken = cancellationToken;
+    }
+
+    public static async Task<DatabaseMessageHandler?> Initialize(IEnumerable<DatabaseConfiguration> databases, Logger logger, CancellationToken cancellationToken)
+    {
+        Dictionary<DatabaseType, IDatabaseManager> _databaseManagers = [];
+        Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> _messageQueues = [];
 
         var databasesByType = databases.GroupBy(database => database.Type);
 
@@ -52,6 +60,8 @@ public sealed class DatabaseMessageHandler : IDisposable
 
         foreach (var databaseType in Enum.GetValues<DatabaseType>())
         {
+            if (cancellationToken.IsCancellationRequested) return null;
+
             if (databaseType == DatabaseType.None) continue;
 
             var databaseManager = IDatabaseManager.MakeManagerFor(databaseType, logger, cancellationToken);
@@ -62,12 +72,20 @@ public sealed class DatabaseMessageHandler : IDisposable
             foreach ((var ConnectionString, var Tables) in tablesByConnectionString)
             {
                 queuesByConnectionString.Add(ConnectionString, Channel.CreateUnbounded<DatabaseMessage>(channelOptions));
-                databaseManager.EnsureTablesExist(ConnectionString, Tables);
+                
+                while (! await databaseManager.TryEnsureTablesExistAsync(ConnectionString, Tables))
+                {
+                    if (cancellationToken.IsCancellationRequested) return null;
+
+                    await Task.Delay(1000, cancellationToken);
+                }
             }
 
-            databaseManagers.Add(databaseType, databaseManager);
-            messageQueues.Add(databaseType, queuesByConnectionString);
+            _databaseManagers.Add(databaseType, databaseManager);
+            _messageQueues.Add(databaseType, queuesByConnectionString);
         }
+
+        return new(_databaseManagers, _messageQueues, logger, cancellationToken);
     }
 
     public void WriteMessage(DatabaseMessage message)

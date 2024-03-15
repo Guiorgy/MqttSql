@@ -47,55 +47,53 @@ public interface IDatabaseManager
 
     public Task EnsureTablesExistAsync(string connectionString, TableConfiguration[] tables);
 
+    public async Task<bool> TryEnsureTablesExistAsync(string connectionString, TableConfiguration[] tables)
+    {
+        try
+        {
+            await EnsureTablesExistAsync(connectionString, tables);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            GetLogger().Error(
+                ex.InnerException ?? ex,
+                "Failed to ensure the existance of the table in the database with connection string \"", connectionString, "\""
+            );
+
+            return false;
+        }
+    }
+
     public void EnsureTablesExist(string connectionString, TableConfiguration[] tables)
     {
-        EnsureTablesExistAsync(connectionString, tables).ContinueWith(task =>
-        {
-            const string messagePart0 = "Failed to ensure the existance of the table in the database with connection string \"";
-            const string messagePart1 = "\"";
-
-            if (task.Exception != null)
-            {
-                if (task.Exception.InnerException != null || task.Exception.InnerExceptions.Count == 1)
-                {
-                    GetLogger().Error(task.Exception.InnerException ?? task.Exception.InnerExceptions[0], messagePart0, connectionString, messagePart1);
-                }
-                else
-                {
-                    GetLogger().Error((Exception)task.Exception, messagePart0, connectionString, messagePart1);
-                }
-            }
-            else
-            {
-                GetLogger().Error(messagePart0, connectionString, messagePart1);
-            }
-        }, TaskContinuationOptions.OnlyOnFaulted);
+        _ = TryEnsureTablesExistAsync(connectionString, tables);
     }
 
     public Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries);
 
+    public async Task<bool> TryWriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
+    {
+        try
+        {
+            await WriteToDatabaseAsync(connectionString, entries);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            GetLogger().Error(
+                ex.InnerException ?? ex,
+                "Failed to write to the database with connection string \"", connectionString, "\""
+            );
+
+            return false;
+        }
+    }
+
     public void WriteToDatabase(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
     {
-        WriteToDatabaseAsync(connectionString, entries).ContinueWith(task =>
-        {
-            const string messagePart0 = "Failed to write to the database with connection string \"";
-            const string messagePart1 = "\"";
-
-            if (task.Exception != null)
-            {
-                if (task.Exception.InnerException != null || task.Exception.InnerExceptions.Count == 1)
-                {
-                    GetLogger().Error(task.Exception.InnerException ?? task.Exception.InnerExceptions[0], messagePart0, connectionString, messagePart1);
-                }
-                else
-                {
-                    GetLogger().Error((Exception)task.Exception, messagePart0, connectionString, messagePart1);
-                }
-            }
-            else
-            {
-                GetLogger().Error(messagePart0, connectionString, messagePart1);
-            }
-        }, TaskContinuationOptions.OnlyOnFaulted);
+        _ = TryWriteToDatabaseAsync(connectionString, entries);
     }
 }

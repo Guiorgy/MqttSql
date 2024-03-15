@@ -11,6 +11,7 @@ using MqttSql.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -140,12 +141,12 @@ public sealed class Service
     {
         logger.Information("Starting service");
 
-        var MethodsToExecute = new Action[]
+        var MethodsToExecute = new (Action? Synchronous, Func<Task>? Asynchronous)[]
         {
-            LoadConfiguration,
-            RegisterConfigurationFileChangeWatcher,
-            CreateMessageQueues,
-            SubscribeToBrokers
+            (LoadConfiguration, null),
+            (RegisterConfigurationFileChangeWatcher, null),
+            (null, CreateMessageQueues),
+            (SubscribeToBrokers, null)
         };
 
         async Task Reset()
@@ -182,9 +183,11 @@ public sealed class Service
         {
             logger.Information("Initializing service");
 
-            foreach (var method in MethodsToExecute)
+            foreach (var (synchronous, asynchronous) in MethodsToExecute)
             {
-                method();
+                if (synchronous != null) synchronous();
+                else if (asynchronous != null) await asynchronous();
+                else throw new UnreachableException($"Either the synchronous or asynchronous delegate must not be null in {nameof(MethodsToExecute)}");
 
                 if (ServiceCancelled) return;
 
@@ -294,11 +297,17 @@ public sealed class Service
         configurationFileChangeTokenSource!.Cancel(false);
     }
 
-    private void CreateMessageQueues()
+    private async Task CreateMessageQueues()
     {
         var databases = brokers!.SelectMany(broker => broker.Clients.SelectMany(client => client.Subscriptions.SelectMany(sub => sub.Databases)));
 
-        messageHandler = new(databases, logger, ServiceCancellationOrConfigurationFileChangeToken);
+        messageHandler = await Initialize(databases, logger, ServiceCancellationOrConfigurationFileChangeToken);
+
+        if (messageHandler == null && !ServiceCancelledOrConfigurationFileChanged) {
+            logger.Critical($"Failed to initialize the {nameof(DatabaseMessageHandler)}");
+
+            CalncelService();
+        }
     }
 
     private void SubscribeToBrokers()
