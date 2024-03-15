@@ -59,18 +59,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Extractor\**" />
-    <Compile Remove="Installer\**" />
     <Compile Remove="LoggerExtensionsGeneratorAttributes\**" />
     <Compile Remove="LoggerExtensionsGenerator\**" />
     <Compile Remove="Tests\**" />
-    <EmbeddedResource Remove="Extractor\**" />
-    <EmbeddedResource Remove="Installer\**" />
     <EmbeddedResource Remove="LoggerExtensionsGeneratorAttributes\**" />
     <EmbeddedResource Remove="src\Logging\**" />
     <EmbeddedResource Remove="Tests\**" />
-    <None Remove="Extractor\**" />
-    <None Remove="Installer\**" />
     <None Remove="LoggerExtensionsGeneratorAttributes\**" />
     <None Remove="LoggerExtensionsGenerator\**" />
     <None Remove="Tests\**" />
