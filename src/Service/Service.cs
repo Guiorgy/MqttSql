@@ -311,7 +311,7 @@ public sealed class Service
 
                     mqttClient.UseDisconnectedHandler(async e =>
                     {
-                        if (e.Reason == MqttClientDisconnectReason.NormalDisconnection)
+                        if (ServiceCancelledOrConfigurationFileChanged)
                         {
                             logger.Information('"', clientId, "\" client disconnected from \"", broker.Host, ':', broker.Port, "\" host");
                             return;
