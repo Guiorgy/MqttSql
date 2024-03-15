@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace MqttSql;
 
@@ -137,20 +138,54 @@ public static class Extensions
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-            yield return reader.Flush().ToList();
+            yield return Flush(reader).ToList();
+
+        static IEnumerable<T> Flush(ChannelReader<T> reader)
+        {
+            while (reader.TryRead(out T? item))
+                yield return item;
+        }
     }
 
     /// <summary>
-    /// Read all elements inside a <see cref="ChannelReader{T}"/>.
+    /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
     /// </summary>
     /// <typeparam name="T">The type of the channel.</typeparam>
     /// <param name="reader">The channel to be read.</param>
-    /// <returns>An <see cref="IEnumerable{T}"/> with elements from the channel.</returns>
-    /// <remarks><seealso href="https://stackoverflow.com/a/70698445/11427841">Source at StackOverflow</seealso></remarks>
-    public static IEnumerable<T> Flush<T>(this ChannelReader<T> reader)
+    /// <param name="collectionTime">The time to wait for additional elements before the batch is returned.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
+    /// <returns>The <see cref="IAsyncEnumerable{List{T}}"/> that can be awaited.</returns>
+    public static async IAsyncEnumerable<List<T>> ReadBatchesAsync<T>(
+        this ChannelReader<T> reader,
+        TimeSpan collectionTime,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        while (reader.TryRead(out T? item))
-            yield return item;
+        while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+            yield return await ToListAsync(Flush(reader, collectionTime, cancellationToken), cancellationToken);
+
+        static async IAsyncEnumerable<T> Flush(ChannelReader<T> reader, TimeSpan maxWaitTime, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                while (reader.TryRead(out T? item))
+                    yield return item;
+
+                await Task.Delay(maxWaitTime, cancellationToken).ConfigureAwait(false);
+
+                if (reader.TryRead(out T? _item))
+                    yield return _item;
+                else
+                    break;
+            }
+        }
+
+        static async ValueTask<List<T>> ToListAsync(IAsyncEnumerable<T> source, CancellationToken cancellationToken)
+        {
+            var list = new List<T>();
+            await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
+                list.Add(item);
+            return list;
+        }
     }
 
     private static readonly DateTime SampleDateTime = new(2022, 04, 26, 16, 10, 30, 500, DateTimeKind.Utc);
