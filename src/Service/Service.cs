@@ -8,6 +8,7 @@ using MQTTnet.Protocol;
 using MqttSql.Configuration;
 using MqttSql.Database;
 using MqttSql.Logging;
+using MqttSql.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -141,12 +142,12 @@ public sealed class Service
     {
         logger.Information("Starting service");
 
-        var MethodsToExecute = new (Action? Synchronous, Func<Task>? Asynchronous)[]
+        var MethodsToExecute = new Union<Action, Func<Task>>[]
         {
-            (LoadConfiguration, null),
-            (RegisterConfigurationFileChangeWatcher, null),
-            (null, CreateMessageQueues),
-            (SubscribeToBrokers, null)
+            new(LoadConfiguration),
+            new(RegisterConfigurationFileChangeWatcher),
+            new(CreateMessageQueues),
+            new(SubscribeToBrokers)
         };
 
         async Task Reset()
@@ -183,11 +184,10 @@ public sealed class Service
         {
             logger.Information("Initializing service");
 
-            foreach (var (synchronous, asynchronous) in MethodsToExecute)
+            foreach (var method in MethodsToExecute.Select(union => union.Value))
             {
-                if (synchronous != null) synchronous();
-                else if (asynchronous != null) await asynchronous();
-                else throw new UnreachableException($"Either the synchronous or asynchronous delegate must not be null in {nameof(MethodsToExecute)}");
+                if (method is Func<Task> awaitable) await awaitable();
+                else ((Action)method)();
 
                 if (ServiceCancelled) return;
 
