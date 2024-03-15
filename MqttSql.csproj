@@ -11,7 +11,7 @@
     <Copyright>Ecopre</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <ApplicationIcon>mqttsql.ico</ApplicationIcon>
-    <Configurations>Debug;Release;Linux Release</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <Version>2.0.0</Version>
     <PackageProjectUrl>https://github.com/Guiorgy/MqttSql</PackageProjectUrl>
     <PackageIcon>mqttsql.ico</PackageIcon>
@@ -39,23 +39,9 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Linux Release|x64'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <DefineConstants>TRACE;LINUX</DefineConstants>
-    <Optimize>True</Optimize>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Linux Release|AnyCPU'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <DefineConstants>TRACE;LINUX</DefineConstants>
-    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
