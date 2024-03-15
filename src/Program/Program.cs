@@ -47,7 +47,7 @@ public static class Program
         // Handle SIGTERM
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
-            if (!serviceStopped)
+            if (!serviceStopped && service.State != Service.ServiceState.Exited)
             {
                 Console.WriteLine("Received SIGTERM");
                 service.Stop();

@@ -35,6 +35,18 @@ public sealed class Service
     private const int mqttClientReconnectionBackoffMaxRetries = 0;
     private static readonly TimeSpan mqttSameBrokerDifferentClientConnectionDelay = TimeSpan.FromSeconds(1);
 
+    public enum ServiceState
+    {
+        Created,
+        Starting,
+        Running,
+        Restarting,
+        Stopping,
+        Exited
+    }
+
+    public ServiceState State { get; private set; }
+
     public Service(string? homeDirectory = null)
     {
         string? macAddress = NetworkInterface
@@ -73,6 +85,8 @@ public sealed class Service
         logger.Debug("Home: \"", this.homeDirectory, '"');
         logger.Debug("Logs: \"", logFilePath, '"');
         logger.Debug("Configuration: \"", configurationFilePath, '"');
+
+        State = ServiceState.Created;
     }
 
     public void Start()
@@ -82,15 +96,21 @@ public sealed class Service
 
     public async Task StartAsync()
     {
+        State = ServiceState.Starting;
+
         try
         {
             await _StartAsync();
+
+            State = ServiceState.Stopping;
 
             if (ServiceCancelled) logger.Information("Service cancelled");
             else logger.Warning("Service exited");
         }
         catch (Exception ex)
         {
+            State = ServiceState.Stopping;
+
             if (ex is OperationCanceledException)
             {
                 logger.Information("Service cancelled");
@@ -101,6 +121,8 @@ public sealed class Service
                 await logger.FlushAsync(TimeSpan.FromMinutes(1), ServiceCancellationToken);
 
                 serviceStopped = true;
+                State = ServiceState.Exited;
+
                 return;
             }
         }
@@ -109,6 +131,8 @@ public sealed class Service
 
         serviceStopped = true;
         serviceCancellationTokenSource.Dispose();
+
+        State = ServiceState.Exited;
     }
 
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Private method with the same name")]
@@ -126,6 +150,8 @@ public sealed class Service
 
         async Task Reset()
         {
+            State = ServiceState.Restarting;
+
             brokers = null;
             configurationFileChangeTokenSource?.Dispose();
             configurationFileChangeTokenSource = null;
@@ -169,6 +195,7 @@ public sealed class Service
                 }
             }
 
+            State = ServiceState.Running;
             await messageHandler!.HandleMessagesAsync();
 
             if (ServiceCancelled) return;
@@ -184,6 +211,8 @@ public sealed class Service
 
     public async Task StopAsync()
     {
+        State = ServiceState.Stopping;
+
         CalncelService();
 
         messageHandler?.Dispose();
@@ -192,6 +221,8 @@ public sealed class Service
 
         var delay = TimeSpan.FromMilliseconds(100);
         while (!serviceStopped) await Task.Delay(delay);
+
+        State = ServiceState.Exited;
     }
 
     private void LoadConfiguration()
