@@ -14,6 +14,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Attributes\**" />
+    <EmbeddedResource Remove="Attributes\**" />
+    <None Remove="Attributes\**" />
+  </ItemGroup>
+
 <!-- 
   <ItemGroup>
     <ProjectReference Include="..\LoggerExtensionsGeneratorAttributes\LoggerExtensionsGeneratorAttributes.csproj" />

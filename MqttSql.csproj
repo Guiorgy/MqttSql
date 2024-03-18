@@ -34,14 +34,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LoggerExtensionsGeneratorAttributes\**" />
-    <Compile Remove="LoggerExtensionsGenerator\**" />
+    <Compile Remove="SourceGenerators\**" />
     <Compile Remove="Tests\**" />
-    <EmbeddedResource Remove="LoggerExtensionsGeneratorAttributes\**" />
     <EmbeddedResource Remove="src\Logging\**" />
     <EmbeddedResource Remove="Tests\**" />
-    <None Remove="LoggerExtensionsGeneratorAttributes\**" />
-    <None Remove="LoggerExtensionsGenerator\**" />
+    <None Remove="SourceGenerators\**" />
     <None Remove="Tests\**" />
     <None Include="LICENSE">
       <Pack>True</Pack>
@@ -63,8 +60,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="LoggerExtensionsGeneratorAttributes\LoggerExtensionsGeneratorAttributes.csproj" />
-    <ProjectReference Include="LoggerExtensionsGenerator\LoggerExtensionsGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="SourceGenerators\Attributes\SourceGeneratorAttributes.csproj" />
+    <ProjectReference Include="SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
