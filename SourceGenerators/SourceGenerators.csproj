@@ -15,29 +15,4 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="Attributes\**" />
-    <EmbeddedResource Remove="Attributes\**" />
-    <None Remove="Attributes\**" />
-  </ItemGroup>
-
-<!-- 
-  <ItemGroup>
-    <ProjectReference Include="..\LoggerExtensionsGeneratorAttributes\LoggerExtensionsGeneratorAttributes.csproj" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-  </PropertyGroup>
-
-  <Target Name="GetDependencyTargetPaths">
-    <ItemGroup>
-      <TargetPathWithTargetPlatformMoniker Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\$(OutputPath)\*.dll" IncludeRuntimeDependency="false" />
-
-      <TargetPathWithTargetPlatformMoniker Condition="'$(Configuration)' == 'Debug'" Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\bin\Debug\netstandard2.0\LoggerExtensionsGeneratorAttributes.dll" IncludeRuntimeDependency="false" />
-      <TargetPathWithTargetPlatformMoniker Condition="'$(Configuration)' == 'Release'" Include="$(ProjectDir)..\LoggerExtensionsGeneratorAttributes\bin\Release\netstandard2.0\LoggerExtensionsGeneratorAttributes.dll" IncludeRuntimeDependency="false" />
-    </ItemGroup>
-  </Target>
--->
-
 </Project>

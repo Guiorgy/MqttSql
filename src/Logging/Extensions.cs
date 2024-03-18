@@ -8,13 +8,15 @@ using static MqttSql.Logging.Logger;
 namespace MqttSql.Logging;
 
 [LoggerExtensions(
-    genericOverrideCount: 12,
-    nameof(LogLevel.Trace),
-    nameof(LogLevel.Debug),
-    nameof(LogLevel.Information),
-    nameof(LogLevel.Warning),
-    nameof(LogLevel.Error),
-    nameof(LogLevel.Critical)
+    GenericOverrideCount = 12,
+    LogLevels = [
+        nameof(LogLevel.Trace),
+        nameof(LogLevel.Debug),
+        nameof(LogLevel.Information),
+        nameof(LogLevel.Warning),
+        nameof(LogLevel.Error),
+        nameof(LogLevel.Critical)
+    ]
 )]
 public static partial class Extensions
 {
