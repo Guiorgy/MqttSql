@@ -3,7 +3,7 @@
 using System.Runtime.Serialization;
 #endif
 
-namespace LoggerExtensionsGenerator;
+namespace SourceGenerators;
 
 #if !NET8_0_OR_GREATER
 [Serializable]

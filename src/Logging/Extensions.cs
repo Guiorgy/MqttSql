@@ -1,4 +1,4 @@
-﻿using LoggerExtensionsGenerator;
+﻿using SourceGenerators;
 using System;
 using System.IO;
 using System.Threading;

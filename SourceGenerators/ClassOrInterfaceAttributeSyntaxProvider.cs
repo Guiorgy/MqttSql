@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
-namespace LoggerExtensionsGenerator;
+namespace SourceGenerators;
 
 internal sealed class ClassOrInterfaceAttributeSyntaxProvider
 {

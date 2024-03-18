@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using System;
 
-namespace LoggerExtensionsGenerator;
+namespace SourceGenerators;
 
 public static class SourceGeneratorExtensions
 {

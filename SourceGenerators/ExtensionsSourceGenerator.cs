@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace LoggerExtensionsGenerator;
+namespace SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class ExtensionsSourceGenerator : IIncrementalGenerator

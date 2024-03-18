@@ -1,4 +1,4 @@
-﻿namespace LoggerExtensionsGenerator;
+﻿namespace SourceGenerators;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
 public sealed class LoggerExtensionsAttribute : Attribute
