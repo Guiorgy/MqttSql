@@ -11,7 +11,7 @@ using System.Text;
 namespace SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
-internal sealed partial class ExtensionsSourceGenerator : IIncrementalGenerator
+internal sealed partial class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 {
     private const bool Debug = false;
     private const string Tab = "    ";
@@ -140,12 +140,12 @@ internal sealed partial class ExtensionsSourceGenerator : IIncrementalGenerator
 
     private static (int GenericOverrideCount, string[] LogLevels) GetAttributeArguments(SemanticModel semanticModel, AttributeSyntax attribute)
     {
-        if (attribute.ArgumentList!.Arguments.Count < 2) throw new ExtensionsSourceGeneratorException("Missing arguments");
+        if (attribute.ArgumentList!.Arguments.Count < 2) throw new LoggerExtensionsSourceGeneratorException("Missing arguments");
 
         var genericOverrideCountArgument = attribute.ArgumentList!.Arguments[0];
         var genericOverrideCountExpression = genericOverrideCountArgument.Expression;
         var genericOverrideCountOptional = semanticModel.GetConstantValue(genericOverrideCountExpression);
-        if (!genericOverrideCountOptional.HasValue || genericOverrideCountOptional.Value == null) throw new ExtensionsSourceGeneratorException("Failed to parse 'genericOverrideCount' argument");
+        if (!genericOverrideCountOptional.HasValue || genericOverrideCountOptional.Value == null) throw new LoggerExtensionsSourceGeneratorException("Failed to parse 'genericOverrideCount' argument");
         var genericOverrideCount = (int)genericOverrideCountOptional.Value;
 
         var logLevels = new List<string>(attribute.ArgumentList.Arguments.Count - 1);
@@ -155,7 +155,7 @@ internal sealed partial class ExtensionsSourceGenerator : IIncrementalGenerator
             var logLevelsArgument = attribute.ArgumentList!.Arguments[1 + i];
             var logLevelsExpression = logLevelsArgument.Expression;
             var logLevelsOptional = semanticModel.GetConstantValue(logLevelsExpression);
-            if (!logLevelsOptional.HasValue || logLevelsOptional.Value == null) throw new ExtensionsSourceGeneratorException("Failed to parse 'logLevels' argument");
+            if (!logLevelsOptional.HasValue || logLevelsOptional.Value == null) throw new LoggerExtensionsSourceGeneratorException("Failed to parse 'logLevels' argument");
             var logLevel = logLevelsOptional.Value.ToString();
 
             logLevels.Add(logLevel);

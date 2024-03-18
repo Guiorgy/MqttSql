@@ -53,14 +53,14 @@ internal sealed class ClassOrInterfaceAttributeSyntaxProvider
         (var @class, var @interface) = attribute.FirstAncestorOrNulls<ClassDeclarationSyntax, InterfaceDeclarationSyntax>();
         if (@class == null && @interface == null)
         {
-            if (ThrowException) throw new ExtensionsSourceGeneratorException("Couldn't get the class/interface marked with the attribute");
+            if (ThrowException) throw new LoggerExtensionsSourceGeneratorException("Couldn't get the class/interface marked with the attribute");
             else return null;
         }
 
         (var @namespace, var fileScopedNamespace) = (@class ?? (SyntaxNode)@interface!).FirstAncestorOrNulls<NamespaceDeclarationSyntax, FileScopedNamespaceDeclarationSyntax>();
         if (@namespace == null && fileScopedNamespace == null)
         {
-            if (ThrowException) throw new ExtensionsSourceGeneratorException("Couldn't get the namespace enclosing the marked class/interface");
+            if (ThrowException) throw new LoggerExtensionsSourceGeneratorException("Couldn't get the namespace enclosing the marked class/interface");
             else return null;
         }
 
