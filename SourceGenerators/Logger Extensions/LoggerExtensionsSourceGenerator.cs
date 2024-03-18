@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-#if DEBUG
+#if LOGGEREXTENSIONSGENERATORDEBUG
 using System.Diagnostics;
 #endif
 using System.Linq;
@@ -13,7 +13,6 @@ namespace SourceGenerators;
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 {
-    private const bool Debug = false;
     private const string Tab = "    ";
     private static readonly int AppendLineLength = new StringBuilder().AppendLine().Length;
 
@@ -71,8 +70,8 @@ internal sealed partial class LoggerExtensionsSourceGenerator : IIncrementalGene
 
     private static void Execute(SourceProductionContext context, Compilation compilation, ImmutableArray<ClassOrInterfaceAttributeSyntaxProvider.Capture?> captures)
     {
-#if DEBUG
-        if (Debug && !Debugger.IsAttached) Debugger.Launch();
+#if LOGGEREXTENSIONSGENERATORDEBUG
+        if (!Debugger.IsAttached) Debugger.Launch();
 #endif
 
         if (captures.IsDefaultOrEmpty) return;
