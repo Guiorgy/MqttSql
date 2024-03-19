@@ -80,7 +80,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         {0}}}
         """;
 
-    private static void GenerateSource(SourceProductionContext context, ImmutableArray<TypeDeclarationTreeOrError?> captures)
+    private static void GenerateSource(SourceProductionContext context, ImmutableArray<TypeDeclarationTreeAndAttributeDeclarationOrError?> captures)
     {
 #if LOGGEREXTENSIONSGENERATORDEBUG
         if (!Debugger.IsAttached) Debugger.Launch();
@@ -88,9 +88,9 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
         if (captures.IsDefaultOrEmpty) return;
 
-        foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTree))
+        foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTreeAndAttributeDeclaration))
         {
-            (var genericOverrideCount, var logLevels) = GetAttributeArguments(capture.TypeDeclarationAncestry[0].AttributeDeclaration!);
+            (var genericOverrideCount, var logLevels) = GetAttributeArguments(capture.AttributeDeclaration!);
 
             var avgLogLevelLength = logLevels.Average(logLevel => logLevel.Length).Ceiling();
             var methodSources = new StringBuilder((
@@ -140,9 +140,9 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
             methodSources.Length -= AppendLineLength; // undo last .AppendLine()
 
-            var source = string.Format(ClassFormat, capture.Namespace, capture.TypeDeclarationAncestry[0].Modifiers, capture.TypeDeclarationAncestry[0].Keyword, capture.TypeDeclarationAncestry[0].Name, methodSources.ToString());
+            var source = string.Format(ClassFormat, capture.TypeDeclarationTree.Namespace, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Modifiers, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Keyword, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Name, methodSources.ToString());
 
-            context.AddSource($"{capture.TypeDeclarationAncestry[0].Name}.generated.cs", source);
+            context.AddSource($"{capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Name}.generated.cs", source);
         }
     }
 
@@ -175,17 +175,14 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
     public static bool Predicate(SyntaxNode syntaxNode, CancellationToken _) => syntaxNode is TypeDeclarationSyntax;
 
-    public static TypeDeclarationTreeOrError? Transform(GeneratorAttributeSyntaxContext context, CancellationToken _)
+    public static TypeDeclarationTreeAndAttributeDeclarationOrError? Transform(GeneratorAttributeSyntaxContext context, CancellationToken _)
     {
         var typeDeclarationSyntax = (TypeDeclarationSyntax)context.TargetNode;
 
         string @namespace = typeDeclarationSyntax.GetNamespace();
         if (string.IsNullOrEmpty(@namespace)) return new DiagnosticMessage(typeDeclarationSyntax.GetLocation(), "Couldn't get the namespace enclosing the marked class/interface");
 
-        TypeDeclarationTree typeDeclarationTree = new(@namespace, typeDeclarationSyntax);
-        typeDeclarationTree.TypeDeclarationAncestry[0] = typeDeclarationTree.TypeDeclarationAncestry[0].WithAttributeDeclaration(new(context.GetAttributeData(AttributeSource.AttributeName)!));
-
-        return typeDeclarationTree;
+        return new TypeDeclarationTreeAndAttributeDeclaration(new(@namespace, typeDeclarationSyntax), new(context.GetAttributeData(AttributeSource.AttributeName)!));
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -195,12 +192,12 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         var captures = context.SyntaxProvider
             .ForAttributeWithMetadataName(AttributeSource.AttributeFullName, Predicate, Transform)
             .Where(static capture => capture is not null)
-            .WithComparer(TypeDeclarationTreeOrError.EqualityComparer);
+            .WithComparer(TypeDeclarationTreeAndAttributeDeclarationOrError.EqualityComparer);
 
         var failedCaptures = captures.Where(static capture => capture!.IsError);
         context.RegisterImplementationSourceOutput(failedCaptures, static (context, capture) => capture!.DiagnosticMessage.ReportDiagnostic(context));
 
-        var successfulCaptures = captures.Where(static capture => capture!.IsTypeDeclarationTree).Collect();
+        var successfulCaptures = captures.Where(static capture => capture!.IsTypeDeclarationTreeAndAttributeDeclaration).Collect();
         context.RegisterSourceOutput(successfulCaptures, static (context, captures) => GenerateSource(context, captures));
     }
 }
