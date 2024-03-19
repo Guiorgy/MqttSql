@@ -93,6 +93,12 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
         foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTreeAndAttributeData))
         {
+#if LOGGEREXTENSIONSGENERATORDEBUG
+            // TODO: Support nested declarations
+            Debug.Assert(capture.TypeDeclarationTree.TypeDeclarationAncestry.Length == 1);
+#endif
+
+            var typeDeclaration = capture.TypeDeclarationTree.TypeDeclarationAncestry[0];
             (var genericOverrideCount, var logLevels) = capture.AttributeData;
 
             var avgLogLevelLength = logLevels.Average(logLevel => logLevel.Length).Ceiling();
@@ -143,9 +149,9 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
             methodSources.Length -= AppendLineLength; // undo last .AppendLine()
 
-            var source = string.Format(ClassFormat, capture.TypeDeclarationTree.Namespace, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Modifiers, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Keyword, capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Name, methodSources.ToString());
+            var source = string.Format(ClassFormat, capture.TypeDeclarationTree.Namespace, typeDeclaration.Modifiers, typeDeclaration.Keyword, typeDeclaration.Name, methodSources.ToString());
 
-            context.AddSource($"{capture.TypeDeclarationTree.TypeDeclarationAncestry[0].Name}.generated.cs", source);
+            context.AddSource($"{typeDeclaration.Name}.generated.cs", source);
         }
     }
 
@@ -180,6 +186,14 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         }
 
         TypeDeclarationTree declarationTree = new(@namespace, typeDeclarationSyntax);
+
+        if (declarationTree.TypeDeclarationAncestry.Length != 1)
+        {
+#if LOGGEREXTENSIONSGENERATORDEBUG
+            // TODO: Support nested declarations
+#endif
+            return new DiagnosticMessage(typeDeclarationSyntax.Parent!.GetLocation(), "Nested declarations not currently supported");
+        }
 
         for (int i = 0; i < declarationTree.TypeDeclarationAncestry.Length; i++)
         {
