@@ -179,7 +179,24 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
             }
         }
 
-        return new Capture(new(@namespace, typeDeclarationSyntax), (genericOvverrideCount, logLevels));
+        TypeDeclarationTree declarationTree = new(@namespace, typeDeclarationSyntax);
+
+        for (int i = 0; i < declarationTree.TypeDeclarationAncestry.Length; i++)
+        {
+            if (!declarationTree.TypeDeclarationAncestry[i].Modifiers.Contains("partial"))
+            {
+                SyntaxNode parent = typeDeclarationSyntax;
+                while (i-- != 0) parent = parent.Parent!;
+
+                var location = parent is TypeDeclarationSyntax declarationWithoutPartial
+                    ? declarationWithoutPartial.Identifier.GetLocation()
+                    : typeDeclarationSyntax.Identifier.GetLocation();
+
+                return new DiagnosticMessage(location, "Type must be declared as \"partial\"");
+            }
+        }
+
+        return new Capture(declarationTree, (genericOvverrideCount, logLevels));
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
