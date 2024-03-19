@@ -4,48 +4,48 @@ using System.Diagnostics;
 
 namespace SourceGenerators;
 
-internal sealed class TypeDeclarationTreeAndAttributeDeclarationOrError : IEquatable<TypeDeclarationTreeAndAttributeDeclarationOrError>
+internal sealed class TypeDeclarationTreeAndAttributeDataOrError<T> : IEquatable<TypeDeclarationTreeAndAttributeDataOrError<T>> where T : notnull
 {
-    private readonly TypeDeclarationTreeAndAttributeDeclaration? typeDeclarationTreeAndAttributeDeclaration;
+    private readonly TypeDeclarationTreeAndAttributeData<T>? typeDeclarationTreeAndAttributeData;
     private readonly DiagnosticMessage? diagnosticMessage;
 
-    public TypeDeclarationTreeAndAttributeDeclarationOrError(TypeDeclarationTreeAndAttributeDeclaration? typeDeclarationTreeAndAttributeDeclaration, DiagnosticMessage? diagnosticMessage)
+    public TypeDeclarationTreeAndAttributeDataOrError(TypeDeclarationTreeAndAttributeData<T>? typeDeclarationTreeAndAttributeData, DiagnosticMessage? diagnosticMessage)
     {
-        Debug.Assert(typeDeclarationTreeAndAttributeDeclaration != null || diagnosticMessage != null, "Either TypeDeclarationTreeAndAttributeDeclaration or DiagnosticMessage must not be null");
-        Debug.Assert(typeDeclarationTreeAndAttributeDeclaration == null || diagnosticMessage == null, "Either TypeDeclarationTreeAndAttributeDeclaration or DiagnosticMessage must be null");
+        Debug.Assert(typeDeclarationTreeAndAttributeData != null || diagnosticMessage != null, "Either TypeDeclarationTreeAndAttributeData or DiagnosticMessage must not be null");
+        Debug.Assert(typeDeclarationTreeAndAttributeData == null || diagnosticMessage == null, "Either TypeDeclarationTreeAndAttributeData or DiagnosticMessage must be null");
 
-        this.typeDeclarationTreeAndAttributeDeclaration = typeDeclarationTreeAndAttributeDeclaration;
+        this.typeDeclarationTreeAndAttributeData = typeDeclarationTreeAndAttributeData;
         this.diagnosticMessage = diagnosticMessage;
     }
 
-    public TypeDeclarationTreeAndAttributeDeclarationOrError(TypeDeclarationTreeAndAttributeDeclaration typeDeclarationTreeAndAttributeDeclaration) : this(typeDeclarationTreeAndAttributeDeclaration, null)
+    public TypeDeclarationTreeAndAttributeDataOrError(TypeDeclarationTreeAndAttributeData<T> typeDeclarationTreeAndAttributeData) : this(typeDeclarationTreeAndAttributeData, null)
     {
     }
 
-    public TypeDeclarationTreeAndAttributeDeclarationOrError(DiagnosticMessage diagnosticMessage) : this(null, diagnosticMessage)
+    public TypeDeclarationTreeAndAttributeDataOrError(DiagnosticMessage diagnosticMessage) : this(null, diagnosticMessage)
     {
     }
 
-    public bool IsTypeDeclarationTreeAndAttributeDeclaration => typeDeclarationTreeAndAttributeDeclaration != null;
+    public bool IsTypeDeclarationTreeAndAttributeData => typeDeclarationTreeAndAttributeData != null;
     public bool IsError => diagnosticMessage != null;
 
-    private static InvalidCastException InvalidCastException => new($"Attempted to dereference the wrong type from {nameof(TypeDeclarationTreeAndAttributeDeclarationOrError)}");
+    private static InvalidCastException InvalidCastException => new($"Attempted to dereference the wrong type from {nameof(TypeDeclarationTreeAndAttributeDataOrError<T>)}");
 
-    public TypeDeclarationTreeAndAttributeDeclaration TypeDeclarationTreeAndAttributeDeclaration => IsTypeDeclarationTreeAndAttributeDeclaration ? typeDeclarationTreeAndAttributeDeclaration! : throw InvalidCastException;
+    public TypeDeclarationTreeAndAttributeData<T> TypeDeclarationTreeAndAttributeData => IsTypeDeclarationTreeAndAttributeData ? typeDeclarationTreeAndAttributeData! : throw InvalidCastException;
     public DiagnosticMessage DiagnosticMessage => IsError ? diagnosticMessage! : throw InvalidCastException;
 
-    public object Value => (IsTypeDeclarationTreeAndAttributeDeclaration ? typeDeclarationTreeAndAttributeDeclaration : diagnosticMessage)!;
+    public object Value => (IsTypeDeclarationTreeAndAttributeData ? typeDeclarationTreeAndAttributeData : diagnosticMessage)!;
 
-    public static implicit operator TypeDeclarationTreeAndAttributeDeclarationOrError(TypeDeclarationTreeAndAttributeDeclaration typeDeclarationTreeAndAttributeDeclaration) => new(typeDeclarationTreeAndAttributeDeclaration);
-    public static implicit operator TypeDeclarationTreeAndAttributeDeclarationOrError(DiagnosticMessage diagnosticMessage) => new(diagnosticMessage);
+    public static implicit operator TypeDeclarationTreeAndAttributeDataOrError<T>(TypeDeclarationTreeAndAttributeData<T> typeDeclarationTreeAndAttributeData) => new(typeDeclarationTreeAndAttributeData);
+    public static implicit operator TypeDeclarationTreeAndAttributeDataOrError<T>(DiagnosticMessage diagnosticMessage) => new(diagnosticMessage);
 
-    public static implicit operator TypeDeclarationTreeAndAttributeDeclaration(TypeDeclarationTreeAndAttributeDeclarationOrError typeDeclarationTreeAndAttributeDeclarationOrError) => typeDeclarationTreeAndAttributeDeclarationOrError.TypeDeclarationTreeAndAttributeDeclaration;
-    public static implicit operator DiagnosticMessage(TypeDeclarationTreeAndAttributeDeclarationOrError typeDeclarationTreeAndAttributeDeclarationOrError) => typeDeclarationTreeAndAttributeDeclarationOrError.DiagnosticMessage;
+    public static implicit operator TypeDeclarationTreeAndAttributeData<T>(TypeDeclarationTreeAndAttributeDataOrError<T> typeDeclarationTreeAndAttributeDataOrError) => typeDeclarationTreeAndAttributeDataOrError.TypeDeclarationTreeAndAttributeData;
+    public static implicit operator DiagnosticMessage(TypeDeclarationTreeAndAttributeDataOrError<T> typeDeclarationTreeAndAttributeDataOrError) => typeDeclarationTreeAndAttributeDataOrError.DiagnosticMessage;
 
-    public bool TryGetTypeDeclarationTree(out TypeDeclarationTreeAndAttributeDeclaration? typeDeclarationTreeAndAttributeDeclaration)
+    public bool TryGetTypeDeclarationTree(out TypeDeclarationTreeAndAttributeData<T>? typeDeclarationTreeAndAttributeData)
     {
-        typeDeclarationTreeAndAttributeDeclaration = this.typeDeclarationTreeAndAttributeDeclaration;
-        return IsTypeDeclarationTreeAndAttributeDeclaration;
+        typeDeclarationTreeAndAttributeData = this.typeDeclarationTreeAndAttributeData;
+        return IsTypeDeclarationTreeAndAttributeData;
     }
     public bool TryGetDiagnosticMessage(out DiagnosticMessage? diagnosticMessage)
     {
@@ -53,11 +53,11 @@ internal sealed class TypeDeclarationTreeAndAttributeDeclarationOrError : IEquat
         return IsError;
     }
 
-    public bool Equals(TypeDeclarationTreeAndAttributeDeclarationOrError other) =>
-        (IsTypeDeclarationTreeAndAttributeDeclaration && other.IsTypeDeclarationTreeAndAttributeDeclaration && typeDeclarationTreeAndAttributeDeclaration!.Equals(other.typeDeclarationTreeAndAttributeDeclaration!))
+    public bool Equals(TypeDeclarationTreeAndAttributeDataOrError<T> other) =>
+        (IsTypeDeclarationTreeAndAttributeData && other.IsTypeDeclarationTreeAndAttributeData && typeDeclarationTreeAndAttributeData!.Equals(other.typeDeclarationTreeAndAttributeData!))
         || (IsError && other.IsError && diagnosticMessage!.Equals(other.diagnosticMessage!));
 
-    public override bool Equals(object? obj) => obj is TypeDeclarationTreeAndAttributeDeclarationOrError other && Equals(other);
+    public override bool Equals(object? obj) => obj is TypeDeclarationTreeAndAttributeDataOrError<T> other && Equals(other);
 
     public override int GetHashCode()
     {
@@ -65,20 +65,20 @@ internal sealed class TypeDeclarationTreeAndAttributeDeclarationOrError : IEquat
         {
             const int multiplier = -1521134295;
             int hashCode = -1648227012;
-            hashCode = (hashCode * multiplier) + typeDeclarationTreeAndAttributeDeclaration?.GetHashCode() ?? 0;
+            hashCode = (hashCode * multiplier) + typeDeclarationTreeAndAttributeData?.GetHashCode() ?? 0;
             hashCode = (hashCode * multiplier) + diagnosticMessage?.GetHashCode() ?? 0;
             return hashCode;
         }
     }
 
-    public sealed class Comparer : IEqualityComparer<TypeDeclarationTreeAndAttributeDeclarationOrError?>
+    public sealed class Comparer<_T> : IEqualityComparer<TypeDeclarationTreeAndAttributeDataOrError<_T>?> where _T : notnull
     {
-        bool IEqualityComparer<TypeDeclarationTreeAndAttributeDeclarationOrError?>.Equals(TypeDeclarationTreeAndAttributeDeclarationOrError? x, TypeDeclarationTreeAndAttributeDeclarationOrError? y) =>
+        bool IEqualityComparer<TypeDeclarationTreeAndAttributeDataOrError<_T>?>.Equals(TypeDeclarationTreeAndAttributeDataOrError<_T>? x, TypeDeclarationTreeAndAttributeDataOrError<_T>? y) =>
             x != null && y != null && x.Equals(y);
 
-        int IEqualityComparer<TypeDeclarationTreeAndAttributeDeclarationOrError?>.GetHashCode(TypeDeclarationTreeAndAttributeDeclarationOrError? typeDeclarationTreeAndAttributeDeclarationOrError) =>
-            typeDeclarationTreeAndAttributeDeclarationOrError?.GetHashCode() ?? 0;
+        int IEqualityComparer<TypeDeclarationTreeAndAttributeDataOrError<_T>?>.GetHashCode(TypeDeclarationTreeAndAttributeDataOrError<_T>? typeDeclarationTreeAndAttributeDataOrError) =>
+            typeDeclarationTreeAndAttributeDataOrError?.GetHashCode() ?? 0;
     }
 
-    public static readonly Comparer EqualityComparer = new();
+    public static readonly Comparer<T> EqualityComparer = new();
 }

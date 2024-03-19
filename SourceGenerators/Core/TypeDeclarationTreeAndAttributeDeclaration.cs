@@ -3,18 +3,15 @@ using System.Collections.Generic;
 
 namespace SourceGenerators;
 
-internal sealed class TypeDeclarationTreeAndAttributeDeclaration(TypeDeclarationTree typeDeclarationTree, AttributeDeclaration? attributeDeclaration = null) : IEquatable<TypeDeclarationTreeAndAttributeDeclaration>
+internal sealed class TypeDeclarationTreeAndAttributeData<T>(TypeDeclarationTree typeDeclarationTree, T attributeData) : IEquatable<TypeDeclarationTreeAndAttributeData<T>> where T : notnull
 {
     public TypeDeclarationTree TypeDeclarationTree { get; } = typeDeclarationTree;
-    public AttributeDeclaration? AttributeDeclaration { get; } = attributeDeclaration;
+    public T AttributeData { get; } = attributeData;
 
-    private static bool Equal(AttributeDeclaration? x, AttributeDeclaration? y) =>
-        (x == null && y == null) || (x != null && y != null && x.Equals(y));
+    public bool Equals(TypeDeclarationTreeAndAttributeData<T> other) =>
+        TypeDeclarationTree.Equals(other.TypeDeclarationTree) && AttributeData.Equals(other.AttributeData);
 
-    public bool Equals(TypeDeclarationTreeAndAttributeDeclaration other) =>
-        TypeDeclarationTree.Equals(other.TypeDeclarationTree) && Equal(AttributeDeclaration, other.AttributeDeclaration);
-
-    public override bool Equals(object? obj) => obj is TypeDeclarationTreeAndAttributeDeclaration other && Equals(other);
+    public override bool Equals(object? obj) => obj is TypeDeclarationTreeAndAttributeData<T> other && Equals(other);
 
     public override int GetHashCode()
     {
@@ -22,8 +19,8 @@ internal sealed class TypeDeclarationTreeAndAttributeDeclaration(TypeDeclaration
         {
             const int multiplier = -1521134295;
             int hashCode = 914465144;
-            hashCode = (hashCode * multiplier) + EqualityComparer<TypeDeclarationTree>.Default.GetHashCode(TypeDeclarationTree);
-            hashCode = (hashCode * multiplier) + EqualityComparer<AttributeDeclaration?>.Default.GetHashCode(AttributeDeclaration);
+            hashCode = (hashCode * multiplier) + TypeDeclarationTree?.GetHashCode() ?? 0;
+            hashCode = (hashCode * multiplier) + EqualityComparer<T>.Default.GetHashCode(AttributeData);
             return hashCode;
         }
     }

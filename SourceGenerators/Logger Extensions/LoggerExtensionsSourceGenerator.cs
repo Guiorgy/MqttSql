@@ -11,6 +11,9 @@ using System.Threading;
 
 namespace SourceGenerators;
 
+using Capture = TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>;
+using CaptureOrError = TypeDeclarationTreeAndAttributeDataOrError<(int genericOverrideCount, string[] logLevels)>;
+
 [Generator(LanguageNames.CSharp)]
 internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 {
@@ -80,7 +83,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         {0}}}
         """;
 
-    private static void GenerateSource(SourceProductionContext context, ImmutableArray<TypeDeclarationTreeAndAttributeDeclarationOrError?> captures)
+    private static void GenerateSource(SourceProductionContext context, ImmutableArray<CaptureOrError?> captures)
     {
 #if LOGGEREXTENSIONSGENERATORDEBUG
         if (!Debugger.IsAttached) Debugger.Launch();
@@ -88,9 +91,9 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
         if (captures.IsDefaultOrEmpty) return;
 
-        foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTreeAndAttributeDeclaration))
+        foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTreeAndAttributeData))
         {
-            (var genericOverrideCount, var logLevels) = GetAttributeArguments(capture.AttributeDeclaration!);
+            (var genericOverrideCount, var logLevels) = capture.AttributeData;
 
             var avgLogLevelLength = logLevels.Average(logLevel => logLevel.Length).Ceiling();
             var methodSources = new StringBuilder((
@@ -146,43 +149,37 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         }
     }
 
-    private static (int GenericOverrideCount, string[] LogLevels) GetAttributeArguments(AttributeDeclaration attributeDeclaration)
-    {
-        int genericOvverrideCount = 0;
-        string[] logLevels = [];
-
-        foreach ((string parameter, TypedConstant value) in attributeDeclaration.NamedArguments)
-        {
-            switch (parameter)
-            {
-                case "GenericOverrideCount":
-                    genericOvverrideCount = value.Value switch
-                    {
-                        int i => i,
-                        string s => int.Parse(s),
-                        object o => int.Parse(o.ToString()),
-                        _ => 0
-                    };
-                    break;
-                case "LogLevels":
-                    logLevels = value.Values.Select(value => value.Value?.ToString() ?? "").ToArray();
-                    break;
-            }
-        }
-
-        return (genericOvverrideCount, logLevels);
-    }
-
     public static bool Predicate(SyntaxNode syntaxNode, CancellationToken _) => syntaxNode is TypeDeclarationSyntax;
 
-    public static TypeDeclarationTreeAndAttributeDeclarationOrError? Transform(GeneratorAttributeSyntaxContext context, CancellationToken _)
+    public static CaptureOrError? Transform(GeneratorAttributeSyntaxContext context, CancellationToken _)
     {
         var typeDeclarationSyntax = (TypeDeclarationSyntax)context.TargetNode;
 
         string @namespace = typeDeclarationSyntax.GetNamespace();
         if (string.IsNullOrEmpty(@namespace)) return new DiagnosticMessage(typeDeclarationSyntax.GetLocation(), "Couldn't get the namespace enclosing the marked class/interface");
 
-        return new TypeDeclarationTreeAndAttributeDeclaration(new(@namespace, typeDeclarationSyntax), new(context.GetAttributeData(AttributeSource.AttributeName)!));
+        var attributeLocation = typeDeclarationSyntax.GetAttributeSyntax(AttributeSource.AttributeName)!.GetLocation();
+        int genericOvverrideCount = 0;
+        string[] logLevels = [];
+
+        foreach ((string parameter, TypedConstant valueConstant) in context.GetAttributeData(AttributeSource.AttributeName)!.NamedArguments)
+        {
+            switch (parameter)
+            {
+                case "GenericOverrideCount":
+                    if (valueConstant.Value is int value) genericOvverrideCount = value;
+                    else return new DiagnosticMessage(attributeLocation, $"{parameter} must me an int");
+                    break;
+                case "LogLevels":
+                    if (valueConstant.Values.All(vc => vc.Value is string))
+                        logLevels = valueConstant.Values.Select(vc => (string)vc.Value!).ToArray();
+                    else
+                        return new DiagnosticMessage(attributeLocation, $"{parameter} must be a string array");
+                    break;
+            }
+        }
+
+        return new Capture(new(@namespace, typeDeclarationSyntax), (genericOvverrideCount, logLevels));
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -192,12 +189,12 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         var captures = context.SyntaxProvider
             .ForAttributeWithMetadataName(AttributeSource.AttributeFullName, Predicate, Transform)
             .Where(static capture => capture is not null)
-            .WithComparer(TypeDeclarationTreeAndAttributeDeclarationOrError.EqualityComparer);
+            .WithComparer(CaptureOrError.EqualityComparer);
 
         var failedCaptures = captures.Where(static capture => capture!.IsError);
         context.RegisterImplementationSourceOutput(failedCaptures, static (context, capture) => capture!.DiagnosticMessage.ReportDiagnostic(context));
 
-        var successfulCaptures = captures.Where(static capture => capture!.IsTypeDeclarationTreeAndAttributeDeclaration).Collect();
+        var successfulCaptures = captures.Where(static capture => capture!.IsTypeDeclarationTreeAndAttributeData).Collect();
         context.RegisterSourceOutput(successfulCaptures, static (context, captures) => GenerateSource(context, captures));
     }
 }
