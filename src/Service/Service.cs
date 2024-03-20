@@ -105,7 +105,7 @@ public sealed class Service
 
         logger.Debug("Mqtt Client Id: \"", mqttClientIdBase, '"');
         logger.Debug("Home: \"", this.homeDirectory, '"');
-        logger.Debug("Logs: \"", logFilePath, '"');
+        if (logger.LogToFileEnabled) logger.Debug("Logs: \"", logFilePath, '"');
         logger.Debug("Configuration: \"", configurationFilePath, '"');
 
         State = ServiceState.Created;

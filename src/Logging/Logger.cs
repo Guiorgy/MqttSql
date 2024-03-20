@@ -132,6 +132,10 @@ public sealed class Logger
     private const int _defaultLogFileMinSize = 1_000_000;
     private const int _defaultLogFileMaxSize = 100_000_000;
 
+    public bool LogToLinkedLoggerEnabled => _linkedLogger != null;
+    public bool LogToFileEnabled => _logFilePath != null;
+    public bool LogToConsoleEnabled => _logToConsole;
+
     public Logger(LogLevel logLevel, MicrosoftLogger linkedLogger, bool logTimestamp = true)
         : this(null, false, logLevel, 0, 0, 0, logTimestamp, linkedLogger) { }
 
