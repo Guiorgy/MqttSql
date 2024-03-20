@@ -8,10 +8,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+
+using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using MicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
+using Microsoft.Extensions.Logging;
 
 namespace MqttSql.Logging;
 
@@ -27,14 +32,14 @@ public sealed class Logger
         /// Not used for writing log messages. Specifies that a logging category should not
         /// write any messages.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.None"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.None"/></remarks>
         None = 0,
 
         /// <summary>
         /// Logs that describe an unrecoverable application or system crash, or a catastrophic
         /// failure that requires immediate attention.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Critical"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Critical"/></remarks>
         Critical = 1,
 
         /// <summary>
@@ -42,21 +47,21 @@ public sealed class Logger
         /// These should indicate a failure in the current activity, not an application-wide
         /// failure.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Error"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Error"/></remarks>
         Error = 1 << 1,
 
         /// <summary>
         /// Logs that highlight an abnormal or unexpected event in the application flow,
         /// but do not otherwise cause the application execution to stop.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Warning"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Warning"/></remarks>
         Warning = 1 << 2,
 
         /// <summary>
         /// Logs that track the general flow of the application. These logs should have long-term
         /// value.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Information"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Information"/></remarks>
         Information = 1 << 3,
 
         /// <summary>
@@ -64,7 +69,7 @@ public sealed class Logger
         /// should primarily contain information useful for debugging and have no long-term
         /// value.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Debug"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Debug"/></remarks>
         Debug = 1 << 4,
 
         /// <summary>
@@ -72,9 +77,26 @@ public sealed class Logger
         /// application data. These messages are disabled by default and should never be
         /// enabled in a production environment.
         /// </summary>
-        /// <remarks><seealso cref="Microsoft.Extensions.Logging.LogLevel.Trace"/></remarks>
+        /// <remarks><seealso cref="MicrosoftLogLevel.Trace"/></remarks>
         Trace = 1 << 5
     }
+
+    /// <summary>
+    /// Maps a <see cref="LogLevel"/> onto the built-in <see cref="MicrosoftLogLevel"/>.
+    /// </summary>
+    /// <param name="logLevel">The enum to map.</param>
+    /// <returns>The mapped built-in enum.</returns>
+    private static MicrosoftLogLevel ToMicrosoftLogLevel(LogLevel logLevel) => logLevel switch
+    {
+        LogLevel.None => MicrosoftLogLevel.None,
+        LogLevel.Critical => MicrosoftLogLevel.Critical,
+        LogLevel.Error => MicrosoftLogLevel.Error,
+        LogLevel.Warning => MicrosoftLogLevel.Warning,
+        LogLevel.Information => MicrosoftLogLevel.Information,
+        LogLevel.Debug => MicrosoftLogLevel.Debug,
+        LogLevel.Trace => MicrosoftLogLevel.Trace,
+        _ => throw new UnreachableException($"Unhandled LogLevel {logLevel}")
+    };
 
     /// <summary>
     /// Converts a <see cref="LogLevel"/> flag into a bitmask where every lower bit to the one set in the falg is also set.
@@ -92,6 +114,8 @@ public sealed class Logger
         return mask;
     }
 
+    private readonly MicrosoftLogger? _linkedLogger;
+
     private readonly string? _logFilePath;
     private readonly bool _logToConsole;
     private readonly byte _logLevelMask;
@@ -108,6 +132,9 @@ public sealed class Logger
     private const int _defaultLogFileMinSize = 1_000_000;
     private const int _defaultLogFileMaxSize = 100_000_000;
 
+    public Logger(LogLevel logLevel, MicrosoftLogger linkedLogger, bool logTimestamp = true)
+        : this(null, false, logLevel, 0, 0, 0, logTimestamp, linkedLogger) { }
+
     public Logger(
         string? logFilePath,
         bool logToConsole,
@@ -115,8 +142,9 @@ public sealed class Logger
         int flushOnMessageCount = _defaultFlushOnMessageCount,
         int logFileMinSize = _defaultLogFileMinSize,
         int logFileMaxSize = _defaultLogFileMaxSize,
-        bool logTimestamp = true
-    ) : this(logFilePath, logToConsole, (byte)ToBitMask(logLevel), flushOnMessageCount, logFileMinSize, logFileMaxSize, logTimestamp) { }
+        bool logTimestamp = true,
+        MicrosoftLogger? linkedLogger = null
+    ) : this(logFilePath, logToConsole, (byte)ToBitMask(logLevel), flushOnMessageCount, logFileMinSize, logFileMaxSize, logTimestamp, linkedLogger) { }
 
     public Logger(
         string? logFilePath,
@@ -125,7 +153,8 @@ public sealed class Logger
         int flushOnMessageCount = _defaultFlushOnMessageCount,
         int logFileMinSize = _defaultLogFileMinSize,
         int logFileMaxSize = _defaultLogFileMaxSize,
-        bool logTimestamp = true
+        bool logTimestamp = true,
+        MicrosoftLogger? linkedLogger = null
     )
     {
         if (logLevelMask >= (byte)LogLevel.Trace << 1) throw new ArgumentOutOfRangeException(nameof(logLevelMask));
@@ -137,6 +166,8 @@ public sealed class Logger
         _logFileMinSize = Math.Max(_defaultLogFileMinSize, logFileMinSize);
         _logFileMaxSize = Math.Max(logFileMinSize * 2, logFileMaxSize);
         _logTimestamp = logTimestamp;
+
+        _linkedLogger = linkedLogger;
     }
 
     public bool EnabledFor(LogLevel logLevel) => ((byte)logLevel & _logLevelMask) != 0;
@@ -157,6 +188,7 @@ public sealed class Logger
 
         PrintLog(message);
         QueueLog(message);
+        LogToLinkedLogger(logLevel, message);
     }
 
     public void Log(LogLevel logLevel, Exception exception, params object?[]? messageBits)
@@ -166,12 +198,12 @@ public sealed class Logger
         string? message = null;
         if (messageBits != null && messageBits.Length != 0) message = string.Concat(messageBits.Select(obj => obj?.ToString()).Where(str => str != null));
 
-        LogException(exception, message);
+        LogException(logLevel, exception, message);
     }
 
     public void Log(LogLevel logLevel, Exception exception) => Log(logLevel, exception, (object?[]?)null);
 
-    private void LogException(Exception exception, string? message = null, bool skipFlush = false)
+    private void LogException(LogLevel logLevel, Exception exception, string? message = null, bool skipFlush = false)
     {
         if (message != null)
         {
@@ -179,12 +211,15 @@ public sealed class Logger
 
             PrintLog(message);
             QueueLog(message, true);
+            LogToLinkedLogger(logLevel, message);
         }
 
         message = message == null ? PrefixTimestamp(exception.Message) : exception.Message;
         message = exception.StackTrace == null ? message : message + Environment.NewLine + exception.StackTrace;
+
         PrintLog(message, ConsoleColor.Red, ConsoleColor.Yellow);
         QueueLog(message, skipFlush);
+        LogToLinkedLogger(logLevel, message);
     }
 
     private void PrintLog(string message)
@@ -214,6 +249,14 @@ public sealed class Logger
             if (!_failedLogs.IsEmpty) FlushFailedLogs();
             else if (!_flushingFailedLogs && _logBuffer.Count >= _flushOnMessageCount) FlushLogs();
         }
+    }
+
+    [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Structured logging not supported")]
+    private void LogToLinkedLogger(LogLevel logLevel, string message)
+    {
+        if (_linkedLogger == null) return;
+
+        _linkedLogger.Log(ToMicrosoftLogLevel(logLevel), message);
     }
 
     private void FlushFailedLogs()
@@ -295,7 +338,7 @@ public sealed class Logger
         }
         catch (Exception ex)
         {
-            LogException(ex, "Failed to flush logs", true);
+            LogException(LogLevel.Critical, ex, "Failed to flush logs", true);
 
             return false;
         }

@@ -30,6 +30,8 @@ using System.Threading.Tasks;
 using static MqttSql.Configuration.SubscriptionConfiguration;
 using static MqttSql.Database.DatabaseMessageHandler;
 
+using MicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
+
 namespace MqttSql;
 
 public sealed class Service
@@ -55,7 +57,7 @@ public sealed class Service
 
     public ServiceState State { get; private set; }
 
-    public Service(string? homeDirectory = null)
+    public Service(string? homeDirectory = null, MicrosoftLogger? loggerOverride = null)
     {
         string? macAddress = NetworkInterface
             .GetAllNetworkInterfaces()
@@ -75,19 +77,31 @@ public sealed class Service
         configurationFilePath = this.homeDirectory + configurationFileName;
         var logFilePath = this.homeDirectory + logFileName;
 
-        logger = new Logger(
+        logger = loggerOverride != null
+            ? new Logger(
 #if DEBUG
-            logFilePath: null,
-            logToConsole: true,
-            logLevel: Logger.LogLevel.Trace,
-            logTimestamp: false
+                logLevel: Logger.LogLevel.Trace,
+                linkedLogger: loggerOverride,
+                logTimestamp: false
 #else
-            logFilePath: logFilePath,
-            logToConsole: false,
-            logLevel: Logger.LogLevel.Information,
-            logTimestamp: true
+                logLevel: Logger.LogLevel.Information,
+                linkedLogger: loggerOverride,
+                logTimestamp: true
 #endif
-        );
+            )
+            : new Logger(
+#if DEBUG
+                logFilePath: null,
+                logToConsole: true,
+                logLevel: Logger.LogLevel.Trace,
+                logTimestamp: false
+#else
+                logFilePath: logFilePath,
+                logToConsole: false,
+                logLevel: Logger.LogLevel.Information,
+                logTimestamp: true
+#endif
+            );
 
         logger.Debug("Mqtt Client Id: \"", mqttClientIdBase, '"');
         logger.Debug("Home: \"", this.homeDirectory, '"');
