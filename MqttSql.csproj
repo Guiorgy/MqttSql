@@ -41,6 +41,8 @@
     <None Remove="SourceGenerators\**" />
     <None Remove="Tests\**" />
     <None Remove=".editorconfig" />
+    <None Remove=".gitattributes" />
+    <None Remove=".gitignore" />
     <None Include="LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
