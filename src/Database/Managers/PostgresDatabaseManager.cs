@@ -87,7 +87,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
                 LANGUAGE plpgsql;
                 """;
 
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            _ = await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -113,10 +113,10 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
                 command.CommandText = $"INSERT INTO {table} (Timestamp, Message) values ($1, $2);";
 
                 command.Parameters.Clear();
-                command.Parameters.AddWithValue(timestamp);
-                command.Parameters.AddWithValue(message);
+                _ = command.Parameters.AddWithValue(timestamp);
+                _ = command.Parameters.AddWithValue(message);
 
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                _ = await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 

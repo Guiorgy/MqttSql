@@ -34,7 +34,7 @@ public static class LinuxHelpers
             CreateNoWindow = true
         };
 
-        process.Start();
+        _ = process.Start();
         await process.WaitForExitAsync();
 
         string result = await process.StandardOutput.ReadToEndAsync();
@@ -86,27 +86,32 @@ public static class LinuxHelpers
 
     public static string GetSystemdServiceUnitPath(string serviceName) => $"{systemdServicesPath}/{serviceName}.service";
 
-    public static string GetSystemdServiceUnitContent(string executablePath, string executableArgs = "", string? workingDirectory = null, string description = "",
-        string type = "exec", string user = "root", string restart = "on-failure", string restartDelay = "10s")
-    {
-        return 
-            $"""
-            [Unit]
-            Description={description}
+    public static string GetSystemdServiceUnitContent(
+        string executablePath,
+        string executableArgs = "",
+        string? workingDirectory = null,
+        string description = "",
+        string type = "exec",
+        string user = "root",
+        string restart = "on-failure",
+        string restartDelay = "10s"
+    ) =>
+        $"""
+        [Unit]
+        Description={description}
         
-            [Service]
-            Type={type}
-            WorkingDirectory={workingDirectory ?? Path.GetDirectoryName(executablePath)}
-            ExecStart={$"{executablePath} {executableArgs}"}
-            User={user}
-            Restart={restart}
-            RestartSec={restartDelay}
-            StandardOutput=syslog
-            StandardError=syslog
-            SyslogIdentifier=%n
+        [Service]
+        Type={type}
+        WorkingDirectory={workingDirectory ?? Path.GetDirectoryName(executablePath)}
+        ExecStart={$"{executablePath} {executableArgs}"}
+        User={user}
+        Restart={restart}
+        RestartSec={restartDelay}
+        StandardOutput=syslog
+        StandardError=syslog
+        SyslogIdentifier=%n
         
-            [Install]
-            WantedBy=default.target
-            """;
-    }
+        [Install]
+        WantedBy=default.target
+        """;
 }

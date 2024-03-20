@@ -157,7 +157,7 @@ public static partial class Extensions
         }
         finally
         {
-            registration.Unregister();
+            _ = registration.Unregister();
         }
     }
 }

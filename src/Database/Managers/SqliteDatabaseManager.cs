@@ -51,7 +51,7 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                     );
                     """;
 
-                command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
             }
 
             transaction.Commit();
@@ -101,7 +101,7 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                         command.Parameters.Add("@timestamp", DbType.DateTime).Value = timestampString;
                         command.Parameters.Add("@message", DbType.String).Value = message;
 
-                        command.ExecuteNonQuery();
+                        _ = command.ExecuteNonQuery();
                     }
                 }
 

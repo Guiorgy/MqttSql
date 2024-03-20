@@ -59,7 +59,7 @@ public sealed class GeneralDatabaseManager(Logger logger, CancellationToken canc
                     END;
                     """;
 
-                command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
             }
 
             transaction.Commit();
@@ -67,10 +67,5 @@ public sealed class GeneralDatabaseManager(Logger logger, CancellationToken canc
     }
 
     public Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
-    {
-        return Task.Run(() =>
-        {
-            throw new NotImplementedException(); // TODO
-        }, cancellationToken);
-    }
+        => Task.Run(() => throw new NotImplementedException() /* TODO */, cancellationToken);
 }

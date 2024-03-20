@@ -43,15 +43,12 @@ public static class ThrowHelpers
         if (args.Contains(command) && args.ContainsAny(commands))
             throw new ArgumentException($"Can't use \"{command}\" with {CommandsToString(commands)}");
 
-        static string CommandsToString(string[] commands)
+        static string CommandsToString(string[] commands) => commands.Length switch
         {
-            return commands.Length switch
-            {
-                0 => throw new UnreachableException(),
-                1 => $"\"{commands[0]}\"",
-                _ => '"' + string.Join("\", \"", commands[..^1]) + $"\" or \"{commands[^1]}\""
-            };
-        }
+            0 => throw new UnreachableException(),
+            1 => $"\"{commands[0]}\"",
+            _ => '"' + string.Join("\", \"", commands[..^1]) + $"\" or \"{commands[^1]}\""
+        };
     }
 
     public sealed class CommandBox(string command)

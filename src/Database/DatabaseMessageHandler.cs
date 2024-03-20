@@ -24,10 +24,7 @@ public sealed class DatabaseMessageHandler : IDisposable
         string Message
     )
     {
-        public readonly void Deconstruct(out (TableConfiguration[] tables, DateTime timestamp, string message) entry)
-        {
-            entry = (Database.Tables, Timestamp, Message);
-        }
+        public readonly void Deconstruct(out (TableConfiguration[] tables, DateTime timestamp, string message) entry) => entry = (Database.Tables, Timestamp, Message);
     }
 
     private static readonly UnboundedChannelOptions channelOptions = new();
@@ -113,7 +110,7 @@ public sealed class DatabaseMessageHandler : IDisposable
     {
         var database = message.Database;
 
-        Task.Run(() =>
+        _ = Task.Run(() =>
             messageQueues[database.Type][database.ConnectionString].Writer.WriteAsync(message, cancellationToken)
         );
     }

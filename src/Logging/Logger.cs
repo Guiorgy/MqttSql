@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -142,27 +141,9 @@ public sealed class Logger
 
     public bool EnabledFor(LogLevel logLevel) => ((byte)logLevel & _logLevelMask) != 0;
 
-    private static void PrefixTimestamp(ref string message)
-    {
-        message = $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
-    }
+    private static void PrefixTimestamp(ref string message) => message = $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
-    private static string PrefixTimestamp(string message)
-    {
-        return $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
-    }
-
-    /*public void Log(LogLevel logLevel, params string[] messageBits)
-    {
-        if (!EnabledFor(logLevel) || messageBits.Length == 0) return;
-
-        var message = messageBits.Length == 1 ? messageBits[0] : string.Concat(messageBits);
-
-        if (_logTimestamp) PrefixTimestamp(ref message);
-
-        PrintLog(message);
-        QueueLog(message);
-    }*/
+    private static string PrefixTimestamp(string message) => $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
     public void Log(LogLevel logLevel, params object?[]? messageBits)
     {
@@ -177,16 +158,6 @@ public sealed class Logger
         PrintLog(message);
         QueueLog(message);
     }
-
-    /*public void Log(LogLevel logLevel, Exception exception, params string[] messageBits)
-    {
-        if (!EnabledFor(logLevel)) return;
-
-        string? message = null;
-        if (messageBits.Length != 0) message = messageBits.Length == 1 ? messageBits[0] : string.Concat(messageBits);
-
-        LogException(exception, message);
-    }*/
 
     public void Log(LogLevel logLevel, Exception exception, params object?[]? messageBits)
     {
@@ -309,12 +280,10 @@ public sealed class Logger
                         buffer = _buffer.AsSpan()[offset..];
                     }
 
-                    using (BinaryWriter writer = new(file.Open(FileMode.Truncate), Encoding.UTF8))
-                    {
-                        writer.BaseStream.Position = 0;
-                        writer.Write(buffer);
-                        writer.Write(Encoding.UTF8.GetBytes(stringBuffer));
-                    }
+                    using BinaryWriter writer = new(file.Open(FileMode.Truncate), Encoding.UTF8);
+                    writer.BaseStream.Position = 0;
+                    writer.Write(buffer);
+                    writer.Write(Encoding.UTF8.GetBytes(stringBuffer));
                 }
                 else
                 {

@@ -28,19 +28,13 @@ public sealed class BrokerConfiguration(string host, int port, params ClientConf
     public bool Equals(BrokerConfiguration? other)
     {
         return
-            other?.Host == this.Host
-            && other.Port == this.Port;
+            other?.Host == Host
+            && other.Port == Port;
     }
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as BrokerConfiguration);
-    }
+    public override bool Equals(object? obj) => Equals(obj as BrokerConfiguration);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Host, Port);
-    }
+    public override int GetHashCode() => HashCode.Combine(Host, Port);
 }
 
 public sealed class ClientConfiguration(string user, string password, params SubscriptionConfiguration[] subscriptions) : IEquatable<ClientConfiguration>
@@ -67,19 +61,13 @@ public sealed class ClientConfiguration(string user, string password, params Sub
     public bool Equals(ClientConfiguration? other)
     {
         return
-            other?.User == this.User
-            && other.Password == this.Password;
+            other?.User == User
+            && other.Password == Password;
     }
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as ClientConfiguration);
-    }
+    public override bool Equals(object? obj) => Equals(obj as ClientConfiguration);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(User, Password + salt);
-    }
+    public override int GetHashCode() => HashCode.Combine(User, Password + salt);
 }
 
 public sealed class SubscriptionConfiguration(string topic, SubscriptionConfiguration.MqttQualityOfService qos, params DatabaseConfiguration[] bases) : IEquatable<SubscriptionConfiguration>
@@ -97,20 +85,11 @@ public sealed class SubscriptionConfiguration(string topic, SubscriptionConfigur
                 Databases.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true);
     }
 
-    public bool Equals(SubscriptionConfiguration? other)
-    {
-        return other?.Topic == this.Topic;
-    }
+    public bool Equals(SubscriptionConfiguration? other) => other?.Topic == Topic;
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as SubscriptionConfiguration);
-    }
+    public override bool Equals(object? obj) => Equals(obj as SubscriptionConfiguration);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Topic);
-    }
+    public override int GetHashCode() => HashCode.Combine(Topic);
 
     public enum MqttQualityOfService
     {
@@ -138,20 +117,11 @@ public sealed class DatabaseConfiguration(DatabaseType type, string connectionSt
             );
     }
 
-    public bool Equals(DatabaseConfiguration? other)
-    {
-        return other?.ConnectionString == this.ConnectionString;
-    }
+    public bool Equals(DatabaseConfiguration? other) => other?.ConnectionString == ConnectionString;
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as DatabaseConfiguration);
-    }
+    public override bool Equals(object? obj) => Equals(obj as DatabaseConfiguration);
 
-    public override int GetHashCode()
-    {
-        return ConnectionString.GetHashCode();
-    }
+    public override int GetHashCode() => ConnectionString.GetHashCode();
 }
 
 public sealed class TableConfiguration(string name, string timestampFormat) : IEquatable<TableConfiguration>
@@ -165,23 +135,11 @@ public sealed class TableConfiguration(string name, string timestampFormat) : IE
         TimestampFormat = this.TimestampFormat;
     }
 
-    public override string ToString()
-    {
-        return $"({nameof(Name)}: {Name}, {nameof(TimestampFormat)}: {TimestampFormat})";
-    }
+    public override string ToString() => $"({nameof(Name)}: {Name}, {nameof(TimestampFormat)}: {TimestampFormat})";
 
-    public bool Equals(TableConfiguration? other)
-    {
-        return other?.Name == this.Name;
-    }
+    public bool Equals(TableConfiguration? other) => other?.Name == Name;
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as TableConfiguration);
-    }
+    public override bool Equals(object? obj) => Equals(obj as TableConfiguration);
 
-    public override int GetHashCode()
-    {
-        return Name.GetHashCode();
-    }
+    public override int GetHashCode() => Name.GetHashCode();
 }

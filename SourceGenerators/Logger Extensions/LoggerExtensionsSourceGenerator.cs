@@ -16,10 +16,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace SourceGenerators;
+using Capture = SourceGenerators.TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>;
+using CaptureOrError = SourceGenerators.GeneratorCapture<SourceGenerators.TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>>;
 
-using Capture = TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>;
-using CaptureOrError = GeneratorCapture<TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>>;
+namespace SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
 internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator

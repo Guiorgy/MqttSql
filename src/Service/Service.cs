@@ -19,7 +19,6 @@ using MqttSql.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -98,10 +97,7 @@ public sealed class Service
         State = ServiceState.Created;
     }
 
-    public void Start()
-    {
-        Task.Run(() => StartAsync(), ServiceCancellationToken);
-    }
+    public void Start() => _ = Task.Run(() => StartAsync(), ServiceCancellationToken);
 
     public async Task StartAsync()
     {
@@ -127,7 +123,7 @@ public sealed class Service
             else
             {
                 logger.Critical(ex, "Uncought exception");
-                await logger.FlushAsync(TimeSpan.FromMinutes(1), ServiceCancellationToken);
+                _ = await logger.FlushAsync(TimeSpan.FromMinutes(1), ServiceCancellationToken);
 
                 serviceStopped = true;
                 State = ServiceState.Exited;
@@ -136,7 +132,7 @@ public sealed class Service
             }
         }
 
-        await logger.FlushAsync(TimeSpan.FromMinutes(1));
+        _ = await logger.FlushAsync(TimeSpan.FromMinutes(1));
 
         serviceStopped = true;
         serviceCancellationTokenSource.Dispose();
@@ -214,10 +210,7 @@ public sealed class Service
         }
     }
 
-    public void Stop()
-    {
-        StopAsync().Wait();
-    }
+    public void Stop() => StopAsync().Wait();
 
     public async Task StopAsync()
     {
@@ -272,13 +265,15 @@ public sealed class Service
             ConfigurationFileChangeToken
         );
 
-        configFileChangeWatcher = new(homeDirectory);
-        configFileChangeWatcher.IncludeSubdirectories = false;
-        configFileChangeWatcher.Filter = configurationFileName;
-        configFileChangeWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+        configFileChangeWatcher = new(homeDirectory)
+        {
+            IncludeSubdirectories = false,
+            Filter = configurationFileName,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+            EnableRaisingEvents = true
+        };
         configFileChangeWatcher.Error += OnConfigFileChangeWatcherError;
         configFileChangeWatcher.Changed += OnConfigurationFileChanged;
-        configFileChangeWatcher.EnableRaisingEvents = true;
     }
 
     private void OnConfigFileChangeWatcherError(object sender, ErrorEventArgs e)
@@ -356,7 +351,7 @@ public sealed class Service
                         maxRetries: mqttClientReconnectionBackoffMaxRetries
                     );
 
-                    mqttClient.UseDisconnectedHandler(async e =>
+                    _ = mqttClient.UseDisconnectedHandler(async e =>
                     {
                         if (ServiceCancelledOrConfigurationFileChanged)
                         {
@@ -376,7 +371,7 @@ public sealed class Service
                         {
                             logger.Debug("Attempting to recconnect \"", clientId, "\" client to \"", broker.Host, ':', broker.Port, "\" host");
 
-                            await mqttClient.ReconnectAsync(ServiceCancellationOrConfigurationFileChangeToken);
+                            _ = await mqttClient.ReconnectAsync(ServiceCancellationOrConfigurationFileChangeToken);
                             exponentialBackoff.Reset();
 
                             logger.Information('"', clientId, "\" client reconnected to \"", broker.Host, ':', broker.Port, "\" host");
@@ -388,7 +383,7 @@ public sealed class Service
                         }
                     });
 
-                    mqttClient.UseConnectedHandler(async _ =>
+                    _ = mqttClient.UseConnectedHandler(async _ =>
                     {
                         logger.Debug('"', clientId, "\" client connected to \"", broker.Host, ':', broker.Port, "\" host");
 
@@ -431,7 +426,7 @@ public sealed class Service
                         return (client.Subscriptions.First(sub => sub.Topic.Equals(topic)).Databases, message);
                     }
 
-                    mqttClient.UseApplicationMessageReceivedHandler(e =>
+                    _ = mqttClient.UseApplicationMessageReceivedHandler(e =>
                     {
                         (DatabaseConfiguration[] databases, string message) = getMessageAndDatabases(e);
 
@@ -443,7 +438,7 @@ public sealed class Service
 
                     logger.Information("Connecting \"", clientId, "\" client to \"", broker.Host, ':', broker.Port, "\" host");
 
-                    await mqttClient.ConnectAsync(mqttOptions, ServiceCancellationOrConfigurationFileChangeToken);
+                    _ = await mqttClient.ConnectAsync(mqttOptions, ServiceCancellationOrConfigurationFileChangeToken);
                     mqttClients.Add(mqttClient);
 
                     await Task.Delay(mqttSameBrokerDifferentClientConnectionDelay, ServiceCancellationOrConfigurationFileChangeToken);
@@ -453,7 +448,7 @@ public sealed class Service
 
         if (ServiceCancelledOrConfigurationFileChanged) return;
 
-        Task.WhenAll(tasks);
+        _ = Task.WhenAll(tasks);
     }
 
     private readonly CancellationTokenSource serviceCancellationTokenSource = new();

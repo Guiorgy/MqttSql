@@ -7,15 +7,11 @@
 
 using System.Text;
 
-namespace MqttSql.src.Utility
-{
-    public interface IAppendStringBuilder
-    {
-        StringBuilder AppendStringBuilder(StringBuilder builder);
+namespace MqttSql.Utility;
 
-        string? ToString()
-        {
-            return AppendStringBuilder(new StringBuilder()).ToString();
-        }
-    }
+public interface IAppendStringBuilder
+{
+    StringBuilder AppendStringBuilder(StringBuilder builder);
+
+    string? ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 }

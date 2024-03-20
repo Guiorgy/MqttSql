@@ -36,7 +36,7 @@ public interface IDatabaseManager
             var getDatabaseManager = implementingType.GetMethod("GetDatabaseManager")!;
 
             MakeManagerMappings[databaseType] = (logger, cancellationToken) =>
-                (IDatabaseManager)getDatabaseManager.Invoke(null, new object[] { logger, cancellationToken })!;
+                (IDatabaseManager)getDatabaseManager.Invoke(null, [logger, cancellationToken])!;
         }
     }
 
@@ -44,10 +44,9 @@ public interface IDatabaseManager
     {
         if (databaseType == DatabaseType.None) throw new ArgumentException($"{typeof(DatabaseType).FullName}.{databaseType} is not supported", nameof(databaseType));
 
-        if (!MakeManagerMappings.TryGetValue(databaseType, out var getDatabaseManager))
-            throw new NotImplementedException($"{typeof(DatabaseType).FullName}.{databaseType} is not implemented");
-
-        return getDatabaseManager(logger, cancellationToken);
+        return !MakeManagerMappings.TryGetValue(databaseType, out var getDatabaseManager)
+            ? throw new NotImplementedException($"{typeof(DatabaseType).FullName}.{databaseType} is not implemented")
+            : getDatabaseManager(logger, cancellationToken);
     }
 
     public Logger GetLogger();
@@ -73,10 +72,7 @@ public interface IDatabaseManager
         }
     }
 
-    public void EnsureTablesExist(string connectionString, TableConfiguration[] tables)
-    {
-        _ = TryEnsureTablesExistAsync(connectionString, tables);
-    }
+    public void EnsureTablesExist(string connectionString, TableConfiguration[] tables) => _ = TryEnsureTablesExistAsync(connectionString, tables);
 
     public Task WriteToDatabaseAsync(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries);
 
@@ -99,8 +95,5 @@ public interface IDatabaseManager
         }
     }
 
-    public void WriteToDatabase(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries)
-    {
-        _ = TryWriteToDatabaseAsync(connectionString, entries);
-    }
+    public void WriteToDatabase(string connectionString, IEnumerable<(TableConfiguration[] tables, DateTime timestamp, string message)> entries) => _ = TryWriteToDatabaseAsync(connectionString, entries);
 }

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace MqttSql;
 
-public sealed partial class ExponentialBackoff
+public sealed class ExponentialBackoff
 {
     private readonly TimeSpan initialDelay;
     private readonly TimeSpan maxDelay;
@@ -26,8 +26,8 @@ public sealed partial class ExponentialBackoff
         this.maxDelay = this.initialDelay <= maxDelay ? maxDelay : this.initialDelay;
         this.multiplier = Math.Max(1, multiplier);
         this.maxRetries = Math.Max(0, maxRetries);
-        this.currentDelay = this.initialDelay;
-        this.retriesRemaining = this.maxRetries == 0 ? -1 : this.maxRetries;
+        currentDelay = this.initialDelay;
+        retriesRemaining = this.maxRetries == 0 ? -1 : this.maxRetries;
     }
 
     public bool FirstTime => currentDelay == initialDelay;

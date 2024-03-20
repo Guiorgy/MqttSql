@@ -7,7 +7,7 @@
 
 using Guiorgy.JsonExtensions;
 using MqttSql.Database;
-using MqttSql.src.Utility;
+using MqttSql.Utility;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -31,18 +31,13 @@ public sealed class ServiceConfiguration : IAppendStringBuilder
     public ServiceConfiguration(DatabaseConfiguration[]? databases = default, BrokerConfiguration[]? brokers = default) =>
         (Databases, Brokers) = (databases ?? [], brokers ?? []);
 
-    public override string ToString()
-    {
-        return AppendStringBuilder(new StringBuilder()).ToString();
-    }
+    public override string ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
-        builder
+        return builder
             .Append(nameof(Databases)).AppendLine(":").AppendLine(Databases, true)
             .Append(nameof(Brokers)).AppendLine(":").AppendLine(Brokers);
-
-        return builder;
     }
 }
 
@@ -63,21 +58,16 @@ public sealed class DatabaseConfiguration : IAppendStringBuilder
         string connectionString = ConnectionStringDefault) =>
         (Name, Type, ConnectionString) = (name, type, connectionString);
 
-    public override string ToString()
-    {
-        return AppendStringBuilder(new StringBuilder()).ToString();
-    }
+    public override string ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
         const char tabs = '\t';
 
-        builder
+        return builder
             .Append(tabs).Append(nameof(Name)).Append(": ").AppendLine(Name)
             .Append(tabs).Append(nameof(Type)).Append(": ").AppendLine(Type)
             .Append(tabs).Append(nameof(ConnectionString)).Append(": ").AppendLine(ConnectionString);
-
-        return builder;
     }
 }
 
@@ -155,7 +145,7 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
     {
         const string tabs = "\t\t";
 
-        builder
+        _ = builder
             .Append(tabs).Append(nameof(Topic)).Append(": ").AppendLine(Topic)
             .Append(tabs).Append(nameof(QOS)).Append(": ").AppendLine(QOS);
 
@@ -163,13 +153,13 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
         {
             var database = Databases[0];
 
-            builder.Append(tabs).Append("Database").Append(": ").AppendLine(database.DatabaseName)
+            _ = builder.Append(tabs).Append("Database").Append(": ").AppendLine(database.DatabaseName)
                 .Append(tabs).Append(nameof(database.Table)).Append(": ").AppendLine(database.Table)
                 .Append(tabs).Append(nameof(database.TimestampFormat)).Append(": ").AppendLine(database.TimestampFormat);
         }
         else
         {
-            builder.Append(tabs).Append(nameof(Databases)).AppendLine(":").AppendLine(Databases, true, true);
+            _ = builder.Append(tabs).Append(nameof(Databases)).AppendLine(":").AppendLine(Databases, true, true);
         }
 
         return builder;
@@ -186,7 +176,7 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
                 ?.GetCustomAttribute<JsonPropertyNamesAttribute>()
                 ?.Names
                 ?.Select(name => name.ToLower())
-                ?? Enumerable.Empty<string>();
+                ?? [];
             var pluralPropertyNames = propertyNames.Where(name => name.EndsWith('s')).ToArray();
             var singlePropertyNames = propertyNames.Where(name => !name.EndsWith('s')).ToArray();
 
@@ -208,7 +198,7 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
 
                     if (singlePropertyNames.Contains(propertyName?.ToLower()))
                     {
-                        probeReader.Read();
+                        _ = probeReader.Read();
 
                         if (probeReader.TokenType == JsonTokenType.StartArray)
                         {
@@ -219,16 +209,15 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
                         if (probeReader.TokenType == JsonTokenType.String) isFlat = true;
                     }
 
-                    if (propertyName?.ToLower() == "table" || propertyName?.ToLower() == "timestampformat") isFlat = true;
+                    if (propertyName?.ToLowerInvariant() is "table" or "timestampformat") isFlat = true;
                 }
             }
 
             if (isFlat)
             {
                 var flat = JsonSerializer.Deserialize<FlatConfiguration>(ref reader, options);
-                if (flat != null && (flat.Database != null || flat.Table != null))
-                {
-                    return new SubscriptionConfiguration(
+                return flat != null && (flat.Database != null || flat.Table != null)
+                    ? new SubscriptionConfiguration(
                         topic: flat.Topic ?? TopicDefault,
                         qos: flat.QOS ?? QOSDefault,
                         databases:
@@ -239,12 +228,8 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
                                 timestampFormat: flat.TimestampFormat ?? TableConfiguration.TimestampFormatDefault
                             )
                         ]
-                    );
-                }
-                else
-                {
-                    return null;
-                }
+                    )
+                    : null;
             }
             else
             {
@@ -252,10 +237,7 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
             }
         }
 
-        public override void Write(Utf8JsonWriter writer, SubscriptionConfiguration values, JsonSerializerOptions options)
-        {
-            JsonSerializer.Serialize(writer, values, options);
-        }
+        public override void Write(Utf8JsonWriter writer, SubscriptionConfiguration values, JsonSerializerOptions options) => JsonSerializer.Serialize(writer, values, options);
 
         public sealed class FlatConfiguration
         {
@@ -303,11 +285,9 @@ public sealed class TableConfiguration : IAppendStringBuilder
     {
         const string tabs = "\t\t\t";
 
-        builder
+        return builder
             .Append(tabs).Append(nameof(DatabaseName)).Append(": ").AppendLine(DatabaseName)
             .Append(tabs).Append(nameof(Table)).Append(": ").AppendLine(Table)
             .Append(tabs).Append(nameof(TimestampFormat)).Append(": ").AppendLine(TimestampFormat);
-
-        return builder;
     }
 }

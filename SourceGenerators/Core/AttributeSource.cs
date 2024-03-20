@@ -97,7 +97,5 @@ internal sealed class AttributeSource<T> where T : IIncrementalGenerator
 internal static class AttributeSourceExtensions
 {
     public static void EmitAttribute<T>(this IncrementalGeneratorInitializationContext context, AttributeSource<T> attributeSource) where T : IIncrementalGenerator
-    {
-        context.RegisterPostInitializationOutput(attributeSource.EmitSourceCode);
-    }
+        => context.RegisterPostInitializationOutput(attributeSource.EmitSourceCode);
 }

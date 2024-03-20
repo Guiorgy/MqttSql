@@ -5,7 +5,7 @@
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
-using MqttSql.src.Utility;
+using MqttSql.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -30,10 +30,7 @@ public static class Extensions
     /// <param name="values">The values to locate in the sequence.</param>
     /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values)
-    {
-        return source.Intersect(values).Any();
-    }
+    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values) => source.Intersect(values).Any();
 
     /// <summary>
     /// Determines whether a sequence contains any of the specified elements by using the default equality comparer.
@@ -43,10 +40,7 @@ public static class Extensions
     /// <param name="values">The values to locate in the sequence.</param>
     /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, params TSource[] values)
-    {
-        return source.Intersect(values).Any();
-    }
+    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, params TSource[] values) => source.Intersect(values).Any();
 
     /// <summary>
     /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
@@ -56,10 +50,7 @@ public static class Extensions
     /// <param name="values">The values to locate in the sequence.</param>
     /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values)
-    {
-        return source.Intersect(values).Count() == values.Count();
-    }
+    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values) => source.Intersect(values).Count() == values.Count();
 
     /// <summary>
     /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
@@ -69,10 +60,7 @@ public static class Extensions
     /// <param name="values">The values to locate in the sequence.</param>
     /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, params TSource[] values)
-    {
-        return source.Intersect(values).Count() == values.Length;
-    }
+    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, params TSource[] values) => source.Intersect(values).Count() == values.Length;
 
     /// <summary>
     /// Appends text to the start and end of every line in a string.
@@ -127,10 +115,7 @@ public static class Extensions
     /// <param name="key">The key of the value to get.</param>
     /// <returns>The value associated with the specified key, if the key is found; otherwise, <see langword="null"/>.</returns>
     [return: MaybeNull]
-    public static TValue GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class
-    {
-        return dict.TryGetValue(key, out TValue? value) ? value : null;
-    }
+    public static TValue GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class => dict.TryGetValue(key, out TValue? value) ? value : null;
 
     /// <summary>
     /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
@@ -235,10 +220,7 @@ public static class Extensions
     /// <param name="source">The sequence to be flattened.</param>
     /// <returns>An <see cref="IEnumerable{T}/>"/> whose elements are the result of flattening the source sequence.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/></exception>
-    public static IEnumerable<TResult> Flatten<TResult>(this IEnumerable<IEnumerable<TResult>> source)
-    {
-        return source.SelectMany(x => x);
-    }
+    public static IEnumerable<TResult> Flatten<TResult>(this IEnumerable<IEnumerable<TResult>> source) => source.SelectMany(x => x);
 
     /// <summary>
     /// Converts <see cref="DateTime"/> into an ISO 8601:2004 or ISO 8601-1:2019 (RFC 3339) string faster than <see cref="DateTime.ToString"/>.
@@ -466,7 +448,7 @@ public static class Extensions
 
         static int AsciiCharToDigit(char digit) => digit - '0';
 
-        static bool IsDigit(int i) => 0 <= i && i <= 9;
+        static bool IsDigit(int i) => i is >= 0 and <= 9;
 
         static bool TryRead4Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
         {
@@ -584,10 +566,9 @@ public static class Extensions
     {
         ArgumentNullException.ThrowIfNull(isoDateTimeString);
 
-        if (!TryParseIsoDateTime(isoDateTimeString, out DateTime dateTime, milliseconds, noDateTimeDelimiter, noDelimiters))
-            throw new FormatException("String is not in the correct ISO format");
-
-        return dateTime;
+        return !TryParseIsoDateTime(isoDateTimeString, out DateTime dateTime, milliseconds, noDateTimeDelimiter, noDelimiters)
+            ? throw new FormatException("String is not in the correct ISO format")
+            : dateTime;
     }
 
     /// <summary>
@@ -596,10 +577,7 @@ public static class Extensions
     /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
     /// <param name="number">The number to append.</param>
     /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, int number)
-    {
-        return builder.AppendLine(number.ToString());
-    }
+    public static StringBuilder AppendLine(this StringBuilder builder, int number) => builder.AppendLine(number.ToString());
 
     /// <summary>
     /// Appends the <paramref name="character"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
@@ -607,10 +585,7 @@ public static class Extensions
     /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
     /// <param name="character">The character to append.</param>
     /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, char character)
-    {
-        return builder.AppendLine(character.ToString());
-    }
+    public static StringBuilder AppendLine(this StringBuilder builder, char character) => builder.AppendLine(character.ToString());
 
     /// <summary>
     /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
@@ -618,10 +593,7 @@ public static class Extensions
     /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
     /// <param name="boolean">The boolean to append.</param>
     /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean)
-    {
-        return builder.AppendLine(boolean.ToString());
-    }
+    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean) => builder.AppendLine(boolean.ToString());
 
     /// <summary>
     /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
@@ -631,10 +603,7 @@ public static class Extensions
     /// <param name="falseString">The string to append when <paramref name="boolean"/> is <see langword="false"/>.</param>
     /// <param name="trueString">The string to append when <paramref name="boolean"/> is <see langword="true"/>.</param>
     /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean, string falseString, string trueString)
-    {
-        return builder.AppendLine(boolean ? trueString : falseString);
-    }
+    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean, string falseString, string trueString) => builder.AppendLine(boolean ? trueString : falseString);
 
     /// <summary>
     /// Appends the <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
@@ -642,11 +611,9 @@ public static class Extensions
     /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
     /// <param name="appendStringBuilder">The <see cref="IAppendStringBuilder"/> to append.</param>
     /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, IAppendStringBuilder appendStringBuilder)
-    {
+    public static StringBuilder AppendLine(this StringBuilder builder, IAppendStringBuilder appendStringBuilder) =>
         // AppendStringBuilder already appends a new line at the end
-        return appendStringBuilder.AppendStringBuilder(builder);
-    }
+        appendStringBuilder.AppendStringBuilder(builder);
 
     /// <summary>
     /// Appends the array of <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
@@ -660,19 +627,19 @@ public static class Extensions
     {
         if (appendStringBuilders.Length == 0)
         {
-            if (appendLineIfEmpty) builder.AppendLine();
+            if (appendLineIfEmpty) _ = builder.AppendLine();
         }
         else
         {
             if (appendLineAfterElement)
             {
                 foreach (var appendStringBuilder in appendStringBuilders)
-                    builder.AppendLine(appendStringBuilder).AppendLine();
+                    _ = builder.AppendLine(appendStringBuilder).AppendLine();
             }
             else
             {
                 foreach (var appendStringBuilder in appendStringBuilders)
-                    builder.AppendLine(appendStringBuilder);
+                    _ = builder.AppendLine(appendStringBuilder);
             }
         }
 
@@ -713,6 +680,8 @@ public static class Extensions
     /// <param name="prefixPostfixLines">If <see langword="true"/>, every element inside <paramref name="values"/> will be split into lines, and
     /// every line will be prefixed and postfixed with <paramref name="prefix"/> and <paramref name="postfix"/> separately.</param>
     /// <returns>The string representation of the sequence in the given format.</returns>
+    [SuppressMessage("Style", "IDE0045:Convert to conditional expression")]
+    [SuppressMessage("Style", "IDE0046:Convert to conditional expression")]
     public static string ToString<T>(this IEnumerable<T> values, string? open = null, string? prefix = null, string? postfix = null, string separator = ", ", string? close = null, bool prefixPostfixLines = false)
     {
         IEnumerable<string?> _values;
@@ -756,12 +725,7 @@ public static class Extensions
     /// <param name="value">The string to search.</param>
     /// <param name="values">The strings to search in.</param>
     /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsInIgnoreCase(this string value, params string[] values)
-    {
-        if (values == null || values.Length == 0) return false;
-
-        return values.Contains(value, StringComparer.OrdinalIgnoreCase);
-    }
+    public static bool IsInIgnoreCase(this string value, params string[] values) => values != null && values.Length != 0 && values.Contains(value, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Check if the given string is equal to one of the given strings.
@@ -769,12 +733,7 @@ public static class Extensions
     /// <param name="value">The string to search.</param>
     /// <param name="values">The strings to search in.</param>
     /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn(this string value, params string[] values)
-    {
-        if (values == null || values.Length == 0) return false;
-
-        return values.Contains(value);
-    }
+    public static bool IsIn(this string value, params string[] values) => values != null && values.Length != 0 && values.Contains(value);
 
     /// <summary>
     /// Check if the given object is equal to one of the given objects.
@@ -783,12 +742,7 @@ public static class Extensions
     /// <param name="value">The object to search.</param>
     /// <param name="values">The objects to search in.</param>
     /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn<T>(this T value, params T[] values)
-    {
-        if (values == null || values.Length == 0) return false;
-
-        return values.Contains(value);
-    }
+    public static bool IsIn<T>(this T value, params T[] values) => values != null && values.Length != 0 && values.Contains(value);
 
     /// <summary>
     /// Check if the given object is equal to one of the given objects.
@@ -798,12 +752,7 @@ public static class Extensions
     /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> to use to compare objects.</param>
     /// <param name="values">The objects to search in.</param>
     /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn<T>(this T value, IEqualityComparer<T> comparer, params T[] values)
-    {
-        if (values == null || values.Length == 0) return false;
-
-        return values.Contains(value, comparer);
-    }
+    public static bool IsIn<T>(this T value, IEqualityComparer<T> comparer, params T[] values) => values != null && values.Length != 0 && values.Contains(value, comparer);
 
     /// <summary>
     /// Returns a new string in which a segment at a specified character position and with a specified length in the current instance is replaced with
@@ -854,8 +803,6 @@ public static class Extensions
         if (!match.Success || match.Groups.Count < groupIndex) return input;
 
         var group = match.Groups[groupIndex];
-        if (!group.Success) return input;
-
-        return input.Replace(group.Index, group.Length, replacement);
+        return group.Success ? input.Replace(group.Index, group.Length, replacement) : input;
     }
 }

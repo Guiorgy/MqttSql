@@ -211,9 +211,7 @@ internal static class SourceGeneratorExtensions
     /// <param name="attributeName">The attribute name to search for.</param>
     /// <returns>The <see cref="AttributeData"/> for the found attribute if found, or <see cref="null"/> if not.</returns>
     public static AttributeData? GetAttributeData(this GeneratorAttributeSyntaxContext context, string attributeName)
-    {
-        return context.Attributes.FirstOrDefault(attribute => attribute.AttributeClass?.Name == attributeName);
-    }
+        => context.Attributes.FirstOrDefault(attribute => attribute.AttributeClass?.Name == attributeName);
 
     /// <summary>
     /// Gets the <see cref="AttributeSyntax"/> with the specified name on the specified <see cref="MemberDeclarationSyntax"/>.
@@ -239,11 +237,7 @@ internal static class SourceGeneratorExtensions
     /// <param name="attribute">The <see cref="AttributeSyntax"/> to search for.</param>
     /// <returns>The initial <see cref="AttributeListSyntax"/> unchanged if <paramref name="attribute"/> wasn't found, or a new node without <paramref name="attribute"/> if found.</returns>
     public static AttributeListSyntax RemoveIfContains(this AttributeListSyntax list, AttributeSyntax attribute)
-    {
-        if (!list.Contains(attribute)) return list;
-
-        return list.RemoveNode(attribute, SyntaxRemoveOptions.KeepNoTrivia)!;
-    }
+        => !list.Contains(attribute) ? list : list.RemoveNode(attribute, SyntaxRemoveOptions.KeepNoTrivia)!;
 
     /// <summary>
     /// Get the full name of the <see cref="TypedConstant"/> type.
@@ -281,9 +275,9 @@ internal static class SourceGeneratorExtensions
     /// <exception cref="ArgumentException"><paramref name="decimalNumber"/> is equal to NaN, NegativeInfinity, or PositiveInfinity.</exception>
     public static int Ceiling(this double decimalNumber)
     {
-        if (double.IsNaN(decimalNumber) || double.IsInfinity(decimalNumber)) throw new ArgumentException(nameof(decimalNumber));
-
-        return (int)Math.Ceiling(decimalNumber);
+        return double.IsNaN(decimalNumber) || double.IsInfinity(decimalNumber)
+            ? throw new ArgumentException(nameof(decimalNumber))
+            : (int)Math.Ceiling(decimalNumber);
     }
 
     /// <summary>

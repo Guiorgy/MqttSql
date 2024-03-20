@@ -7,7 +7,6 @@
 
 using System;
 using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MqttSql.Utility;
 
@@ -47,10 +46,7 @@ public sealed class Union<T1, T2> where T1 : class where T2 : class
 
     public T1 First
     {
-        get
-        {
-            return IsFirst ? first! : throw InvalidCastException;
-        }
+        get => IsFirst ? first! : throw InvalidCastException;
         set
         {
             first = value;
@@ -59,10 +55,7 @@ public sealed class Union<T1, T2> where T1 : class where T2 : class
     }
     public T2 Second
     {
-        get
-        {
-            return IsSecond ? second! : throw InvalidCastException;
-        }
+        get => IsSecond ? second! : throw InvalidCastException;
         set
         {
             first = null;

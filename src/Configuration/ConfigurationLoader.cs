@@ -20,10 +20,8 @@ public static partial class ConfigurationLoader
     public static BrokerConfiguration[] LoadBrokersFromJson(
         string configPath,
         Logger logger,
-        string baseDirectory)
-    {
-        return LoadJsonConfig(logger, configPath).ToServiceConfiguration(logger, baseDirectory);
-    }
+        string baseDirectory
+    ) => LoadJsonConfig(logger, configPath).ToServiceConfiguration(logger, baseDirectory);
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {

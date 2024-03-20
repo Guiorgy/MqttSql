@@ -152,9 +152,7 @@ public static class Program
         if (IsOSPlatform(Linux))
         {
             int exitCode = await ExecuteSystemd(SystemdSubcommand.Enable, systemdServiceName);
-            if (exitCode != 0) return exitCode;
-
-            return await ExecuteSystemd(SystemdSubcommand.Start, systemdServiceName);
+            return exitCode == 0 ? await ExecuteSystemd(SystemdSubcommand.Start, systemdServiceName) : exitCode;
         }
         else
         {
@@ -169,9 +167,7 @@ public static class Program
         if (IsOSPlatform(Linux))
         {
             int exitCode = await ExecuteSystemd(SystemdSubcommand.Stop, systemdServiceName);
-            if (exitCode != 0) return exitCode;
-
-            return await ExecuteSystemd(SystemdSubcommand.Stop, systemdServiceName);
+            return exitCode == 0 ? await ExecuteSystemd(SystemdSubcommand.Stop, systemdServiceName) : exitCode;
         }
         else
         {
