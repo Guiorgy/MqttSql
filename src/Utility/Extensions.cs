@@ -180,6 +180,22 @@ public static class Extensions
         }
     }
 
+    /// <summary>
+    /// Determines if the specified channel reader is empty.
+    /// </summary>
+    /// <typeparam name="T">The type of the channel.</typeparam>
+    /// <param name="reader">The channel reader to be checked.</param>
+    /// <returns><see langword="true"/> if <paramref name="reader"/> was empty; otherwise, <see langword="false"/>.</returns>
+    public static bool IsEmpty<T>(this ChannelReader<T> reader) => !reader.TryPeek(out _);
+
+    /// <summary>
+    /// Determines if the specified channel is empty.
+    /// </summary>
+    /// <typeparam name="T">The type of the channel.</typeparam>
+    /// <param name="channel">The channel to be checked.</param>
+    /// <returns><see langword="true"/> if <paramref name="channel"/> was empty; otherwise, <see langword="false"/>.</returns>
+    public static bool IsEmpty<T>(this Channel<T> channel) => channel.Reader.IsEmpty();
+
     private static readonly DateTime SampleDateTime = new(2022, 04, 26, 16, 10, 30, 500, DateTimeKind.Utc);
 
     /// <summary>
@@ -753,6 +769,14 @@ public static class Extensions
     /// <param name="values">The objects to search in.</param>
     /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
     public static bool IsIn<T>(this T value, IEqualityComparer<T> comparer, params T[] values) => values != null && values.Length != 0 && values.Contains(value, comparer);
+
+    /// <summary>
+    /// Groups every element in a sequence with its positional index.
+    /// </summary>
+    /// <typeparam name="T">The element type in the target sequence.</typeparam>
+    /// <param name="source">The target sequence.</param>
+    /// <returns>A new enumerable sequence with tuples of elements and their indexes.</returns>
+    public static IEnumerable<(int position, T value)> Enumerate<T>(this IEnumerable<T> source) => source.Select((value, position) => (position, value));
 
     /// <summary>
     /// Returns a new string in which a segment at a specified character position and with a specified length in the current instance is replaced with

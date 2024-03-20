@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace MqttSql.Database;
 
-public sealed class DatabaseMessageHandler : IDisposable
+public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
 {
     public record struct DatabaseMessage(
         DatabaseConfiguration Database,
@@ -32,6 +32,7 @@ public sealed class DatabaseMessageHandler : IDisposable
     private readonly Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues;
     private readonly Logger logger;
     private readonly CancellationToken cancellationToken;
+    private bool disposed;
 
     static DatabaseMessageHandler()
     {
@@ -108,6 +109,8 @@ public sealed class DatabaseMessageHandler : IDisposable
 
     public void WriteMessage(DatabaseMessage message)
     {
+        if (disposed) return;
+
         var database = message.Database;
 
         _ = Task.Run(() =>
@@ -149,7 +152,9 @@ public sealed class DatabaseMessageHandler : IDisposable
         return Task.WhenAll(tasks);
     }
 
-    public void Dispose()
+    public bool QueuesAreEmpty => messageQueues.Values.SelectMany(dict => dict.Values).All(channel => channel.IsEmpty());
+
+    private void ClearManagers()
     {
         foreach (var databaseManager in databaseManagers.Values)
         {
@@ -160,5 +165,32 @@ public sealed class DatabaseMessageHandler : IDisposable
         }
 
         databaseManagers.Clear();
+    }
+
+    public void Dispose()
+    {
+        if (disposed) return;
+        disposed = true;
+
+        ClearManagers();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (disposed) return;
+        disposed = true;
+
+        const int maxDisposeWaitForQueFlush = 10_000;
+        const int waitForFlushRetries = 10;
+        const int delayMilliseconds = maxDisposeWaitForQueFlush / waitForFlushRetries;
+
+        for (int i = 0; i < waitForFlushRetries; i++)
+        {
+            if (QueuesAreEmpty) break;
+
+            await Task.Delay(delayMilliseconds);
+        }
+
+        ClearManagers();
     }
 }

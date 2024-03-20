@@ -34,7 +34,7 @@ using MicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MqttSql;
 
-public sealed class Service
+public sealed class Service : IDisposable, IAsyncDisposable
 {
     private const string logFileName = "logs.txt";
     private const string configurationFileName = "config.json";
@@ -115,8 +115,15 @@ public sealed class Service
 
     public async Task StartAsync()
     {
+        if (disposed)
+        {
+            logger.Error("Service can't be started as it's already been disposed");
+            throw new ObjectDisposedException(nameof(Service));
+        }
+
         State = ServiceState.Starting;
 
+        CancellationToken flushCancellation = CancellationToken.None;
         try
         {
             await _StartAsync();
@@ -137,21 +144,23 @@ public sealed class Service
             else
             {
                 logger.Critical(ex, "Uncought exception");
-                _ = await logger.FlushAsync(TimeSpan.FromMinutes(1), ServiceCancellationToken);
 
-                serviceStopped = true;
-                State = ServiceState.Exited;
-
-                return;
+                flushCancellation = ServiceCancellationToken;
             }
         }
+        finally
+        {
+            try
+            {
+                _ = await logger.FlushAsync(TimeSpan.FromMinutes(1), flushCancellation);
+            }
+            finally
+            {
+                await DisposeAsync();
 
-        _ = await logger.FlushAsync(TimeSpan.FromMinutes(1));
-
-        serviceStopped = true;
-        serviceCancellationTokenSource.Dispose();
-
-        State = ServiceState.Exited;
+                State = ServiceState.Exited;
+            }
+        }
     }
 
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Private method with the same name")]
@@ -171,30 +180,8 @@ public sealed class Service
         {
             State = ServiceState.Restarting;
 
-            brokers = null;
-            configurationFileChangeTokenSource?.Dispose();
-            configurationFileChangeTokenSource = null;
-            serviceCancellationOrConfigurationFileChangeTokenSource?.Dispose();
-            serviceCancellationOrConfigurationFileChangeTokenSource = null;
-            messageHandler = null;
-
-            if (mqttClients != null)
-            {
-                if (mqttClients.Count != 0) logger.Information("Disconnecting all ", mqttClients.Count, " clients");
-
-                var disconnectionOptions = new MqttClientDisconnectOptions()
-                {
-                    ReasonCode = MqttClientDisconnectReason.NormalDisconnection
-                };
-
-                foreach (var client in mqttClients)
-                {
-                    await client.DisconnectAsync(disconnectionOptions);
-                    client.Dispose();
-                }
-
-                mqttClients = null;
-            }
+            await DisposeAsync();
+            disposed = false;
         }
 
         while (true)
@@ -230,16 +217,62 @@ public sealed class Service
     {
         State = ServiceState.Stopping;
 
-        CalncelService();
-
-        messageHandler?.Dispose();
-
         logger.Information("Stopping service");
 
-        var delay = TimeSpan.FromMilliseconds(100);
-        while (!serviceStopped) await Task.Delay(delay);
+        CalncelService();
 
-        State = ServiceState.Exited;
+        var delay = TimeSpan.FromMilliseconds(100);
+        while (State != ServiceState.Exited) await Task.Delay(delay);
+    }
+
+    public void Dispose()
+    {
+        if (disposed) return;
+
+        DisposeAsync().AsTask().RunSynchronously();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (disposed) return;
+        disposed = true;
+
+        var stopTask = !State.IsIn(ServiceState.Restarting, ServiceState.Stopping) ? StopAsync() : null;
+
+        UnregisterConfigurationFileChangeWatcher();
+
+        if (mqttClients != null)
+        {
+            if (mqttClients.Count != 0)
+            {
+                logger.Information("Disconnecting all ", mqttClients.Count, " clients");
+
+                var disconnectionOptions = new MqttClientDisconnectOptions()
+                {
+                    ReasonCode = MqttClientDisconnectReason.NormalDisconnection
+                };
+
+                var disconnectionTasks = new Task[mqttClients.Count];
+                foreach (var (position, client) in mqttClients.Enumerate())
+                    disconnectionTasks[position] = client.DisconnectAsync(disconnectionOptions).ContinueWith((_) => client.Dispose());
+                await Task.WhenAll(disconnectionTasks);
+            }
+
+            mqttClients = null;
+        }
+
+        if (messageHandler != null) await messageHandler.DisposeAsync();
+
+        brokers = null;
+
+        if (stopTask != null) await stopTask;
+
+        serviceCancellationOrConfigurationFileChangeTokenSource?.Dispose();
+        serviceCancellationOrConfigurationFileChangeTokenSource = null;
+        configurationFileChangeTokenSource?.Dispose();
+        configurationFileChangeTokenSource = null;
+
+        if (State != ServiceState.Restarting) serviceCancellationTokenSource?.Dispose();
     }
 
     private void LoadConfiguration()
@@ -265,11 +298,7 @@ public sealed class Service
 
     private void RegisterConfigurationFileChangeWatcher()
     {
-        if (configFileChangeWatcher != null)
-        {
-            configFileChangeWatcher.Dispose();
-            configFileChangeWatcher = null;
-        }
+        UnregisterConfigurationFileChangeWatcher();
 
         configurationFileChangeTokenSource?.Dispose();
         configurationFileChangeTokenSource = new CancellationTokenSource();
@@ -290,23 +319,24 @@ public sealed class Service
         configFileChangeWatcher.Changed += OnConfigurationFileChanged;
     }
 
+    private void UnregisterConfigurationFileChangeWatcher()
+    {
+        configFileChangeWatcher?.Dispose();
+        configFileChangeWatcher = null;
+    }
+
     private void OnConfigFileChangeWatcherError(object sender, ErrorEventArgs e)
     {
         logger.Error(e.GetException(), "FileSystemWatcher was unable to continue monitoring for configuration file changes");
 
-        if (configFileChangeWatcher != null)
-        {
-            configFileChangeWatcher.Dispose();
-            configFileChangeWatcher = null;
-        }
+        UnregisterConfigurationFileChangeWatcher();
     }
 
     private void OnConfigurationFileChanged(object sender, FileSystemEventArgs e)
     {
         if (configFileChangeWatcher == null) return;
 
-        configFileChangeWatcher.Changed -= OnConfigurationFileChanged;
-        configFileChangeWatcher = null;
+        UnregisterConfigurationFileChangeWatcher();
 
         logger.Information("Configuration file changed");
 
@@ -465,11 +495,13 @@ public sealed class Service
         _ = Task.WhenAll(tasks);
     }
 
+    private void CalncelService()
+    {
+        State = ServiceState.Stopping;
+        serviceCancellationTokenSource.Cancel(false);
+    }
+
     private readonly CancellationTokenSource serviceCancellationTokenSource = new();
-
-    private void CalncelService() => serviceCancellationTokenSource.Cancel(false);
-    private bool serviceStopped;
-
     private bool ServiceCancelled => serviceCancellationTokenSource.IsCancellationRequested;
     private CancellationToken ServiceCancellationToken => serviceCancellationTokenSource.Token;
 
@@ -491,4 +523,6 @@ public sealed class Service
     private BrokerConfiguration[]? brokers;
 
     private DatabaseMessageHandler? messageHandler;
+
+    private bool disposed;
 }
