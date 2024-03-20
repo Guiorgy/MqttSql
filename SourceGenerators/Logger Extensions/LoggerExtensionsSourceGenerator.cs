@@ -19,7 +19,7 @@ using System.Threading;
 namespace SourceGenerators;
 
 using Capture = TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>;
-using CaptureOrError = TypeDeclarationTreeAndAttributeDataOrError<(int genericOverrideCount, string[] logLevels)>;
+using CaptureOrError = GeneratorCapture<TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>>;
 
 [Generator(LanguageNames.CSharp)]
 internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
@@ -98,7 +98,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
         if (captures.IsDefaultOrEmpty) return;
 
-        foreach (var capture in captures.Distinct().Select(capture => capture!.TypeDeclarationTreeAndAttributeData))
+        foreach (var capture in captures.Distinct().Select(capture => capture!.Capture))
         {
 #if LOGGEREXTENSIONSGENERATORDEBUG
             // TODO: Support nested declarations
@@ -232,7 +232,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         var failedCaptures = captures.Where(static capture => capture!.IsError);
         context.RegisterImplementationSourceOutput(failedCaptures, static (context, capture) => capture!.DiagnosticMessage.ReportDiagnostic(context));
 
-        var successfulCaptures = captures.Where(static capture => capture!.IsTypeDeclarationTreeAndAttributeData).Collect();
+        var successfulCaptures = captures.Where(static capture => capture!.IsSuccess).Collect();
         context.RegisterSourceOutput(successfulCaptures, static (context, captures) => GenerateSource(context, captures));
     }
 }
