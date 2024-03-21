@@ -121,6 +121,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
             throw new ObjectDisposedException(nameof(Service));
         }
 
+        if (State != ServiceState.Created) throw new NotSupportedException("Service already started");
         State = ServiceState.Starting;
 
         CancellationToken flushCancellation = CancellationToken.None;
@@ -217,6 +218,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
     public async Task StopAsync()
     {
+        if (State == ServiceState.Stopping) return;
         State = ServiceState.Stopping;
 
         logger.Information("Stopping service");
