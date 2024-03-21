@@ -14,9 +14,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerators", "SourceG
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB51B67B-C950-4B3B-B5D1-FC8781A60266}"
 	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		docker-build.ps1 = docker-build.ps1
+		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
 Global
