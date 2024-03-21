@@ -67,11 +67,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
         mqttClientIdBase = $"{macAddress ?? Guid.NewGuid().ToString()}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
 
-#if DEBUG
-        this.homeDirectory = homeDirectory ?? Directory.GetCurrentDirectory();
-#else
         this.homeDirectory = homeDirectory ?? Environment.GetEnvironmentVariable("MqttSqlHome") ?? Directory.GetCurrentDirectory();
-#endif
         if (!Path.EndsInDirectorySeparator(this.homeDirectory)) this.homeDirectory += Path.DirectorySeparatorChar;
 
         configurationFilePath = this.homeDirectory + configurationFileName;
@@ -81,6 +77,10 @@ public sealed class Service : IDisposable, IAsyncDisposable
             ? new Logger(
 #if DEBUG
                 logLevel: Logger.LogLevel.Trace,
+                linkedLogger: loggerOverride,
+                logTimestamp: false
+#elif DOCKER
+                logLevel: Logger.LogLevel.Information,
                 linkedLogger: loggerOverride,
                 logTimestamp: false
 #else
@@ -94,6 +94,11 @@ public sealed class Service : IDisposable, IAsyncDisposable
                 logFilePath: null,
                 logToConsole: true,
                 logLevel: Logger.LogLevel.Trace,
+                logTimestamp: false
+#elif DOCKER
+                logFilePath: null,
+                logToConsole: true,
+                logLevel: Logger.LogLevel.Information,
                 logTimestamp: false
 #else
                 logFilePath: logFilePath,

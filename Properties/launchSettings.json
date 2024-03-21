@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "MqttSql": {
+      "commandName": "Project"
+    },
+    "MqttSql Docker": {
+      "commandName": "Docker",
+      "environmentVariables": {
+        "MqttSqlHome": "/app/bin/Docker/home"
+      }
+    }
+  }
+}

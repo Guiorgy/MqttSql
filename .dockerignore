@@ -1,0 +1,25 @@
+# Build directories
+**/bin/
+**/obj/
+**/out/
+
+# Docker files
+**/Dockerfile
+**/.dockerignore
+**/docker-build.ps1
+
+# git files
+**/.git/
+**/.github/
+**/.gitignore
+**/.gitattributes
+
+# Visual Studio files
+**/.vs/
+**/.editorconfig
+**/*.csproj.user
+**/Properties/
+
+# Tests
+Tests/
+TestResults/
