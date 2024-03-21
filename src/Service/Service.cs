@@ -194,12 +194,13 @@ public sealed class Service : IDisposable, IAsyncDisposable
                 else ((Action)method)();
 
                 if (ServiceCancelled) return;
+                if (ConfigurationFileChanged) break;
+            }
 
-                if (ConfigurationFileChanged)
-                {
-                    await Reset();
-                    break;
-                }
+            if (ConfigurationFileChanged)
+            {
+                await Reset();
+                continue;
             }
 
             State = ServiceState.Running;
