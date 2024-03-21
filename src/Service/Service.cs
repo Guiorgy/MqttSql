@@ -219,7 +219,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
         logger.Information("Stopping service");
 
-        CalncelService();
+        CancelService();
 
         var delay = TimeSpan.FromMilliseconds(100);
         while (State != ServiceState.Exited) await Task.Delay(delay);
@@ -285,14 +285,14 @@ public sealed class Service : IDisposable, IAsyncDisposable
             {
                 logger.Critical("No valid brokers found");
 
-                CalncelService();
+                CancelService();
             }
         }
         catch (JsonException ex)
         {
             logger.Critical(ex);
 
-            CalncelService();
+            CancelService();
         }
     }
 
@@ -352,7 +352,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
         if (messageHandler == null && !ServiceCancelledOrConfigurationFileChanged) {
             logger.Critical($"Failed to initialize the {nameof(DatabaseMessageHandler)}");
 
-            CalncelService();
+            CancelService();
         }
     }
 
@@ -495,7 +495,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
         _ = Task.WhenAll(tasks);
     }
 
-    private void CalncelService()
+    private void CancelService()
     {
         State = ServiceState.Stopping;
         serviceCancellationTokenSource.Cancel(false);
