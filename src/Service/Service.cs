@@ -194,7 +194,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
                 if (method is Func<Task> awaitable) await awaitable();
                 else ((Action)method)();
 
-                if (ServiceCancelled) return;
+                if (ServiceCancelled || disposed) return;
                 if (ConfigurationFileChanged) break;
             }
 
