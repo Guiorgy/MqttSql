@@ -206,8 +206,9 @@ public sealed class Service : IDisposable, IAsyncDisposable
             await messageHandler!.HandleMessagesAsync();
 
             if (ServiceCancelled) return;
+            if (!ConfigurationFileChanged) logger.Error(nameof(DatabaseMessageHandler.HandleMessagesAsync), " exited without cancellation");
 
-            if (ConfigurationFileChanged) await Reset();
+            await Reset();
         }
     }
 

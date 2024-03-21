@@ -149,6 +149,11 @@ public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
             }
         }
 
+        _ = Task.WhenAny(tasks).ContinueWith((_) =>
+        {
+            if (!cancellationToken.IsCancellationRequested) logger.Error("One of ", nameof(HandleMessagesAsync), " message handlers exited without cancellation");
+        });
+
         return Task.WhenAll(tasks);
     }
 
