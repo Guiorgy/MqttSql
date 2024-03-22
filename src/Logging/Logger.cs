@@ -224,7 +224,7 @@ public sealed class Logger
             LogToLinkedLogger(logLevel, message);
         }
 
-        message = message == null ? PrefixTimestamp(exception.Message) : exception.Message;
+        message = message == null && _logTimestamp ? PrefixTimestamp(exception.Message) : exception.Message;
         message = exception.StackTrace == null ? message : message + Environment.NewLine + exception.StackTrace;
 
         PrintLog(logLevel, message, ConsoleColor.Red, ConsoleColor.Yellow);
