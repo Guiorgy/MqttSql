@@ -78,15 +78,18 @@ public sealed class Service : IDisposable, IAsyncDisposable
 #if DEBUG
                 logLevel: Logger.LogLevel.Trace,
                 linkedLogger: loggerOverride,
-                logTimestamp: false
+                includeLogLevels: Logger.LogLevel.None,
+                includeTimestamp: false
 #elif DOCKER
                 logLevel: Logger.LogLevel.Information,
                 linkedLogger: loggerOverride,
-                logTimestamp: false
+                includeLogLevels: Logger.LogLevel.None,
+                includeTimestamp: false
 #else
                 logLevel: Logger.LogLevel.Information,
                 linkedLogger: loggerOverride,
-                logTimestamp: true
+                includeLogLevels: Logger.LogLevel.None,
+                includeTimestamp: true
 #endif
             )
             : new Logger(
@@ -94,17 +97,20 @@ public sealed class Service : IDisposable, IAsyncDisposable
                 logFilePath: null,
                 logToConsole: true,
                 logLevel: Logger.LogLevel.Trace,
-                logTimestamp: false
+                includeLogLevels: Logger.AllLogLevels,
+                includeTimestamp: false
 #elif DOCKER
                 logFilePath: null,
                 logToConsole: true,
                 logLevel: Logger.LogLevel.Information,
-                logTimestamp: false
+                includeLogLevels: Logger.AllLogLevels,
+                includeTimestamp: false
 #else
                 logFilePath: logFilePath,
                 logToConsole: false,
                 logLevel: Logger.LogLevel.Information,
-                logTimestamp: true
+                includeLogLevels: Logger.AllLogLevels,
+                includeTimestamp: true
 #endif
             );
 

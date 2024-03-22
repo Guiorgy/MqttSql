@@ -84,6 +84,21 @@ public sealed class Logger
         Trace = 1 << 5
     }
 
+    public const LogLevelFlag AllLogLevels = LogLevelEnum.Critical | LogLevelEnum.Error | LogLevelFlag.Warning | LogLevelEnum.Information | LogLevelEnum.Debug | LogLevelEnum.Trace;
+    public const byte AllLogLevelsMask = (byte)AllLogLevels;
+
+    private static string ToDisplayString(LogLevelEnum logLevel) => logLevel switch
+    {
+        LogLevelEnum.None => nameof(LogLevelEnum.None),
+        LogLevelEnum.Critical => nameof(LogLevelEnum.Critical),
+        LogLevelEnum.Error => nameof(LogLevelEnum.Error),
+        LogLevelEnum.Warning => nameof(LogLevelEnum.Warning),
+        LogLevelEnum.Information => nameof(LogLevelEnum.Information),
+        LogLevelEnum.Debug => nameof(LogLevelEnum.Debug),
+        LogLevelEnum.Trace => nameof(LogLevelEnum.Trace),
+        _ => throw new UnreachableException($"Unhandled LogLevel {logLevel}")
+    };
+
     /// <summary>
     /// Maps a <see cref="LogLevelEnum"/> onto the built-in <see cref="MicrosoftLogLevel"/>.
     /// </summary>
@@ -122,10 +137,11 @@ public sealed class Logger
     private readonly string? _logFilePath;
     private readonly bool _logToConsole;
     private readonly byte _logLevelMask;
+    private readonly byte _includeLogLevelMask;
+    private readonly bool _includeTimestamp;
     private readonly int _flushOnMessageCount;
     private readonly int _logFileMinSize;
     private readonly int _logFileMaxSize;
-    private readonly bool _logTimestamp;
     private readonly ConcurrentQueue<string> _logBuffer = new();
     private readonly ConcurrentQueue<List<string>> _failedLogs = new();
     private bool _flushingFailedLogs;
@@ -139,28 +155,30 @@ public sealed class Logger
     public bool LogToFileEnabled => _logFilePath != null;
     public bool LogToConsoleEnabled => _logToConsole;
 
-    public Logger(LogLevelEnum logLevel, MicrosoftLogger linkedLogger, bool logTimestamp = true)
-        : this(null, false, logLevel, 0, 0, 0, logTimestamp, linkedLogger) { }
+    public Logger(LogLevelEnum logLevel, MicrosoftLogger linkedLogger, LogLevelFlag includeLogLevels = LogLevelEnum.None, bool includeTimestamp = true)
+        : this(null, false, logLevel, includeLogLevels, includeTimestamp, 0, 0, 0, linkedLogger) { }
 
     public Logger(
         string? logFilePath,
         bool logToConsole,
         LogLevelEnum logLevel,
+        LogLevelFlag includeLogLevels = AllLogLevels,
+        bool includeTimestamp = true,
         int flushOnMessageCount = _defaultFlushOnMessageCount,
         int logFileMinSize = _defaultLogFileMinSize,
         int logFileMaxSize = _defaultLogFileMaxSize,
-        bool logTimestamp = true,
         MicrosoftLogger? linkedLogger = null
-    ) : this(logFilePath, logToConsole, (byte)ToBitMask(logLevel), flushOnMessageCount, logFileMinSize, logFileMaxSize, logTimestamp, linkedLogger) { }
+    ) : this(logFilePath, logToConsole, (byte)ToBitMask(logLevel), (byte)ToBitMask(includeLogLevels), includeTimestamp, flushOnMessageCount, logFileMinSize, logFileMaxSize, linkedLogger) { }
 
     public Logger(
         string? logFilePath,
         bool logToConsole,
         byte logLevelMask,
+        byte includeLogLevelMask = AllLogLevelsMask,
+        bool includeTimestamp = true,
         int flushOnMessageCount = _defaultFlushOnMessageCount,
         int logFileMinSize = _defaultLogFileMinSize,
         int logFileMaxSize = _defaultLogFileMaxSize,
-        bool logTimestamp = true,
         MicrosoftLogger? linkedLogger = null
     )
     {
@@ -169,10 +187,11 @@ public sealed class Logger
         _logFilePath = logFilePath;
         _logToConsole = logToConsole;
         _logLevelMask = logLevelMask;
+        _includeLogLevelMask = includeLogLevelMask;
+        _includeTimestamp = includeTimestamp;
         _flushOnMessageCount = flushOnMessageCount < 1 ? 1 : flushOnMessageCount;
         _logFileMinSize = Math.Max(_defaultLogFileMinSize, logFileMinSize);
         _logFileMaxSize = Math.Max(logFileMinSize * 2, logFileMaxSize);
-        _logTimestamp = logTimestamp;
 
         _linkedLogger = linkedLogger;
     }
@@ -184,7 +203,8 @@ public sealed class Logger
 
     private static void PrefixTimestamp(ref string message) => message = $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
-    private static string PrefixTimestamp(string message) => $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
+    private bool PrefixLogLevelFor(LogLevelEnum logLevel) => ((byte)logLevel & _includeLogLevelMask) != 0;
+    private static void PrefixLogLevel(ref string message, LogLevelEnum logLevel) => message = $"[{ToDisplayString(logLevel)}] {message}";
 
     public void Log(LogLevelEnum logLevel, params object?[]? messageBits)
     {
@@ -194,7 +214,8 @@ public sealed class Logger
 
         if (message.Length == 0) return;
 
-        if (_logTimestamp) PrefixTimestamp(ref message);
+        if (_includeTimestamp) PrefixTimestamp(ref message);
+        if (PrefixLogLevelFor(logLevel)) PrefixLogLevel(ref message, logLevel);
 
         PrintLog(logLevel, message);
         QueueLog(message);
@@ -217,14 +238,23 @@ public sealed class Logger
     {
         if (message != null)
         {
-            if (_logTimestamp) PrefixTimestamp(ref message);
+            if (_includeTimestamp) PrefixTimestamp(ref message);
+            if (PrefixLogLevelFor(logLevel)) PrefixLogLevel(ref message, logLevel);
 
             PrintLog(logLevel, message);
             QueueLog(message, true);
             LogToLinkedLogger(logLevel, message);
+
+            message = exception.Message;
+        }
+        else
+        {
+            message = exception.Message;
+
+            if (_includeTimestamp) PrefixTimestamp(ref message);
+            if (PrefixLogLevelFor(logLevel)) PrefixLogLevel(ref message, logLevel);
         }
 
-        message = message == null && _logTimestamp ? PrefixTimestamp(exception.Message) : exception.Message;
         message = exception.StackTrace == null ? message : message + Environment.NewLine + exception.StackTrace;
 
         PrintLog(logLevel, message, ConsoleColor.Red, ConsoleColor.Yellow);
