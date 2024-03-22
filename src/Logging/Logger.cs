@@ -14,6 +14,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using LogLevelFlag = MqttSql.Logging.Logger.LogLevel;
+using LogLevelEnum = MqttSql.Logging.Logger.LogLevel;
+
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using MicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.Extensions.Logging;
@@ -82,29 +85,29 @@ public sealed class Logger
     }
 
     /// <summary>
-    /// Maps a <see cref="LogLevel"/> onto the built-in <see cref="MicrosoftLogLevel"/>.
+    /// Maps a <see cref="LogLevelEnum"/> onto the built-in <see cref="MicrosoftLogLevel"/>.
     /// </summary>
     /// <param name="logLevel">The enum to map.</param>
     /// <returns>The mapped built-in enum.</returns>
-    private static MicrosoftLogLevel ToMicrosoftLogLevel(LogLevel logLevel) => logLevel switch
+    private static MicrosoftLogLevel ToMicrosoftLogLevel(LogLevelEnum logLevel) => logLevel switch
     {
-        LogLevel.None => MicrosoftLogLevel.None,
-        LogLevel.Critical => MicrosoftLogLevel.Critical,
-        LogLevel.Error => MicrosoftLogLevel.Error,
-        LogLevel.Warning => MicrosoftLogLevel.Warning,
-        LogLevel.Information => MicrosoftLogLevel.Information,
-        LogLevel.Debug => MicrosoftLogLevel.Debug,
-        LogLevel.Trace => MicrosoftLogLevel.Trace,
+        LogLevelEnum.None => MicrosoftLogLevel.None,
+        LogLevelEnum.Critical => MicrosoftLogLevel.Critical,
+        LogLevelEnum.Error => MicrosoftLogLevel.Error,
+        LogLevelEnum.Warning => MicrosoftLogLevel.Warning,
+        LogLevelEnum.Information => MicrosoftLogLevel.Information,
+        LogLevelEnum.Debug => MicrosoftLogLevel.Debug,
+        LogLevelEnum.Trace => MicrosoftLogLevel.Trace,
         _ => throw new UnreachableException($"Unhandled LogLevel {logLevel}")
     };
 
     /// <summary>
-    /// Converts a <see cref="LogLevel"/> flag into a bitmask where every lower bit to the one set in the falg is also set.
+    /// Converts a <see cref="LogLevelEnum"/> into a bitmask where every lower bit to the one set in the falg is also set.
     /// </summary>
-    /// <param name="logLevel">The <see cref="LogLevel"/> flag to convert to a bitmask.</param>
+    /// <param name="logLevel">The <see cref="LogLevelEnum"/> to convert to a bitmask.</param>
     /// <returns>The resulting bitmask.</returns>
     [SuppressMessage("Major Code Smell", "S1121:Assignments should not be made from within sub-expressions")]
-    private static uint ToBitMask(LogLevel logLevel)
+    private static uint ToBitMask(LogLevelEnum logLevel)
     {
         uint mask = (uint)logLevel;
 
@@ -136,13 +139,13 @@ public sealed class Logger
     public bool LogToFileEnabled => _logFilePath != null;
     public bool LogToConsoleEnabled => _logToConsole;
 
-    public Logger(LogLevel logLevel, MicrosoftLogger linkedLogger, bool logTimestamp = true)
+    public Logger(LogLevelEnum logLevel, MicrosoftLogger linkedLogger, bool logTimestamp = true)
         : this(null, false, logLevel, 0, 0, 0, logTimestamp, linkedLogger) { }
 
     public Logger(
         string? logFilePath,
         bool logToConsole,
-        LogLevel logLevel,
+        LogLevelEnum logLevel,
         int flushOnMessageCount = _defaultFlushOnMessageCount,
         int logFileMinSize = _defaultLogFileMinSize,
         int logFileMaxSize = _defaultLogFileMaxSize,
@@ -161,7 +164,7 @@ public sealed class Logger
         MicrosoftLogger? linkedLogger = null
     )
     {
-        if (logLevelMask >= (byte)LogLevel.Trace << 1) throw new ArgumentOutOfRangeException(nameof(logLevelMask));
+        if (logLevelMask >= (byte)LogLevelEnum.Trace << 1) throw new ArgumentOutOfRangeException(nameof(logLevelMask));
 
         _logFilePath = logFilePath;
         _logToConsole = logToConsole;
@@ -174,16 +177,16 @@ public sealed class Logger
         _linkedLogger = linkedLogger;
     }
 
-    public bool EnabledFor(LogLevel logLevel) => ((byte)logLevel & _logLevelMask) != 0;
+    public bool EnabledFor(LogLevelEnum logLevel) => ((byte)logLevel & _logLevelMask) != 0;
 
-    private const LogLevel _printToStdErrLogLevels = LogLevel.Critical | LogLevel.Error | LogLevel.Warning;
-    private static bool ShouldPrintToStdErr(LogLevel logLevel) => (logLevel & _printToStdErrLogLevels) != 0;
+    private const LogLevelFlag _printToStdErrLogLevels = LogLevelEnum.Critical | LogLevelEnum.Error | LogLevelEnum.Warning;
+    private static bool ShouldPrintToStdErr(LogLevelEnum logLevel) => (logLevel & _printToStdErrLogLevels) != 0;
 
     private static void PrefixTimestamp(ref string message) => message = $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
     private static string PrefixTimestamp(string message) => $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
-    public void Log(LogLevel logLevel, params object?[]? messageBits)
+    public void Log(LogLevelEnum logLevel, params object?[]? messageBits)
     {
         if (!EnabledFor(logLevel) || messageBits == null || messageBits.Length == 0) return;
 
@@ -198,7 +201,7 @@ public sealed class Logger
         LogToLinkedLogger(logLevel, message);
     }
 
-    public void Log(LogLevel logLevel, Exception exception, params object?[]? messageBits)
+    public void Log(LogLevelEnum logLevel, Exception exception, params object?[]? messageBits)
     {
         if (!EnabledFor(logLevel)) return;
 
@@ -208,9 +211,9 @@ public sealed class Logger
         LogException(logLevel, exception, message);
     }
 
-    public void Log(LogLevel logLevel, Exception exception) => Log(logLevel, exception, (object?[]?)null);
+    public void Log(LogLevelEnum logLevel, Exception exception) => Log(logLevel, exception, (object?[]?)null);
 
-    private void LogException(LogLevel logLevel, Exception exception, string? message = null, bool skipFlush = false)
+    private void LogException(LogLevelEnum logLevel, Exception exception, string? message = null, bool skipFlush = false)
     {
         if (message != null)
         {
@@ -229,7 +232,7 @@ public sealed class Logger
         LogToLinkedLogger(logLevel, message);
     }
 
-    private void PrintLog(LogLevel logLevel, string message)
+    private void PrintLog(LogLevelEnum logLevel, string message)
     {
         if (!_logToConsole) return;
 
@@ -239,7 +242,7 @@ public sealed class Logger
             Console.WriteLine(message);
     }
 
-    private void PrintLog(LogLevel logLevel, string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
+    private void PrintLog(LogLevelEnum logLevel, string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
     {
         if (!_logToConsole) return;
 
@@ -266,7 +269,7 @@ public sealed class Logger
     }
 
     [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Structured logging not supported")]
-    private void LogToLinkedLogger(LogLevel logLevel, string message)
+    private void LogToLinkedLogger(LogLevelEnum logLevel, string message)
     {
         if (_linkedLogger == null) return;
 
