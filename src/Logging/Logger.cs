@@ -176,6 +176,9 @@ public sealed class Logger
 
     public bool EnabledFor(LogLevel logLevel) => ((byte)logLevel & _logLevelMask) != 0;
 
+    private const LogLevel _printToStdErrLogLevels = LogLevel.Critical | LogLevel.Error | LogLevel.Warning;
+    private static bool ShouldPrintToStdErr(LogLevel logLevel) => (logLevel & _printToStdErrLogLevels) != 0;
+
     private static void PrefixTimestamp(ref string message) => message = $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
 
     private static string PrefixTimestamp(string message) => $"[{DateTime.Now.ToIsoString(milliseconds: true)}] {message}";
@@ -190,7 +193,7 @@ public sealed class Logger
 
         if (_logTimestamp) PrefixTimestamp(ref message);
 
-        PrintLog(message);
+        PrintLog(logLevel, message);
         QueueLog(message);
         LogToLinkedLogger(logLevel, message);
     }
@@ -213,7 +216,7 @@ public sealed class Logger
         {
             if (_logTimestamp) PrefixTimestamp(ref message);
 
-            PrintLog(message);
+            PrintLog(logLevel, message);
             QueueLog(message, true);
             LogToLinkedLogger(logLevel, message);
         }
@@ -221,25 +224,32 @@ public sealed class Logger
         message = message == null ? PrefixTimestamp(exception.Message) : exception.Message;
         message = exception.StackTrace == null ? message : message + Environment.NewLine + exception.StackTrace;
 
-        PrintLog(message, ConsoleColor.Red, ConsoleColor.Yellow);
+        PrintLog(logLevel, message, ConsoleColor.Red, ConsoleColor.Yellow);
         QueueLog(message, skipFlush);
         LogToLinkedLogger(logLevel, message);
     }
 
-    private void PrintLog(string message)
+    private void PrintLog(LogLevel logLevel, string message)
     {
-        if (_logToConsole) Console.WriteLine(message);
+        if (!_logToConsole) return;
+
+        if (ShouldPrintToStdErr(logLevel))
+            Console.Error.WriteLine(message);
+        else
+            Console.WriteLine(message);
     }
 
-    private void PrintLog(string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
+    private void PrintLog(LogLevel logLevel, string message, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
     {
-        if (_logToConsole)
-        {
-            Console.ForegroundColor = foregroundColor;
-            Console.BackgroundColor = backgroundColor;
+        if (!_logToConsole) return;
+
+        Console.ForegroundColor = foregroundColor;
+        Console.BackgroundColor = backgroundColor;
+        if (ShouldPrintToStdErr(logLevel))
+            Console.Error.WriteLine(message);
+        else
             Console.WriteLine(message);
-            Console.ResetColor();
-        }
+        Console.ResetColor();
     }
 
     private void QueueLog(string message, bool skipFlush = false)
