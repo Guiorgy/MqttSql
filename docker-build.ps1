@@ -6,7 +6,7 @@ param(
 if ($COMMAND -eq 'build') {
   if ($arch -in 'auto', 'x86', 'x64', 'arm', 'arm64') {
     if ($arch -eq 'auto') {
-      docker build --platform=linux --tag guiorgy/mqttsql:latest --file Dockerfile .
+      docker build --platform=linux --tag guiorgy/mqttsql:latest --file MqttSql\Dockerfile .
     } else {
       $ARCH_DOCKER_MAPPING = @{
         "auto" = "auto"
@@ -17,7 +17,7 @@ if ($COMMAND -eq 'build') {
       }
       $DOCKER_ARCH = $ARCH_DOCKER_MAPPING[$ARCH]
 
-      docker build --platform=linux/$DOCKER_ARCH --tag guiorgy/mqttsql:latest --file Dockerfile .
+      docker build --platform=linux/$DOCKER_ARCH --tag guiorgy/mqttsql:latest --file MqttSql\Dockerfile .
     }
   } else {
     Write-Error "Invalid architecture specified: $arch. Please use one of: auto, x86, x64, arm, arm64"
