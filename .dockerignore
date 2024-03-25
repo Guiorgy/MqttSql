@@ -7,6 +7,11 @@
 **/Dockerfile
 **/.dockerignore
 **/docker-build.ps1
+**/docker-compose.dcproj
+**/docker-compose.yml
+**/docker-compose.yaml
+**/docker-compose.override.yml
+**/docker-compose.override.yaml
 
 # git files
 **/.git/

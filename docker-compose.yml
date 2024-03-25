@@ -1,0 +1,44 @@
+version: '3.4'
+
+name: mqttsql
+
+services:
+  mqttsql:
+    container_name: MqttSql
+    image: ${DOCKER_REGISTRY-}mqttsql
+    build:
+      context: .
+      dockerfile: MqttSql/Dockerfile
+    depends_on:
+      - postgres
+      - mosquitto
+
+  postgres:
+    container_name: PostgreSQL_for_MqttSql
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mqttsql
+
+  pgadmin:
+    container_name: PgAdmin4_for_MqttSql
+    image: dpage/pgadmin4:latest
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres
+
+  mosquitto:
+    container_name: Mosquitto_for_MqttSql
+    image: eclipse-mosquitto:latest
+    ports:
+      - 1883:1883 # MQTT
+      - 8883:8883 # MQTTS
+
+networks:
+  default:
+    external: false
