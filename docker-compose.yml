@@ -1,0 +1,192 @@
+version: '3.4'
+
+name: mqttsql
+
+services:
+  mqttsql:
+    container_name: MqttSql
+    image: guiorgy/mqttsql:dev
+    build:
+      dockerfile: MqttSql/Dockerfile
+      context: .
+      target: debug
+      args:
+        BUILD_CONFIGURATION: Debug
+        DEBUG_CONFIG: |-
+          {
+            "database": {
+              "name": "postgres",
+              "type": "PostgreSql",
+              "connectionString": "Host=postgres;Port=5432;Database=mqttsql;Username=admin;Password=admin;"
+            }, 
+            "broker": {
+              "host": "mosquitto",
+              "port": 1881,
+              "user": "mqttsql",
+              "password": "mqttsql",
+              "subscriptions": [
+                {
+                  "topic": "mqttsql/debug",
+                  "base": "postgres",
+                  "table": "debug"
+                }
+              ]
+            }
+          }
+    depends_on:
+      - postgres
+      - mosquitto
+
+  postgres:
+    container_name: PostgreSQL_for_MqttSql
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mqttsql
+
+  pgadmin:
+    container_name: PgAdmin4_for_MqttSql
+    image: dpage/pgadmin4:latest
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_SERVER_JSON_FILE: /var/lib/pgadmin/servers.json
+      SERVER_JSON_CONTENT: |-
+        {
+          "Servers": {
+            "1": {
+              "Name": "PostgreSQL for MqttSql",
+              "Group": "Servers",
+              "Host": "postgres",
+              "Port": 5432,
+              "MaintenanceDB": "postgres",
+              "Username": "admin",
+              "PassFile": "../../pgpass",
+              "SSLMode": "disable"
+            }
+          }
+        }
+      PGPASS_CONTENT: |-
+        # hostname:port:database:username:password
+        postgres:5432:*:admin:admin
+    entrypoint: >
+      /bin/sh -c '
+        echo -n "$$SERVER_JSON_CONTENT" > /var/lib/pgadmin/servers.json &&
+        echo -n "$$PGPASS_CONTENT" > /var/lib/pgadmin/pgpass &&
+        chmod 600 /var/lib/pgadmin/pgpass &&
+        exec /entrypoint.sh
+      '
+    depends_on:
+      - postgres
+
+  mosquitto:
+    container_name: Mosquitto_for_MqttSql
+    image: eclipse-mosquitto:latest
+    ports:
+      - 1883:1883 # MQTT
+      - 8883:8883 # MQTTS
+    environment:
+      CONFIG_CONTENT: |-
+        per_listener_settings true
+        log_type error
+        log_type warning
+        log_type notice
+        log_type information
+        log_type subscribe
+        log_type unsubscribe
+        log_timestamp true
+        log_timestamp_format %Y-%m-%dT%H:%M:%S
+        connection_messages true
+
+        # MQTT
+        listener 1883
+        socket_domain ipv4
+        allow_anonymous false
+        password_file /mosquitto/config/passwords_1883
+        acl_file /mosquitto/config/access_control_1883
+
+        # MQTTS
+        listener 8883
+        socket_domain ipv4
+        allow_anonymous false
+        password_file /mosquitto/config/passwords_8883
+        acl_file /mosquitto/config/access_control_8883
+        cafile /run/secrets/ca.crt
+        certfile /run/secrets/server.crt
+        keyfile /run/secrets/server.key
+        tls_version tlsv1.2
+        #require_certificate false
+
+        # Docker Internal MQTT
+        listener 1881
+        socket_domain ipv4
+        allow_anonymous false
+        password_file /mosquitto/config/passwords_1881
+        acl_file /mosquitto/config/access_control_1881
+      PASSWORDS_1883_CONTENT: |-
+        mqttsql:mqttsql
+      ACCESS_CONTROL_1883_CONTENT: |-
+        user mqttsql
+        topic write mqttsql/debug
+      PASSWORDS_8883_CONTENT: |-
+        mqttsql:mqttsql
+      ACCESS_CONTROL_8883_CONTENT: |-
+        user mqttsql
+        topic write mqttsql/debug
+      PASSWORDS_1881_CONTENT: |-
+        mqttsql:mqttsql
+      ACCESS_CONTROL_1881_CONTENT: |-
+        user mqttsql
+        topic read mqttsql/debug
+    secrets:
+      - ca.crt
+      - server.crt
+      - server.key
+    entrypoint: >
+      /bin/sh -c '
+        if [ ! -f /run/secrets/ca.crt ] || [ ! -f /run/secrets/server.crt ] || [ ! -f /run/secrets/server.key ]; then CONFIG_CONTENT=$(echo -n "$$CONFIG_CONTENT" | awk "!between && /^# MQTTS$/ {between=1} between && /^# Docker Internal MQTT$/ {between=0} !between"); fi &&
+        if [ -z "$$ACCESS_CONTROL_1883_CONTENT" ]; then
+          CONFIG_CONTENT=$(echo -n "$$CONFIG_CONTENT" | sed "\|/mosquitto/config/access_control_1883|d");
+        else
+          echo -n "$$ACCESS_CONTROL_1883_CONTENT" > /mosquitto/config/access_control_1883 &&
+          chmod 0700 /mosquitto/config/access_control_1883;
+        fi &&
+        if [ -z "$$ACCESS_CONTROL_8883_CONTENT" ]; then
+          CONFIG_CONTENT=$(echo -n "$$CONFIG_CONTENT" | sed "\|/mosquitto/config/access_control_8883|d");
+        else
+          echo -n "$$ACCESS_CONTROL_8883_CONTENT" > /mosquitto/config/access_control_8883 &&
+          chmod 0700 /mosquitto/config/access_control_8883;
+        fi &&
+        if [ -z "$$ACCESS_CONTROL_1881_CONTENT" ]; then
+          CONFIG_CONTENT=$(echo -n "$$CONFIG_CONTENT" | sed "\|/mosquitto/config/access_control_1881|d");
+        else
+          echo -n "$$ACCESS_CONTROL_1881_CONTENT" > /mosquitto/config/access_control_1881 &&
+          chmod 0700 /mosquitto/config/access_control_1881;
+        fi &&
+        echo -n "$$CONFIG_CONTENT" > /mosquitto/config/mosquitto.conf &&
+        echo -n "$$PASSWORDS_1883_CONTENT" > /mosquitto/config/passwords_1883 &&
+        chmod 0700 /mosquitto/config/passwords_1883 &&
+        mosquitto_passwd -U /mosquitto/config/passwords_1883 &&
+        echo -n "$$PASSWORDS_8883_CONTENT" > /mosquitto/config/passwords_8883 &&
+        chmod 0700 /mosquitto/config/passwords_8883 &&
+        mosquitto_passwd -U /mosquitto/config/passwords_8883 &&
+        echo -n "$$PASSWORDS_1881_CONTENT" > /mosquitto/config/passwords_1881 &&
+        chmod 0700 /mosquitto/config/passwords_1881 &&
+        mosquitto_passwd -U /mosquitto/config/passwords_1881 &&
+        exec /docker-entrypoint.sh /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
+      '
+
+secrets:
+  ca.crt:
+    file: mosquitto_certs/ca.crt
+  server.crt:
+    file: mosquitto_certs/server.crt
+  server.key:
+    file: mosquitto_certs/server.key
+
+networks:
+  default:
+    external: false

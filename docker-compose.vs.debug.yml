@@ -1,0 +1,4 @@
+services:
+  mqttsql:
+    build:
+      target: debug-base

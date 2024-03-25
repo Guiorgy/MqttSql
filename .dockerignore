@@ -7,6 +7,19 @@
 **/Dockerfile
 **/.dockerignore
 **/docker-build.ps1
+**/DockerDebug.dcproj
+**/docker-compose.yml
+**/docker-compose.yaml
+**/docker-compose.override.yml
+**/docker-compose.override.yaml
+**/docker-compose.vs.debug.yml
+**/docker-compose.vs.debug.yaml
+**/docker-compose.vs.release.yml
+**/docker-compose.vs.release.yaml
+
+# Docker debug files
+# Mosquitto debug TLS certificates
+mosquitto_certs/
 
 # git files
 **/.git/
@@ -19,6 +32,7 @@
 **/.editorconfig
 **/*.csproj.user
 **/Properties/
+**/launchSettings.json
 
 # Tests
 Tests/

@@ -1,11 +1,14 @@
 # syntax=docker/dockerfile:1.7-labs
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
-### .NET App Build Image ###
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+### .NET Build Base Stage ###
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build-base
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /build
+
+### .NET Build Stage ###
+FROM build-base AS build
 
 # Copy project files only and restore dependencies (as a distinct layers for caching)
 COPY --parents *.csproj */*.csproj */*/*.csproj ./
@@ -15,9 +18,28 @@ RUN dotnet restore ./MqttSql/MqttSql.csproj --arch $TARGETARCH
 COPY --exclude=*.csproj --exclude=*/*.csproj --exclude=*/*/*.csproj . ./
 RUN dotnet build ./MqttSql/MqttSql.csproj --no-restore --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false -p:Define=DOCKER
 
-### .NET App Publish Image ###
+### .NET Debug Base Stage ###
+FROM build-base as debug-base
+ARG DEBUG_CONFIG
+WORKDIR /app
+
+# Set environmental variables
+ENV MqttSqlHome=/tmp/mqttsql
+
+# Create the configuration file
+RUN mkdir /tmp/mqttsql/ && echo -n "$DEBUG_CONFIG" > /tmp/mqttsql/config.json
+
+### .NET App Debug Stage ###
+FROM debug-base as debug
+
+# Copy the built files into the working directory
+COPY --from=build /build/MqttSql/bin/Debug/*/*/* .
+
+# Define the entry point
+ENTRYPOINT ["dotnet", "MqttSql.dll"]
+
+### .NET App Publish Stage ###
 FROM build as publish
-ARG BUILD_CONFIGURATION=Release
 
 # Build a release executable targeting Linux and the specified architecture
 RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false --output /publish
@@ -27,9 +49,9 @@ RUN mv ./LICENSE /publish/
 
 ### .NET App Runtime Image ###
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime:8.0 as runtime
+WORKDIR /app
 
 # Copy the published files from the publish stage into the working directory
-WORKDIR /app
 COPY --from=publish /publish .
 
 # Set environmental variables
