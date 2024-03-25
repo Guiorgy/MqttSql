@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MqttSql.csproj" />
+    <ProjectReference Include="..\MqttSql\MqttSql.csproj" />
   </ItemGroup>
 
   <ItemGroup>
