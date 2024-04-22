@@ -1,8 +1,20 @@
 # syntax=docker/dockerfile:1.7-labs
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
+# Debian Slim: 8.0
+# Ubuntu: 8.0-jammy
+# Alpine: 8.0-alpine
+ARG SDK_TAG=8.0
+
+# Debian Slim: 8.0
+# Ubuntu: 8.0-jammy
+# Ubuntu Chiseled: 8.0-jammy-chiseled
+# Ubuntu Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-jammy-chiseled-extra
+# Alpine: 8.0-alpine
+ARG RUNTIME_TAG=8.0
+
 ### .NET Build Base Stage ###
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build-base
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:$SDK_TAG AS build-base
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /build
@@ -48,7 +60,7 @@ RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arc
 RUN mv ./LICENSE /publish/
 
 ### .NET App Runtime Image ###
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime:8.0 as runtime
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime:$RUNTIME_TAG as runtime
 WORKDIR /app
 
 # Copy the published files from the publish stage into the working directory
@@ -56,11 +68,6 @@ COPY --from=publish /publish .
 
 # Set environmental variables
 ENV MqttSqlHome=/app/home
-
-# Create a new user (without home) and run the app with that user instead of root (default)
-RUN groupadd mqttsql --gid=10101 \
-  && useradd --no-user-group --gid mqttsql --uid=10101 --no-log-init --shell=/bin/bash -M mqttsql
-USER mqttsql:mqttsql
 
 # Define the entry point
 ENTRYPOINT ["dotnet", "MqttSql.dll"]
