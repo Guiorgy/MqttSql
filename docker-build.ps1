@@ -49,7 +49,7 @@ if ($Command -eq 'build') {
   docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_TAG --build-arg RUNTIME_TAG=$RUNTIME_TAG --tag "$($TAG):latest" --file MqttSql\Dockerfile .
 } elseif ($Command -eq 'save') {
   New-Item -ItemType Directory -Force -Path .\Publish\Docker
-  docker save -o .\Publish\Docker\$($TAG -replace '/', '-')-latest.tar "$($TAG):latest"
+  docker save "$($TAG):latest" | gzip --best > .\Publish\Docker\$($TAG -replace '/', '-')-latest.tar.gz
 } else {
   Write-Error "Invalid command specified: $Command. Please use one of: 'build', 'save'"
 }
