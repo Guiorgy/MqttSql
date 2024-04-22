@@ -44,6 +44,8 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: mqttsql
+    tmpfs:
+      - /var/lib/postgresql/data
 
   pgadmin:
     container_name: PgAdmin4_for_MqttSql
@@ -79,6 +81,8 @@ services:
         chmod 600 /var/lib/pgadmin/pgpass &&
         exec /entrypoint.sh
       '
+    tmpfs:
+      - /var/lib/pgadmin
     depends_on:
       - postgres
 
@@ -178,6 +182,10 @@ services:
         mosquitto_passwd -U /mosquitto/config/passwords_1881 &&
         exec /docker-entrypoint.sh /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
       '
+    tmpfs:
+      - /mosquitto/config
+      - /mosquitto/data
+      - /mosquitto/log
 
 secrets:
   ca.crt:
