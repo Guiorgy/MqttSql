@@ -122,7 +122,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
         State = ServiceState.Created;
     }
 
-    public void Start() => _ = Task.Run(() => StartAsync(), ServiceCancellationToken);
+    public void Start() => _ = Task.Run(StartAsync, ServiceCancellationToken);
 
     public async Task StartAsync()
     {
