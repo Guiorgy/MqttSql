@@ -3,13 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
-
     <PlatformTarget>x64</PlatformTarget>
-
     <IsPublishable>False</IsPublishable>
-
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
@@ -26,10 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Configuration Samples\*">
+    <None Update="Service\Configuration Samples\*">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Update="Configuration Samples\Result\*">
+    <None Update="Service\Configuration Samples\Result\*">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
