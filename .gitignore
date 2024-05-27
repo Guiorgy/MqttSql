@@ -387,5 +387,8 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
+# Verify
+*.received.*
+
 # Mosquitto debug TLS certificates
 mosquitto_certs/
