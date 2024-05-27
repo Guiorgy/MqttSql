@@ -16,6 +16,24 @@ namespace SourceGenerators;
 internal static class SourceGeneratorExtensions
 {
     /// <summary>
+    /// Equivalent to <code>.Where(x => x is not null)</code> and <code>.Select(static (x, _) => x!)</code>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IncrementalValueProviderExtensions.Where{TSource}(IncrementalValuesProvider{TSource}, Func{TSource, bool})"/>
+    /// <see cref="IncrementalValueProviderExtensions.Select{TSource, TResult}(IncrementalValuesProvider{TSource}, Func{TSource, System.Threading.CancellationToken, TResult})"/>
+    /// </remarks>
+    public static IncrementalValuesProvider<T> ExcludeNulls<T>(this IncrementalValuesProvider<T?> provider) =>
+        provider.Where(static x => x is not null).Select(static (x, _) => x!);
+
+    public static IncrementalValuesProvider<GeneratorCapture<T>> FilterDiagnostics<T>(this IncrementalValuesProvider<GeneratorCapture<T>> provider)
+        where T : class?, IEquatable<T> =>
+        provider.Where(static capture => capture.IsError);
+
+    public static IncrementalValuesProvider<GeneratorCapture<T>> FilterCaptures<T>(this IncrementalValuesProvider<GeneratorCapture<T>> provider)
+        where T : class?, IEquatable<T> =>
+        provider.Where(static capture => capture.IsSuccess);
+
+    /// <summary>
     /// Returns the first ancestor node of type <see cref="{TAncestor}"/>, or a default value if such ancestor can't be found.
     /// </summary>
     /// <typeparam name="TAncestor">The type of the ancestor.</typeparam>
@@ -309,5 +327,26 @@ internal static class SourceGeneratorExtensions
             if (!element.Equals(skip))
                 yield return element;
         }
+    }
+
+    /// <summary>
+    /// Computes the average of a sequence of System.Double values that are obtained by invoking a transform function on each element of the input sequence.
+    /// </summary>
+    /// <remarks><see cref="Enumerable.Average{TSource}(IEnumerable{TSource}, Func{TSource, double})"/></remarks>
+    /// <typeparam name="TSource">A sequence of values to calculate the average of.</typeparam>
+    /// <param name="source">A transform function to apply to each element.</param>
+    /// <param name="selector">The type of the elements of source.</param>
+    /// <returns>The average of the sequence of values.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
+    public static double Average<TSource>(this ReadOnlySpan<TSource> source, Func<TSource, double> selector)
+    {
+        if (source.Length == 0) throw new InvalidOperationException($"{nameof(source)} must not be empty.");
+
+        double sum = 0;
+
+        foreach (TSource element in source)
+            sum += selector(element);
+
+        return sum / source.Length;
     }
 }

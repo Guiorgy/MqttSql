@@ -64,22 +64,7 @@ internal sealed class TypeDeclaration(string modifiers, string keyword, string n
     public override bool Equals(object? obj) =>
         obj is TypeDeclaration other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        static int StringHash(string s) => EqualityComparer<string>.Default.GetHashCode(s);
-
-        unchecked
-        {
-            const int multiplier = -1521134295;
-            int hashCode = -754136522;
-            hashCode = (hashCode * multiplier) + StringHash(Modifiers);
-            hashCode = (hashCode * multiplier) + StringHash(Keyword);
-            hashCode = (hashCode * multiplier) + StringHash(Name);
-            hashCode = (hashCode * multiplier) + StringHash(TypeParameters);
-            hashCode = (hashCode * multiplier) + StringHash(Constraints);
-            return hashCode;
-        }
-    }
+    public override int GetHashCode() => HashCode.Combine(Modifiers, Keyword, Name, TypeParameters, Constraints);
 
     public override string ToString()
     {
