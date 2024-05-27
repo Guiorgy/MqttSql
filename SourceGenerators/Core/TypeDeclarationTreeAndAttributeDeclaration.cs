@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace SourceGenerators;
 
-internal sealed class TypeDeclarationTreeAndAttributeData<T>(TypeDeclarationTree typeDeclarationTree, T attributeData) : IEquatable<TypeDeclarationTreeAndAttributeData<T>> where T : notnull
+internal sealed class TypeDeclarationTreeAndAttributeData<T>(TypeDeclarationTree typeDeclarationTree, T attributeData) : IEquatable<TypeDeclarationTreeAndAttributeData<T>> where T : notnull, IEquatable<T>
 {
     public TypeDeclarationTree TypeDeclarationTree { get; } = typeDeclarationTree;
     public T AttributeData { get; } = attributeData;
@@ -20,15 +20,5 @@ internal sealed class TypeDeclarationTreeAndAttributeData<T>(TypeDeclarationTree
 
     public override bool Equals(object? obj) => obj is TypeDeclarationTreeAndAttributeData<T> other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            const int multiplier = -1521134295;
-            int hashCode = 914465144;
-            hashCode = (hashCode * multiplier) + TypeDeclarationTree?.GetHashCode() ?? 0;
-            hashCode = (hashCode * multiplier) + EqualityComparer<T>.Default.GetHashCode(AttributeData);
-            return hashCode;
-        }
-    }
+    public override int GetHashCode() => HashCode.Combine(TypeDeclarationTree, AttributeData);
 }

@@ -6,17 +6,17 @@
 */
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SourceGenerators;
 
 internal sealed class DiagnosticMessage(Location location, string message, params object?[] messageArgs) : IEquatable<DiagnosticMessage>
 {
-    public Location Location { get; } = location;
+    private readonly LocationCache locationCache = location;
+    public Location Location => locationCache;
     public string Message { get; } = message;
-    public object?[] MessageArgs { get; } = messageArgs;
+    public EquatableImmutableArray MessageArgs { get; } = messageArgs;
 
     public DiagnosticMessage(string message, params object?[] messageArgs) : this(Location.None, message, messageArgs)
     {
@@ -28,28 +28,50 @@ internal sealed class DiagnosticMessage(Location location, string message, param
             Diagnostic.Create(
                 new DiagnosticDescriptor("GEN", nameof(SourceGenerators), Message, "Generation", DiagnosticSeverity.Error, true),
                 Location,
-                MessageArgs
+                MessageArgs.Length == 0 ? null : [..MessageArgs]
             )
         );
     }
 
     public bool Equals(DiagnosticMessage other) =>
-        EqualityComparer<Location>.Default.Equals(Location, other.Location) &&
+        locationCache.Equals(other.locationCache) &&
         Message == other.Message &&
-        MessageArgs.SequenceEqual(other.MessageArgs);
+        MessageArgs.Equals(other.MessageArgs);
 
     public override bool Equals(object? obj) => obj is DiagnosticMessage other && Equals(other);
 
-    public override int GetHashCode()
+    public override int GetHashCode() => HashCode.Combine(locationCache, Message, MessageArgs);
+
+    private sealed class LocationCache(string filePath, TextSpan textSpan, LinePositionSpan lineSpan) : IEquatable<LocationCache>
     {
-        unchecked
+        public string FilePath { get; } = filePath;
+        public TextSpan TextSpan { get; } = textSpan;
+        public LinePositionSpan LineSpan { get; } = lineSpan;
+
+        public bool IsNone => FilePath.Length == 0;
+
+        public LocationCache(Location location) : this(location.SourceTree?.FilePath ?? "", location.SourceSpan, location.GetLineSpan().Span)
         {
-            const int multiplier = -1521134295;
-            int hashCode = -1896323061;
-            hashCode = (hashCode * multiplier) + EqualityComparer<Location>.Default.GetHashCode(Location);
-            hashCode = (hashCode * multiplier) + EqualityComparer<string>.Default.GetHashCode(Message);
-            hashCode = (hashCode * multiplier) + EqualityComparer<object?[]>.Default.GetHashCode(MessageArgs);
-            return hashCode;
         }
+
+        public LocationCache(SyntaxNode syntaxNode) : this(syntaxNode.GetLocation())
+        {
+        }
+
+        public static implicit operator LocationCache(Location location) => new(location);
+        public static implicit operator LocationCache(SyntaxNode syntaxNode) => new(syntaxNode);
+        public static implicit operator Location(LocationCache cache) => cache.IsNone ? Location.None : Location.Create(cache.FilePath, cache.TextSpan, cache.LineSpan);
+
+        public bool Equals(LocationCache other) =>
+            (IsNone && other.IsNone) ||
+            (
+                FilePath == other.FilePath &&
+                TextSpan.Equals(other.TextSpan) &&
+                LineSpan.Equals(other.LineSpan)
+            );
+
+        public override bool Equals(object? obj) => obj is LocationCache cache && Equals(cache);
+
+        public override int GetHashCode() => IsNone ? 0 : HashCode.Combine(FilePath, TextSpan, LineSpan);
     }
 }

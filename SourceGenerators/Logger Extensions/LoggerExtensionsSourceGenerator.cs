@@ -16,8 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-using Capture = SourceGenerators.TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>;
-using CaptureOrError = SourceGenerators.GeneratorCapture<SourceGenerators.TypeDeclarationTreeAndAttributeData<(int genericOverrideCount, string[] logLevels)>>;
+using Capture = SourceGenerators.TypeDeclarationTreeAndAttributeData<SourceGenerators.LoggerExtensionsAttributeData>;
+using CaptureOrError = SourceGenerators.GeneratorCapture<SourceGenerators.TypeDeclarationTreeAndAttributeData<SourceGenerators.LoggerExtensionsAttributeData>>;
 
 namespace SourceGenerators;
 
@@ -90,7 +90,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         {0}}}
         """;
 
-    private static void GenerateSource(SourceProductionContext context, ImmutableArray<CaptureOrError?> captures)
+    private static void GenerateSource(SourceProductionContext context, ImmutableArray<CaptureOrError> captures)
     {
 #if LOGGEREXTENSIONSGENERATORDEBUG
         if (!Debugger.IsAttached) Debugger.Launch();
@@ -98,7 +98,7 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
 
         if (captures.IsDefaultOrEmpty) return;
 
-        foreach (var capture in captures.Distinct().Select(capture => capture!.Capture))
+        foreach (var capture in captures.Distinct().Select(capture => capture.Capture))
         {
 #if LOGGEREXTENSIONSGENERATORDEBUG
             // TODO: Support nested declarations
@@ -225,14 +225,25 @@ internal sealed class LoggerExtensionsSourceGenerator : IIncrementalGenerator
         context.EmitAttribute(AttributeSource);
 
         var captures = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AttributeSource.AttributeFullName, Predicate, Transform)
-            .Where(static capture => capture is not null)
-            .WithComparer(CaptureOrError.EqualityComparer);
+            .ForAttributeWithMetadataName(AttributeSource.AttributeFullName, Predicate, Transform).WithTrackingName(TrackingNames.InitialTransform)
+            .ExcludeNulls().WithTrackingName(TrackingNames.NullRemoval);
 
-        var failedCaptures = captures.Where(static capture => capture!.IsError);
-        context.RegisterImplementationSourceOutput(failedCaptures, static (context, capture) => capture!.DiagnosticMessage.ReportDiagnostic(context));
+        var failedCaptures = captures.FilterDiagnostics().WithTrackingName(TrackingNames.FilterDiagnostics);
+        context.RegisterSourceOutput(failedCaptures, static (context, capture) => capture.DiagnosticMessage.ReportDiagnostic(context));
 
-        var successfulCaptures = captures.Where(static capture => capture!.IsSuccess).Collect();
+        var successfulCaptures = captures.FilterCaptures().Collect().WithTrackingName(TrackingNames.FilterCaptures);
         context.RegisterSourceOutput(successfulCaptures, static (context, captures) => GenerateSource(context, captures));
+    }
+
+    public sealed class TrackingNames
+    {
+        public const string InitialTransform = nameof(InitialTransform);
+        public const string NullRemoval = nameof(NullRemoval);
+        public const string FilterDiagnostics = nameof(FilterDiagnostics);
+        public const string FilterCaptures = nameof(FilterCaptures);
+
+        private TrackingNames()
+        {
+        }
     }
 }

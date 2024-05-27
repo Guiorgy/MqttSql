@@ -10,24 +10,22 @@ using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace SourceGenerators;
 
-internal sealed class AttributeSource<T> where T : IIncrementalGenerator
+internal class AttributeSource
 {
     public string AttributeName { get; }
     public string AttributeFullName { get; }
     public string AttributeFileName { get; }
     public string AttributeSourceCode { get; }
 
-    public AttributeSource(string attributeName, AttributeTargets validOn, bool allowMultiple, bool inherited, string attributeSourceCode = "")
+    public AttributeSource(string @namespace, AssemblyName assemblyName, string attributeName, AttributeTargets validOn, bool allowMultiple, bool inherited, string attributeSourceCode = "")
     {
         AttributeName = attributeName;
 
-        var generatorType = typeof(T);
-        var @namespace = generatorType.Namespace;
-        var assemblyName = generatorType.Assembly.GetName();
         var generatedCodeAttribute = $@"global::System.CodeDom.Compiler.GeneratedCodeAttribute(""{assemblyName.Name}"", ""{assemblyName.Version}"")";
 
         AttributeFullName = $"{@namespace}.{attributeName}";
@@ -50,19 +48,22 @@ internal sealed class AttributeSource<T> where T : IIncrementalGenerator
             """;
     }
 
-    private AttributeSource(string attributeName, (AttributeTargets validOn, bool allowMultiple, bool inherited) deconstructed, string attributeSourceCode = "") : this(attributeName, deconstructed.validOn, deconstructed.allowMultiple, deconstructed.inherited, attributeSourceCode)
+    private AttributeSource(string @namespace, AssemblyName assemblyName, string attributeName, (AttributeTargets validOn, bool allowMultiple, bool inherited) deconstructed, string attributeSourceCode = "")
+        : this(@namespace, assemblyName, attributeName, deconstructed.validOn, deconstructed.allowMultiple, deconstructed.inherited, attributeSourceCode)
     {
     }
 
-    public AttributeSource(string attributeName, AttributeUsageAttribute? attributeUsage = null, string attributeSourceCode = "") : this(attributeName, Deconstruct(attributeUsage), attributeSourceCode)
+    public AttributeSource(string @namespace, AssemblyName assemblyName, string attributeName, AttributeUsageAttribute? attributeUsage = null, string attributeSourceCode = "")
+        : this(@namespace, assemblyName, attributeName, Deconstruct(attributeUsage), attributeSourceCode)
     {
     }
 
-    public AttributeSource(string attributeName, string attributeSourceCode) : this(attributeName, null, attributeSourceCode)
+    public AttributeSource(string @namespace, AssemblyName assemblyName, string attributeName, string attributeSourceCode)
+        : this(@namespace, assemblyName, attributeName, null, attributeSourceCode)
     {
     }
 
-    private static (AttributeTargets validOn, bool allowMultiple, bool inherited) Deconstruct(AttributeUsageAttribute? attributeUsage) =>
+    protected static (AttributeTargets validOn, bool allowMultiple, bool inherited) Deconstruct(AttributeUsageAttribute? attributeUsage) =>
         attributeUsage != null
             ? (attributeUsage.ValidOn, attributeUsage.AllowMultiple, attributeUsage.Inherited)
             : (AttributeTargets.All, false, true);
@@ -94,8 +95,30 @@ internal sealed class AttributeSource<T> where T : IIncrementalGenerator
         context.AddSource(AttributeFileName, SourceText.From(AttributeSourceCode, Encoding.UTF8));
 }
 
+internal sealed class AttributeSource<T>(string attributeName, AttributeTargets validOn, bool allowMultiple, bool inherited, string attributeSourceCode = "")
+    : AttributeSource(typeof(T).Namespace, typeof(T).Assembly.GetName(), attributeName, validOn, allowMultiple, inherited, attributeSourceCode)
+    where T : IIncrementalGenerator
+{
+    private AttributeSource(string attributeName, (AttributeTargets validOn, bool allowMultiple, bool inherited) deconstructed, string attributeSourceCode = "")
+        : this(attributeName, deconstructed.validOn, deconstructed.allowMultiple, deconstructed.inherited, attributeSourceCode)
+    {
+    }
+
+    public AttributeSource(string attributeName, AttributeUsageAttribute? attributeUsage = null, string attributeSourceCode = "")
+        : this(attributeName, Deconstruct(attributeUsage), attributeSourceCode)
+    {
+    }
+
+    public AttributeSource(string attributeName, string attributeSourceCode) : this(attributeName, null, attributeSourceCode)
+    {
+    }
+}
+
 internal static class AttributeSourceExtensions
 {
+    public static void EmitAttribute(this IncrementalGeneratorInitializationContext context, AttributeSource attributeSource)
+        => context.RegisterPostInitializationOutput(attributeSource.EmitSourceCode);
+
     public static void EmitAttribute<T>(this IncrementalGeneratorInitializationContext context, AttributeSource<T> attributeSource) where T : IIncrementalGenerator
         => context.RegisterPostInitializationOutput(attributeSource.EmitSourceCode);
 }

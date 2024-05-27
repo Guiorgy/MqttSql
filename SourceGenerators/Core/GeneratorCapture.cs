@@ -66,26 +66,5 @@ internal sealed class GeneratorCapture<T> : IEquatable<GeneratorCapture<T>> wher
 
     public override bool Equals(object? obj) => obj is GeneratorCapture<T> other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            const int multiplier = -1521134295;
-            int hashCode = -1648227012;
-            hashCode = (hashCode * multiplier) + capture?.GetHashCode() ?? 0;
-            hashCode = (hashCode * multiplier) + diagnosticMessage?.GetHashCode() ?? 0;
-            return hashCode;
-        }
-    }
-
-    public sealed class Comparer<_T> : IEqualityComparer<GeneratorCapture<_T>?> where _T : class?, IEquatable<_T>
-    {
-        bool IEqualityComparer<GeneratorCapture<_T>?>.Equals(GeneratorCapture<_T>? x, GeneratorCapture<_T>? y) =>
-            x != null && y != null && x.Equals(y);
-
-        int IEqualityComparer<GeneratorCapture<_T>?>.GetHashCode(GeneratorCapture<_T>? generatorCapture) =>
-            generatorCapture?.GetHashCode() ?? 0;
-    }
-
-    public static readonly Comparer<T> EqualityComparer = new();
+    public override int GetHashCode() => HashCode.Combine(capture, diagnosticMessage);
 }
