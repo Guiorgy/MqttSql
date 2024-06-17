@@ -18,11 +18,12 @@ public sealed class BrokerConfiguration(string host, int port, params ClientConf
 
     public override string ToString()
     {
-        return
-            $"{nameof(Host)}: {Host}{Environment.NewLine}" +
-            $"{nameof(Port)}: {Port}{Environment.NewLine}" +
-            $"{nameof(Clients)}:{Environment.NewLine}" +
-                Clients.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true);
+        return $"""
+            {nameof(Host)}: {Host}
+            {nameof(Port)}: {Port}
+            {nameof(Clients)}:
+            {Clients.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true)}
+            """;
     }
 
     public bool Equals(BrokerConfiguration? other)
@@ -47,15 +48,18 @@ public sealed class ClientConfiguration(string user, string password, params Sub
 
     public override string ToString()
     {
-        return
-            $"{nameof(User)}: {User}{Environment.NewLine}" +
 #if DEBUG
-            $"{nameof(Password)}: {Password}{Environment.NewLine}" +
+        var _password = Password;
 #else
-            $"{nameof(Password)}: {new string('*', Password.Length)}{Environment.NewLine}" +
+        var _password = new string('*', Password.Length);
 #endif
-            $"{nameof(Subscriptions)}:{Environment.NewLine}" +
-                Subscriptions.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true);
+
+        return $"""
+            {nameof(User)}: {User}
+            {nameof(Password)}: {_password}
+            {nameof(Subscriptions)}:
+            {Subscriptions.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true)}
+            """;
     }
 
     public bool Equals(ClientConfiguration? other)
@@ -78,11 +82,12 @@ public sealed class SubscriptionConfiguration(string topic, SubscriptionConfigur
 
     public override string ToString()
     {
-        return
-            $"{nameof(Topic)}: {Topic}{Environment.NewLine}" +
-            $"{nameof(QOS)}: {QOS.ToFriendlyString()}{Environment.NewLine}" +
-            $"{nameof(Databases)}:{Environment.NewLine}" +
-                Databases.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true);
+        return $"""
+            {nameof(Topic)}: {Topic}
+            {nameof(QOS)}: {QOS.ToFriendlyString()}
+            {nameof(Databases)}:
+            {Databases.ToString(prefix: "\t", separator: Environment.NewLine, prefixPostfixLines: true)}
+            """;
     }
 
     public bool Equals(SubscriptionConfiguration? other) => other?.Topic == Topic;
@@ -107,14 +112,16 @@ public sealed class DatabaseConfiguration(DatabaseType type, string connectionSt
 
     public override string ToString()
     {
-        return
-            $"{nameof(Type)}: {Type.ToFriendlyString()}{Environment.NewLine}" +
-            $"{nameof(ConnectionString)}: {ConnectionString}{Environment.NewLine}" +
-            (
+        return $"""
+            {nameof(Type)}: {Type.ToFriendlyString()}
+            {nameof(ConnectionString)}: {ConnectionString}
+            {(
                 Tables.Length == 1
-                ? $"Table: {Tables[0]}{Environment.NewLine}"
-                : $"{nameof(Tables)}: {Tables.ToString(open: "[", separator: ", ", close: "]")}{Environment.NewLine}"
-            );
+                    ? $"{nameof(Tables)[..^1]}: {Tables[0]}"
+                    : $"{nameof(Tables)}: {Tables.ToString(open: "[", separator: ", ", close: "]")}"
+            )}
+
+            """;
     }
 
     public bool Equals(DatabaseConfiguration? other) => other?.ConnectionString == ConnectionString;
