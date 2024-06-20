@@ -21,15 +21,11 @@ public sealed class ServiceConfiguration : IAppendStringBuilder
 {
     [JsonConverter(typeof(SingleOrArrayJsonConverter))]
     [JsonPropertyNames("Databases", "Database")]
-    public DatabaseConfiguration[] Databases { get; }
+    public DatabaseConfiguration[] Databases { get; init; } = [];
 
     [JsonConverter(typeof(SingleOrArrayJsonConverter))]
     [JsonPropertyNames("Brokers", "Broker")]
-    public BrokerConfiguration[] Brokers { get; }
-
-    [JsonConstructor]
-    public ServiceConfiguration(DatabaseConfiguration[]? databases = default, BrokerConfiguration[]? brokers = default) =>
-        (Databases, Brokers) = (databases ?? [], brokers ?? []);
+    public BrokerConfiguration[] Brokers { get; init; } = [];
 
     public override string ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 
@@ -43,20 +39,9 @@ public sealed class ServiceConfiguration : IAppendStringBuilder
 
 public sealed class DatabaseConfiguration : IAppendStringBuilder
 {
-    private const string NameDefault = "sqlite";
-    private const string TypeDefault = nameof(DatabaseType.SQLite);
-    private const string ConnectionStringDefault = "";
-
-    public string Name { get; }
-    public string Type { get; }
-    public string ConnectionString { get; }
-
-    [JsonConstructor]
-    public DatabaseConfiguration(
-        string name = NameDefault,
-        string type = TypeDefault,
-        string connectionString = ConnectionStringDefault) =>
-        (Name, Type, ConnectionString) = (name, type, connectionString);
+    public string Name { get; init; } = "sqlite";
+    public string Type { get; init; } = nameof(DatabaseType.SQLite);
+    public string ConnectionString { get; init; } = "";
 
     public override string ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 
@@ -73,31 +58,17 @@ public sealed class DatabaseConfiguration : IAppendStringBuilder
 
 public sealed class BrokerConfiguration : IAppendStringBuilder
 {
-    private const string HostDefault = "localhost";
-    private const int PortDefault = 1883;
-    private const string UserDefault = "";
-    private const string PasswordDefault = "";
-
-    public string Host { get; }
-    public int Port { get; }
+    public string Host { get; init; } = "localhost";
+    public int Port { get; init; } = 1883;
 
     [JsonPropertyNames("User", "UserName")]
-    public string User { get; }
+    public string User { get; init; } = "";
 
-    public string Password { get; }
+    public string Password { get; init; } = "";
 
     [JsonConverter(typeof(SingleOrArrayJsonConverter<SubscriptionConfiguration.SubscriptionConfigurationJsonConverter>))]
     [JsonPropertyNames("Subscriptions", "Subscription")]
-    public SubscriptionConfiguration[] Subscriptions { get; }
-
-    [JsonConstructor]
-    public BrokerConfiguration(
-        string host = HostDefault,
-        int port = PortDefault,
-        string? user = default,
-        string password = PasswordDefault,
-        SubscriptionConfiguration[]? subscriptions = default) =>
-        (Host, Port, User, Password, Subscriptions) = (host, port, user ?? UserDefault, password, subscriptions ?? []);
+    public SubscriptionConfiguration[] Subscriptions { get; } = [];
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
@@ -121,25 +92,12 @@ public sealed class BrokerConfiguration : IAppendStringBuilder
 
 public sealed class SubscriptionConfiguration : IAppendStringBuilder
 {
-    private const string NameOfDatabasesPropery = nameof(Databases);
-
-    private const string TopicDefault = "sql";
-    private const int QOSDefault = 2;
-    private const TableConfiguration[]? DatabasesDefault = default;
-
-    public string Topic { get; }
-    public int QOS { get; }
+    public string Topic { get; init; } = "sql";
+    public int QOS { get; init; } = 2;
 
     [JsonConverter(typeof(SingleOrArrayJsonConverter))]
     [JsonPropertyNames("Databases", "Database", "Bases", "Base", "Dbs", "Db")]
-    public TableConfiguration[] Databases { get; }
-
-    [JsonConstructor]
-    public SubscriptionConfiguration(
-        string topic = TopicDefault,
-        int qos = QOSDefault,
-        TableConfiguration[]? databases = DatabasesDefault) =>
-        (Topic, QOS, Databases) = (topic, qos, databases ?? []);
+    public TableConfiguration[] Databases { get; init; } = [];
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
@@ -167,12 +125,15 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
 
     internal sealed class SubscriptionConfigurationJsonConverter : JsonConverter<SubscriptionConfiguration>
     {
+        private static readonly SubscriptionConfiguration DefaultSubscriptionConfiguration = new();
+        private static readonly TableConfiguration DefaultTableConfiguration = new();
+
         public override SubscriptionConfiguration? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException();
 
             var propertyNames =
-                typeToConvert.GetProperty(NameOfDatabasesPropery)
+                typeToConvert.GetProperty(nameof(DefaultSubscriptionConfiguration.Databases))
                 ?.GetCustomAttribute<JsonPropertyNamesAttribute>()
                 ?.Names
                 ?.Select(name => name.ToLower())
@@ -217,18 +178,20 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
             {
                 var flat = JsonSerializer.Deserialize<FlatConfiguration>(ref reader, options);
                 return flat != null && (flat.Database != null || flat.Table != null)
-                    ? new SubscriptionConfiguration(
-                        topic: flat.Topic ?? TopicDefault,
-                        qos: flat.QOS ?? QOSDefault,
-                        databases:
+                    ? new SubscriptionConfiguration()
+                    {
+                        Topic = flat.Topic ?? DefaultSubscriptionConfiguration.Topic,
+                        QOS = flat.QOS ?? DefaultSubscriptionConfiguration.QOS,
+                        Databases =
                         [
-                            new(
-                                databaseName: flat.Database ?? TableConfiguration.DatabaseNameDefault,
-                                table: flat.Table ?? TableConfiguration.TableDefault,
-                                timestampFormat: flat.TimestampFormat ?? TableConfiguration.TimestampFormatDefault
-                            )
+                            new()
+                            {
+                                DatabaseName = flat.Database ?? DefaultTableConfiguration.DatabaseName,
+                                Table = flat.Table ?? DefaultTableConfiguration.Table,
+                                TimestampFormat = flat.TimestampFormat ?? DefaultTableConfiguration.TimestampFormat
+                            }
                         ]
-                    )
+                    }
                     : null;
             }
             else
@@ -241,45 +204,25 @@ public sealed class SubscriptionConfiguration : IAppendStringBuilder
 
         public sealed class FlatConfiguration
         {
-            public string? Topic { get; }
-            public int? QOS { get; }
+            public string? Topic { get; init; }
+            public int? QOS { get; init; }
 
             [JsonPropertyNames("Database", "Base", "Db")]
-            public string? Database { get; }
+            public string? Database { get; init; }
 
-            public string? Table { get; }
-            public string? TimestampFormat { get; }
-
-            [JsonConstructor]
-            public FlatConfiguration(
-                string? topic = null,
-                int? qos = null,
-                string? database = null,
-                string? table = null,
-                string? timestampFormat = null) =>
-                (Topic, QOS, Database, Table, TimestampFormat) = (topic, qos, database, table, timestampFormat);
+            public string? Table { get; init; }
+            public string? TimestampFormat { get; init; }
         }
     }
 }
 
 public sealed class TableConfiguration : IAppendStringBuilder
 {
-    internal const string DatabaseNameDefault = "sqlite";
-    internal const string TableDefault = "mqtt";
-    internal const string TimestampFormatDefault = "yyyy-MM-dd HH:mm:ss";
-
     [JsonPropertyNames("DatabaseName", "Database", "BaseName", "Base", "DbName", "Db", "Name")]
-    public string DatabaseName { get; }
+    public string DatabaseName { get; init; } = "sqlite";
 
-    public string Table { get; }
-    public string TimestampFormat { get; }
-
-    [JsonConstructor]
-    public TableConfiguration(
-        string? databaseName = default,
-        string table = TableDefault,
-        string timestampFormat = TimestampFormatDefault) =>
-        (DatabaseName, Table, TimestampFormat) = (databaseName ?? DatabaseNameDefault, table, timestampFormat);
+    public string Table { get; init; } = "mqtt";
+    public string TimestampFormat { get; init; } = "yyyy-MM-dd HH:mm:ss";
 
     public StringBuilder AppendStringBuilder(StringBuilder builder)
     {
