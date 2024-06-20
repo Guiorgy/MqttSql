@@ -66,8 +66,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
 
             command.CommandText =
                 $"""
-                DO
-                $$
+                DO $$
                 BEGIN
                     IF NOT EXISTS (
                         SELECT * FROM information_schema.tables
@@ -83,8 +82,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
                         );
                     END IF;
                 END;
-                $$
-                LANGUAGE plpgsql;
+                $$ LANGUAGE plpgsql;
                 """;
 
             _ = await command.ExecuteNonQueryAsync(cancellationToken);
