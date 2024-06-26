@@ -6,6 +6,8 @@ param(
 
 $TAG = 'guiorgy/mqttsql'
 
+$InformationPreference = 'Continue'
+
 if ($Command -eq 'build') {
   if ($Arch -in 'auto', 'x86', 'x64', 'arm', 'arm64') {
     $ARCH_DOCKER_PLATFORM_MAPPING = @{
@@ -47,9 +49,15 @@ if ($Command -eq 'build') {
   }
 
   docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_TAG --build-arg RUNTIME_TAG=$RUNTIME_TAG --tag "$($TAG):latest" --file MqttSql\Dockerfile .
+
+  Write-Information "Image '$($TAG):latest' built"
 } elseif ($Command -eq 'save') {
-  New-Item -ItemType Directory -Force -Path .\Publish\Docker
-  docker save "$($TAG):latest" | gzip --best > .\Publish\Docker\$($TAG -replace '/', '-')-latest.tar.gz
+  New-Item -ItemType Directory -Force -Path .\Publish\Docker > $null
+  $ARCHIVE = ".\Publish\Docker\$($TAG -replace '/', '-')-latest.tar.gz"
+
+  docker save "$($TAG):latest" | gzip --best --stdout --verbose > "$ARCHIVE"
+
+  Write-Information "Image saved to '$ARCHIVE'"
 } else {
   Write-Error "Invalid command specified: $Command. Please use one of: 'build', 'save'"
 }
