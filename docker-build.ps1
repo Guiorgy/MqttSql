@@ -6,6 +6,7 @@ param(
 
 $TAG = 'guiorgy/mqttsql'
 
+$ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
 if ($Command -eq 'build') {
