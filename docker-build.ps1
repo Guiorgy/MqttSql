@@ -55,7 +55,12 @@ if ($Command -eq 'build') {
   New-Item -ItemType Directory -Force -Path .\Publish\Docker > $null
   $ARCHIVE = ".\Publish\Docker\$($TAG -replace '/', '-')-latest.tar.gz"
 
-  docker save "$($TAG):latest" | gzip --best --stdout --verbose > "$ARCHIVE"
+  if ($PSVersionTable.PSVersion.Major -ge 7) {
+    docker save "$($TAG):latest" | gzip --best --stdout --verbose > "$ARCHIVE"
+  } else {
+    # PowerShell 5 doesn't handle byte streams properly resulting in corrupted archive
+    cmd /c "docker save $($TAG):latest | gzip --best --stdout --verbose > $ARCHIVE"
+  }
 
   Write-Information "Image saved to '$ARCHIVE'"
 } else {
