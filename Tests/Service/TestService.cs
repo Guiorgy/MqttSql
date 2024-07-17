@@ -23,7 +23,10 @@ using ServiceConfigurationJson = MqttSql.Configuration.Json.ServiceConfiguration
 
 namespace Tests;
 
+// TODO: Rewrite the whole test to work inside Docker
+
 [TestClass]
+[Obsolete("TODO: Rewrite the whole test to work inside Docker", true)]
 public sealed class TestService
 {
     private readonly CancellationTokenSource cancellationToken = new();
