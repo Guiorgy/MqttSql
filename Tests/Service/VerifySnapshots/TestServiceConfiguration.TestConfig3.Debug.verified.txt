@@ -1,0 +1,193 @@
+﻿{
+  loadedConfig:
+    Databases:
+    	Name: db1
+    	Type: SQLite
+    	ConnectionString: 
+    
+    	Name: db2
+    	Type: GenericSql
+    	ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+    
+    Brokers:
+    	Host: localhost
+    	Port: 1883
+    	User: user1
+    	Password: password1
+    	Subscriptions:
+    		Topic: some/topic/1
+    		QOS: 2
+    		Database: db1
+    		Table: table1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/2
+    		QOS: 2
+    		Database: db1
+    		Table: table2
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: 192.168.0.101
+    	Port: 1883
+    	User: user2
+    	Password: password2
+    	Subscriptions:
+    		Topic: some/topic/3
+    		QOS: 0
+    		Database: db2
+    		Table: table3
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/4
+    		QOS: 0
+    		Database: db2
+    		Table: table4
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: 192.168.0.101
+    	Port: 1883
+    	User: user2
+    	Password: password2
+    	Subscriptions:
+    
+    	Host: 192.168.0.101
+    	Port: 1883
+    	User: user2
+    	Password: password2
+    	Subscriptions:
+    		Topic: some/topic/3
+    		QOS: 1
+    		Database: db2
+    		Table: table3
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/5
+    		QOS: 1
+    		Database: db2
+    		Table: table4
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/5
+    		QOS: 2
+    		Database: db2
+    		Table: table5
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/5
+    		QOS: 0
+    		Database: db1
+    		Table: table5
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: localhost
+    	Port: 1883
+    	User: user1
+    	Password: password1
+    	Subscriptions:
+    		Topic: some/topic/1
+    		QOS: 1
+    		Database: db1
+    		Table: table_1_1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/2
+    		QOS: 1
+    		Database: db1
+    		Table: table_2_1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: localhost
+    	Port: 1883
+    	User: user3
+    	Password: password3
+    	Subscriptions:
+    		Topic: some/topic/1
+    		QOS: 1
+    		Database: db1
+    		Table: table_1_1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/2
+    		QOS: 1
+    		Database: db1
+    		Table: table_2_1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    ,
+  brokers: [
+    {
+      broker 1:
+        Host: localhost
+        Port: 1883
+        Clients:
+        	User: user1
+        	Password: password1
+        	Subscriptions:
+        		Topic: some/topic/1
+        		QOS: Exactly Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table_1_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
+        			
+        		Topic: some/topic/2
+        		QOS: Exactly Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Tables: [(Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table_2_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
+        			
+        	User: user3
+        	Password: password3
+        	Subscriptions:
+        		Topic: some/topic/1
+        		QOS: At Least Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Table: (Name: table_1_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+        			
+        		Topic: some/topic/2
+        		QOS: At Least Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Table: (Name: table_2_1, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+        			
+    },
+    {
+      broker 2:
+        Host: 192.168.0.101
+        Port: 1883
+        Clients:
+        	User: user2
+        	Password: password2
+        	Subscriptions:
+        		Topic: some/topic/3
+        		QOS: At Least Once
+        		Databases:
+        			Type: Generic SQL
+        			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+        			Table: (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+        			
+        		Topic: some/topic/4
+        		QOS: At Most Once
+        		Databases:
+        			Type: Generic SQL
+        			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+        			Table: (Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+        			
+        		Topic: some/topic/5
+        		QOS: Exactly Once
+        		Databases:
+        			Type: Generic SQL
+        			ConnectionString: Server=localhost;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
+        			Tables: [(Name: table4, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
+        			
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Table: (Name: table5, TimestampFormat: yyyy-MM-dd HH:mm:ss)
+        			
+    }
+  ]
+}

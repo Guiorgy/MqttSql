@@ -1,0 +1,21 @@
+﻿{
+  loadedConfig:
+    Databases:
+    	Name: db1
+    	Type: SQLite
+    	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
+    
+    	Name: db2
+    	Type: SQLite
+    	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
+    
+    Brokers:
+    	Host: localhost
+    	Port: 1883
+    	User: user
+    	Password: ********
+    	Subscriptions:
+    
+    ,
+  brokers: []
+}

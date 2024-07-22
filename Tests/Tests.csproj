@@ -29,9 +29,6 @@
     <None Update="Service\Configuration Samples\*">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Update="Service\Configuration Samples\Result\*">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis;
 using SourceGenerators;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
-using Tests.Source_Generators;
 
 namespace Tests;
 

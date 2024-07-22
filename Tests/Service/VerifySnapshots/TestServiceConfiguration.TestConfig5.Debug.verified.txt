@@ -1,0 +1,90 @@
+﻿{
+  loadedConfig:
+    Databases:
+    	Name: db1
+    	Type: SQLite
+    	ConnectionString: 
+    
+    	Name: db2
+    	Type: SQLite
+    	ConnectionString: 
+    
+    Brokers:
+    	Host: localhost
+    	Port: 1883
+    	User: user
+    	Password: password
+    	Subscriptions:
+    		Topic: some/topic/1
+    		QOS: 2
+    		Database: db1
+    		Table: table1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/1
+    		QOS: 2
+    		Database: db2
+    		Table: table2
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: localhost
+    	Port: 1883
+    	User: user
+    	Password: password
+    	Subscriptions:
+    		Topic: some/topic/2
+    		QOS: 2
+    		Database: db1
+    		Table: table1
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/2
+    		QOS: 2
+    		Database: db2
+    		Table: table2
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    	Host: localhost
+    	Port: 1883
+    	User: user
+    	Password: password
+    	Subscriptions:
+    		Topic: some/topic/1
+    		QOS: 2
+    		Database: db1
+    		Table: table3
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    		Topic: some/topic/1
+    		QOS: 2
+    		Database: db2
+    		Table: table3
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    ,
+  brokers: [
+    {
+      broker 1:
+        Host: localhost
+        Port: 1883
+        Clients:
+        	User: user
+        	Password: password
+        	Subscriptions:
+        		Topic: some/topic/1
+        		QOS: Exactly Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table3, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
+        			
+        		Topic: some/topic/2
+        		QOS: Exactly Once
+        		Databases:
+        			Type: SQLite
+        			ConnectionString: Data Source=Some\Path\database.sqlite;Version=3;
+        			Tables: [(Name: table1, TimestampFormat: yyyy-MM-dd HH:mm:ss), (Name: table2, TimestampFormat: yyyy-MM-dd HH:mm:ss)]
+        			
+    }
+  ]
+}

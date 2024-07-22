@@ -1,0 +1,22 @@
+﻿{
+  loadedConfig:
+    Databases:
+    	Name: db1
+    	Type: SQLite
+    	ConnectionString: 
+    
+    Brokers:
+    	Host: localhost
+    	Port: 1883
+    	User: user
+    	Password: ********
+    	Subscriptions:
+    		Topic: some/topic
+    		QOS: 2
+    		Database: db2
+    		Table: table
+    		TimestampFormat: yyyy-MM-dd HH:mm:ss
+    
+    ,
+  brokers: []
+}
