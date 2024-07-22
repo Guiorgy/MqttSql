@@ -341,145 +341,144 @@ public sealed class TestService
 
     private static readonly Regex ConnectionStringRegex = new("(\"connectionString\"\\s*:\\s*\")(.*?)((?:\"\\s*)(?:,|$|}|\n|\r))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-    private static readonly string configurationTemplate =
-        @"{
-				""databases"": [
-					{
-						""name"": ""{DB_NAME_1}"",
-						""type"": ""SQLite"",
-						""connectionString"": ""Data Source={DB_PATH_1};Version=3;""
-					},
-					{
-						""name"": ""{DB_NAME_2}"",
-						""type"": ""SQLite"",
-						""connectionString"": ""Data Source={DB_PATH_2};Version=3;""
-					},
-					{
-						""name"": ""{DB_NAME_3}"",
-						""type"": ""SQLite"",
-						""connectionString"": ""Data Source={DB_PATH_3};Version=3;""
-					}
-				],
-				""brokers"": [
-					{
-						""host"": ""localhost"",
-						""port"": {PORT},
-						""user"": ""user1"",
-						""password"": ""password1"",
-						""subscriptions"": [
-							{
-								""topic"": ""some/topic/1"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_1""
-							},
-							{
-								""topic"": ""some/topic/1"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_2""
-							},
-							{
-								""topic"": ""some/topic/1"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_2}"",
-								""table"": ""table_2_1""
-							},
-							{
-								""topic"": ""some/topic/2"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_2}"",
-								""table"": ""table_2_2""
-							},
-							{
-								""topic"": ""some/topic/2"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_2}"",
-								""table"": ""table_2_2""
-							},
-							{
-								""topic"": ""some/topic/2"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_3}"",
-								""table"": ""table_3_2""
-							}
-						]
-					},
-					{
-						""host"": ""localhost"",
-						""port"": {PORT},
-						""user"": ""user1"",
-						""password"": ""password1"",
-						""subscriptions"": [
-							{
-								""topic"": ""some/topic/3"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_3""
-							},
-							{
-								""topic"": ""some/topic/3"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_3}"",
-								""table"": ""table_3_3""
-							}
-						]
-					},
-					{
-						""host"": ""localhost"",
-						""port"": {PORT},
-						""user"": ""user2"",
-						""password"": ""password2"",
-						""subscriptions"": [
-							{
-								""topic"": ""some/topic/1"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_1""
-							},
-							{
-								""topic"": ""some/topic/1"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_2""
-							},
-							{
-								""topic"": ""some/topic/3"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_3""
-							},
-							{
-								""topic"": ""some/topic/3"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_3}"",
-								""table"": ""table_3_3""
-							}
-						]
-					},
-					{
-						""host"": ""localhost"",
-						""port"": {PORT},
-						""user"": ""user3"",
-						""password"": ""password3"",
-						""subscriptions"": [
-							{
-								""topic"": ""some/topic/2"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_1_2""
-							},
-							{
-								""topic"": ""some/topic/2"",
-								""qos"": 2,
-								""base"": ""{DB_NAME_1}"",
-								""table"": ""table_2_2""
-							}
-						]
-					}
-				]
-			}"
-        .SplitLines()
-        .Select(s => s.StartsWith("			") ? s[("			".Length)..] : s)
-        .JoinLines();
+    private const string configurationTemplate =
+        """
+        {
+        	"databases": [
+        		{
+        			"name": "{DB_NAME_1}",
+        			"type": "SQLite",
+        			"connectionString": "Data Source={DB_PATH_1};Version=3;"
+        		},
+        		{
+        			"name": "{DB_NAME_2}",
+        			"type": "SQLite",
+        			"connectionString": "Data Source={DB_PATH_2};Version=3;"
+        		},
+        		{
+        			"name": "{DB_NAME_3}",
+        			"type": "SQLite",
+        			"connectionString": "Data Source={DB_PATH_3};Version=3;"
+        		}
+        	],
+        	"brokers": [
+        		{
+        			"host": "localhost",
+        			"port": {PORT},
+        			"user": "user1",
+        			"password": "password1",
+        			"subscriptions": [
+        				{
+        					"topic": "some/topic/1",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_1"
+        				},
+        				{
+        					"topic": "some/topic/1",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_2"
+        				},
+        				{
+        					"topic": "some/topic/1",
+        					"qos": 2,
+        					"base": "{DB_NAME_2}",
+        					"table": "table_2_1"
+        				},
+        				{
+        					"topic": "some/topic/2",
+        					"qos": 2,
+        					"base": "{DB_NAME_2}",
+        					"table": "table_2_2"
+        				},
+        				{
+        					"topic": "some/topic/2",
+        					"qos": 2,
+        					"base": "{DB_NAME_2}",
+        					"table": "table_2_2"
+        				},
+        				{
+        					"topic": "some/topic/2",
+        					"qos": 2,
+        					"base": "{DB_NAME_3}",
+        					"table": "table_3_2"
+        				}
+        			]
+        		},
+        		{
+        			"host": "localhost",
+        			"port": {PORT},
+        			"user": "user1",
+        			"password": "password1",
+        			"subscriptions": [
+        				{
+        					"topic": "some/topic/3",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_3"
+        				},
+        				{
+        					"topic": "some/topic/3",
+        					"qos": 2,
+        					"base": "{DB_NAME_3}",
+        					"table": "table_3_3"
+        				}
+        			]
+        		},
+        		{
+        			"host": "localhost",
+        			"port": {PORT},
+        			"user": "user2",
+        			"password": "password2",
+        			"subscriptions": [
+        				{
+        					"topic": "some/topic/1",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_1"
+        				},
+        				{
+        					"topic": "some/topic/1",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_2"
+        				},
+        				{
+        					"topic": "some/topic/3",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_3"
+        				},
+        				{
+        					"topic": "some/topic/3",
+        					"qos": 2,
+        					"base": "{DB_NAME_3}",
+        					"table": "table_3_3"
+        				}
+        			]
+        		},
+        		{
+        			"host": "localhost",
+        			"port": {PORT},
+        			"user": "user3",
+        			"password": "password3",
+        			"subscriptions": [
+        				{
+        					"topic": "some/topic/2",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_1_2"
+        				},
+        				{
+        					"topic": "some/topic/2",
+        					"qos": 2,
+        					"base": "{DB_NAME_1}",
+        					"table": "table_2_2"
+        				}
+        			]
+        		}
+        	]
+        }
+        """;
 }
