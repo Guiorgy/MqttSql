@@ -15,6 +15,7 @@
   </Folder>
   <Project Path="DockerDebug.dcproj" Type="e53339b2-1760-4266-bcc7-ca923cbcf16c">
     <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
+    <Build Solution="Release|*" Project="false" />
   </Project>
   <Project Path="MqttSql\MqttSql.csproj">
     <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
