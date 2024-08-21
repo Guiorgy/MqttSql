@@ -36,7 +36,9 @@ public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
 
     static DatabaseMessageHandler()
     {
+        channelOptions.SingleWriter = false;
         channelOptions.SingleReader = true;
+        channelOptions.AllowSynchronousContinuations  = false;
     }
 
     private DatabaseMessageHandler(Dictionary<DatabaseType, IDatabaseManager> databaseManagers, Dictionary<DatabaseType, Dictionary<string, Channel<DatabaseMessage>>> messageQueues, Logger logger, CancellationToken cancellationToken)
