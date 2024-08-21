@@ -113,9 +113,8 @@ public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
 
         var database = message.Database;
 
-        _ = messageQueues[database.Type][database.ConnectionString]
-            .Writer.WriteAsync(message, cancellationToken)
-            .AsTask().ContinueWith(_ => logger.Information("Failed to enqueue a database message"), TaskContinuationOptions.OnlyOnFaulted);
+        if (!messageQueues[database.Type][database.ConnectionString].Writer.TryWrite(message))
+            logger.Information("Failed to enqueue a database message");
     }
 
     public Task HandleMessagesAsync()
