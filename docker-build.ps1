@@ -29,8 +29,6 @@ if ($Command -eq 'build') {
       "default" = "8.0"
       "debian" = "8.0"
       "ubuntu" = "8.0-jammy"
-      "ubuntu-chiseled" = "8.0-jammy"
-      "ubuntu-chiseled-extra" = "8.0-jammy"
       "alpine" = "8.0-alpine"
     }
 
