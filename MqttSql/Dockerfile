@@ -2,14 +2,18 @@
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
 # Debian Slim: 8.0
-# Ubuntu: 8.0-jammy
+# Ubuntu 22.04: 8.0-jammy
+# Ubuntu 24.04: 8.0-noble
 # Alpine: 8.0-alpine
 ARG SDK_TAG=8.0
 
 # Debian Slim: 8.0
-# Ubuntu: 8.0-jammy
-# Ubuntu Chiseled: 8.0-jammy-chiseled
-# Ubuntu Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-jammy-chiseled-extra
+# Ubuntu 22.04: 8.0-jammy
+# Ubuntu 24.04: 8.0-noble
+# Ubuntu 22.04 Chiseled: 8.0-jammy-chiseled
+# Ubuntu 24.04 Chiseled: 8.0-noble-chiseled
+# Ubuntu 22.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-jammy-chiseled-extra
+# Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-noble-chiseled-extra
 # Alpine: 8.0-alpine
 ARG RUNTIME_TAG=8.0
 

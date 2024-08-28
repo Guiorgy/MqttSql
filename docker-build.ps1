@@ -28,16 +28,24 @@ if ($Command -eq 'build') {
     $BASE_SDK_IMAGE_TAG_MAPPING = @{
       "default" = "8.0"
       "debian" = "8.0"
-      "ubuntu" = "8.0-jammy"
+      "ubuntu-22" = "8.0-jammy"
+      "ubuntu-24" = "8.0-noble"
+      "ubuntu" = "8.0-noble"
       "alpine" = "8.0-alpine"
     }
 
     $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
       "default" = "8.0"
       "debian" = "8.0"
-      "ubuntu" = "8.0-jammy"
-      "ubuntu-chiseled" = "8.0-jammy-chiseled"
-      "ubuntu-chiseled-extra" = "8.0-jammy-chiseled-extra"
+      "ubuntu-22" = "8.0-jammy"
+      "ubuntu-24" = "8.0-noble"
+      "ubuntu" = "8.0-noble"
+      "ubuntu-chiseled-22" = "8.0-jammy-chiseled"
+      "ubuntu-chiseled-24" = "8.0-noble-chiseled"
+      "ubuntu-chiseled" = "8.0-noble-chiseled"
+      "ubuntu-chiseled-extra-22" = "8.0-jammy-chiseled-extra"
+      "ubuntu-chiseled-extra-24" = "8.0-noble-chiseled-extra"
+      "ubuntu-chiseled-extra" = "8.0-noble-chiseled-extra"
       "alpine" = "8.0-alpine"
     }
 
