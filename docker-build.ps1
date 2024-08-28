@@ -65,7 +65,7 @@ if ($Command -eq 'build') {
   if ($PSVersionTable.PSVersion.Major -ge 7) {
     docker save "$($TAG):latest" | gzip --best --stdout --verbose > "$ARCHIVE"
   } else {
-    # PowerShell 5 doesn't handle byte streams properly resulting in corrupted archive
+    # PowerShell 5 doesn't handle byte streams properly resulting in a corrupted archive
     cmd /c "docker save $($TAG):latest | gzip --best --stdout --verbose > $ARCHIVE"
   }
 
