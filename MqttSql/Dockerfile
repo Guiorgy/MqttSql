@@ -1,6 +1,11 @@
 # syntax=docker/dockerfile:1.7-labs
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
+#   This file is part of MqttSql (Copyright © 2024 Guiorgy).
+#   MqttSql is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#   MqttSql is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#   You should have received a copy of the GNU Affero General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+
 # Debian Slim: 8.0
 # Ubuntu 22.04: 8.0-jammy
 # Ubuntu 24.04: 8.0-noble
