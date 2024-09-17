@@ -1,0 +1,31 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="LoggerExtensionsGeneratorDebug" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="docker-build.ps1" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="DockerDebug.dcproj" Type="e53339b2-1760-4266-bcc7-ca923cbcf16c">
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
+    <Build Solution="Release|*" Project="false" />
+  </Project>
+  <Project Path="MqttSql\MqttSql.csproj">
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
+  </Project>
+  <Project Path="SourceGenerators\SourceGenerators.csproj" />
+  <Project Path="Tests\Tests.csproj">
+    <BuildDependency Project="MqttSql\MqttSql.csproj" />
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
+  </Project>
+  <Properties Name="Visual Studio">
+    <Property Name="OpenWith" Value="17" />
+  </Properties>
+</Solution>
