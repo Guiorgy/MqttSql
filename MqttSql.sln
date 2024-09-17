@@ -1,0 +1,67 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MqttSql", "MqttSql\MqttSql.csproj", "{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{4FF47CC5-57C2-4981-8C27-74626F11734E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3} = {ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerators", "SourceGenerators\SourceGenerators.csproj", "{C08C529A-1583-4D85-9A84-398B4FBFA22A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB51B67B-C950-4B3B-B5D1-FC8781A60266}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		docker-build.ps1 = docker-build.ps1
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "DockerDebug", "DockerDebug.dcproj", "{991A49B2-FCE8-4118-95F2-152D4629BF40}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		LoggerExtensionsGeneratorDebug|Any CPU = LoggerExtensionsGeneratorDebug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.LoggerExtensionsGeneratorDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.LoggerExtensionsGeneratorDebug|Any CPU.Build.0 = Debug|Any CPU
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACA89A91-30C7-4BD5-AC70-E91BB5FCDEA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.LoggerExtensionsGeneratorDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.LoggerExtensionsGeneratorDebug|Any CPU.Build.0 = Debug|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FF47CC5-57C2-4981-8C27-74626F11734E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.LoggerExtensionsGeneratorDebug|Any CPU.ActiveCfg = LoggerExtensionsGeneratorDebug|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.LoggerExtensionsGeneratorDebug|Any CPU.Build.0 = LoggerExtensionsGeneratorDebug|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C08C529A-1583-4D85-9A84-398B4FBFA22A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{991A49B2-FCE8-4118-95F2-152D4629BF40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{991A49B2-FCE8-4118-95F2-152D4629BF40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{991A49B2-FCE8-4118-95F2-152D4629BF40}.LoggerExtensionsGeneratorDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{991A49B2-FCE8-4118-95F2-152D4629BF40}.LoggerExtensionsGeneratorDebug|Any CPU.Build.0 = Debug|Any CPU
+		{991A49B2-FCE8-4118-95F2-152D4629BF40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CCF71E78-DB0D-4CE9-A86F-3163A43D97C8}
+	EndGlobalSection
+EndGlobal
+	SolutionGuid = {CCF71E78-DB0D-4CE9-A86F-3163A43D97C8}
+	EndGlobalSection
+EndGlobal
