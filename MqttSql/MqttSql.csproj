@@ -53,13 +53,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JsonMultiNameModifier" Version="1.0.2.1" />
+    <PackageReference Include="JsonMultiNameModifier" Version="1.0.2.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="MQTTnet" Version="3.1.2" />
-    <PackageReference Include="Npgsql" Version="8.0.3" />
-    <PackageReference Include="SingleOrArrayJsonConverter" Version="1.0.1.1" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="Npgsql" Version="9.0.1" />
+    <PackageReference Include="SingleOrArrayJsonConverter" Version="1.0.1.2" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
