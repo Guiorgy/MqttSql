@@ -397,7 +397,7 @@ public static class Extensions
     /// <exception cref="ArgumentNullException"><paramref name="dateTime"/> is null.</exception>
     public static string ToIsoString(this DateTime? dateTime, bool milliseconds = true, bool strictDateTimeDelimiter = false, bool omitDelimiters = false)
     {
-        ArgumentNullException.ThrowIfNull(dateTime);
+        if (dateTime == null) throw new ArgumentNullException(nameof(dateTime));
 
         DateTime _dateTime = (DateTime)dateTime;
 
