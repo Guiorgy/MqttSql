@@ -20,6 +20,7 @@ using LogLevelEnum = MqttSql.Logging.Logger.LogLevel;
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using MicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace MqttSql.Logging;
 
@@ -145,7 +146,7 @@ public sealed class Logger
     private readonly ConcurrentQueue<string> _logBuffer = new();
     private readonly ConcurrentQueue<List<string>> _failedLogs = new();
     private bool _flushingFailedLogs;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     private const int _defaultFlushOnMessageCount = 1000;
     private const int _defaultLogFileMinSize = 1_000_000;

@@ -29,7 +29,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
     public Logger GetLogger() => logger;
 
     private readonly Dictionary<string, NpgsqlDataSource> dataSurceCache = [];
-    private readonly object dataSurceCacheLock = new();
+    private readonly Lock dataSurceCacheLock = new();
     private bool disposed;
 
     private NpgsqlDataSource? GetDataSource(string connectionString)
