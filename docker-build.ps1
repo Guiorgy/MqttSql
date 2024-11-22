@@ -16,46 +16,72 @@ $TAG = 'guiorgy/mqttsql'
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
-if ($Command -eq 'build') {
-  if ($Arch -in 'auto', 'x86', 'x64', 'arm', 'arm64') {
-    $ARCH_DOCKER_PLATFORM_MAPPING = @{
-      "auto" = "linux"
-      "x86" = "linux/386"
-      "x64" = "linux/amd64"
-      "arm" = "linux/arm/v7"
-      "arm64" = "linux/arm64"
-    }
+function Get-ValueFromMapping {
+  param (
+    [Parameter(Mandatory)]
+    [hashtable]$Mapping,
 
-    $PLATFORM = $ARCH_DOCKER_PLATFORM_MAPPING[$Arch]
-  } else {
-    Write-Error "Invalid architecture specified: $Arch. Please use one of: auto, x86, x64, arm, arm64"
+    [Parameter(Mandatory)]
+    [string]$Key
+  )
+
+  foreach ($value in $Mapping.Keys) {
+    if ($Mapping[$value] -contains $Key) {
+      return $value
+    }
   }
 
-  if ($Base -in 'default', 'debian', 'ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'alpine') {
-    $BASE_SDK_IMAGE_TAG_MAPPING = @{
-      "default" = "9.0"
-      "debian" = "9.0"
-      "ubuntu-24" = "9.0-noble"
-      "ubuntu" = "9.0-noble"
-      "alpine" = "9.0-alpine"
-    }
+  return $null
+}
 
-    $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
-      "default" = "9.0"
-      "debian" = "9.0"
-      "ubuntu-24" = "9.0-noble"
-      "ubuntu" = "9.0-noble"
-      "ubuntu-chiseled-24" = "9.0-noble-chiseled"
-      "ubuntu-chiseled" = "9.0-noble-chiseled"
-      "ubuntu-chiseled-extra-24" = "9.0-noble-chiseled-extra"
-      "ubuntu-chiseled-extra" = "9.0-noble-chiseled-extra"
-      "alpine" = "9.0-alpine"
-    }
+function Get-AllKeysFromMapping {
+  param (
+    [Parameter(Mandatory)]
+    [hashtable]$Mapping
+  )
 
-    $SDK_TAG = $BASE_SDK_IMAGE_TAG_MAPPING[$Base]
-    $RUNTIME_TAG = $BASE_RUNTIME_IMAGE_TAG_MAPPING[$Base]
-  } else {
-    Write-Error "Invalid base image specified: $Base. Please use one of: default, debian, ubuntu, ubuntu-chiseled, ubuntu-chiseled-extra, alpine"
+  $keys = @()
+  foreach ($value in $Mapping.Keys) {
+    $keys += $Mapping[$value]
+  }
+
+  return $keys | Sort-Object
+}
+
+if ($Command -eq 'build') {
+  $ARCH_DOCKER_PLATFORM_MAPPING = @{
+    'linux' = @('auto')
+    'linux/386' = @('x86')
+    'linux/amd64' = @('x64')
+    'linux/arm/v7' = @('arm')
+    'linux/arm64' = @('arm64')
+  }
+
+  $PLATFORM = Get-ValueFromMapping -Mapping $ARCH_DOCKER_PLATFORM_MAPPING -Key $Arch
+
+  if (-not $PLATFORM) {
+    Write-Error "Invalid architecture specified: $Arch. Please use one of: $($(Get-AllKeysFromMapping -Mapping $ARCH_DOCKER_PLATFORM_MAPPING) -join ', ')"
+  }
+
+  $BASE_SDK_IMAGE_TAG_MAPPING = @{
+    '9.0' = @('default', 'debian')
+    '9.0-noble' = @('ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'ubuntu-24', 'ubuntu-24-chiseled', 'ubuntu-24-chiseled-extra')
+    '9.0-alpine' = @('alpine')
+  }
+
+  $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
+    '9.0' = @('default', 'debian')
+    '9.0-noble' = @('ubuntu', 'ubuntu-24')
+    '9.0-noble-chiseled' = @('ubuntu-chiseled', 'ubuntu-24-chiseled')
+    '9.0-noble-chiseled-extra' = @('ubuntu-chiseled-extra', 'ubuntu-24-chiseled-extra')
+    '9.0-alpine' = @('alpine')
+  }
+
+  $SDK_TAG = Get-ValueFromMapping -Mapping $BASE_SDK_IMAGE_TAG_MAPPING -Key $Base
+  $RUNTIME_TAG = Get-ValueFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING -Key $Base
+
+  if (-not $SDK_TAG -or -not $RUNTIME_TAG) {
+    Write-Error "Invalid base image specified: $Base. Please use one of: $($(Get-AllKeysFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING) -join ', ')"
   }
 
   docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_TAG --build-arg RUNTIME_TAG=$RUNTIME_TAG --tag "$($TAG):latest" --file MqttSql\Dockerfile .
