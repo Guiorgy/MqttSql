@@ -6,21 +6,17 @@
 #   MqttSql is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License along with MqttSql. If not, see <https://www.gnu.org/licenses/>.
 
-# Debian Slim: 8.0
-# Ubuntu 22.04: 8.0-jammy
-# Ubuntu 24.04: 8.0-noble
-# Alpine: 8.0-alpine
-ARG SDK_TAG=8.0
+# Debian Slim: 9.0
+# Ubuntu 24.04: 9.0-noble
+# Alpine: 9.0-alpine
+ARG SDK_TAG=9.0
 
-# Debian Slim: 8.0
-# Ubuntu 22.04: 8.0-jammy
-# Ubuntu 24.04: 8.0-noble
-# Ubuntu 22.04 Chiseled: 8.0-jammy-chiseled
-# Ubuntu 24.04 Chiseled: 8.0-noble-chiseled
-# Ubuntu 22.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-jammy-chiseled-extra
-# Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 8.0-noble-chiseled-extra
-# Alpine: 8.0-alpine
-ARG RUNTIME_TAG=8.0
+# Debian Slim: 9.0
+# Ubuntu 24.04: 9.0-noble
+# Ubuntu 24.04 Chiseled: 9.0-noble-chiseled
+# Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 9.0-noble-chiseled-extra
+# Alpine: 9.0-alpine
+ARG RUNTIME_TAG=9.0
 
 ### .NET Build Base Stage ###
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:$SDK_TAG AS build-base

@@ -33,27 +33,23 @@ if ($Command -eq 'build') {
 
   if ($Base -in 'default', 'debian', 'ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'alpine') {
     $BASE_SDK_IMAGE_TAG_MAPPING = @{
-      "default" = "8.0"
-      "debian" = "8.0"
-      "ubuntu-22" = "8.0-jammy"
-      "ubuntu-24" = "8.0-noble"
-      "ubuntu" = "8.0-noble"
-      "alpine" = "8.0-alpine"
+      "default" = "9.0"
+      "debian" = "9.0"
+      "ubuntu-24" = "9.0-noble"
+      "ubuntu" = "9.0-noble"
+      "alpine" = "9.0-alpine"
     }
 
     $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
-      "default" = "8.0"
-      "debian" = "8.0"
-      "ubuntu-22" = "8.0-jammy"
-      "ubuntu-24" = "8.0-noble"
-      "ubuntu" = "8.0-noble"
-      "ubuntu-chiseled-22" = "8.0-jammy-chiseled"
-      "ubuntu-chiseled-24" = "8.0-noble-chiseled"
-      "ubuntu-chiseled" = "8.0-noble-chiseled"
-      "ubuntu-chiseled-extra-22" = "8.0-jammy-chiseled-extra"
-      "ubuntu-chiseled-extra-24" = "8.0-noble-chiseled-extra"
-      "ubuntu-chiseled-extra" = "8.0-noble-chiseled-extra"
-      "alpine" = "8.0-alpine"
+      "default" = "9.0"
+      "debian" = "9.0"
+      "ubuntu-24" = "9.0-noble"
+      "ubuntu" = "9.0-noble"
+      "ubuntu-chiseled-24" = "9.0-noble-chiseled"
+      "ubuntu-chiseled" = "9.0-noble-chiseled"
+      "ubuntu-chiseled-extra-24" = "9.0-noble-chiseled-extra"
+      "ubuntu-chiseled-extra" = "9.0-noble-chiseled-extra"
+      "alpine" = "9.0-alpine"
     }
 
     $SDK_TAG = $BASE_SDK_IMAGE_TAG_MAPPING[$Base]
