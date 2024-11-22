@@ -84,12 +84,16 @@ if ($Command -eq 'build') {
     Write-Error "Invalid base image specified: $Base. Please use one of: $($(Get-AllKeysFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING) -join ', ')"
   }
 
+  Write-Information "Building image '$($TAG):latest'"
+
   docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_TAG --build-arg RUNTIME_TAG=$RUNTIME_TAG --tag "$($TAG):latest" --file MqttSql\Dockerfile .
 
   Write-Information "Image '$($TAG):latest' built"
 } elseif ($Command -eq 'save') {
   New-Item -ItemType Directory -Force -Path .\Publish\Docker > $null
   $ARCHIVE = ".\Publish\Docker\$($TAG -replace '/', '-')-latest.tar.gz"
+
+  Write-Information "Saving image to '$ARCHIVE'"
 
   if ($PSVersionTable.PSVersion.Major -ge 7) {
     docker save "$($TAG):latest" | gzip --best --stdout --verbose > "$ARCHIVE"
