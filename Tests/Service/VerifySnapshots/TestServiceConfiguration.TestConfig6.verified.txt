@@ -3,7 +3,11 @@
     Databases:
     	Name: db1
     	Type: SQLite
-    	ConnectionString: 
+    	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
+    
+    	Name: db2
+    	Type: SQLite
+    	ConnectionString: Data Source=C:\Windows\Temp\MQTTSql
     
     Brokers:
     	Host: localhost
@@ -11,12 +15,6 @@
     	User: user
     	Password: ********
     	Subscriptions:
-    		Topic: some/topic
-    		QOS: 2
-    		Database: db2
-    		Table: table
-    		TimestampFormat: yyyy-MM-dd HH:mm:ss
     
-    ,
-  brokers: []
+    
 }

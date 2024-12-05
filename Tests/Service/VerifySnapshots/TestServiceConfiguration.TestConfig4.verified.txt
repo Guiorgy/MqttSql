@@ -9,7 +9,7 @@
     	Host: localhost
     	Port: 1883
     	User: user
-    	Password: password
+    	Password: ********
     	Subscriptions:
     		Topic: some/topic
     		QOS: 2
@@ -17,6 +17,5 @@
     		Table: table
     		TimestampFormat: yyyy-MM-dd HH:mm:ss
     
-    ,
-  brokers: []
+    
 }

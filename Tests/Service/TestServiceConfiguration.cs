@@ -12,7 +12,7 @@ using System.Collections.Generic;
 namespace Tests;
 
 [TestClass]
-public sealed class TestServiceConfiguration : VerifyBaseWithDefaultSettings
+public sealed class TestServiceConfiguration() : VerifyBaseWithDefaultSettings(hidePasswords: true)
 {
     private static readonly string sampleConfigDirPath = Path.GetFullPath(@"..\..\..\Service\Configuration Samples\", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
     private const string dummyDirPath = @"Some\Path\";
