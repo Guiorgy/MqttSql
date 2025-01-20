@@ -1,3 +1,4 @@
+# check=error=true
 # syntax=docker/dockerfile:1-labs
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
