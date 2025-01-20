@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7-labs
+# syntax=docker/dockerfile:1-labs
 # TODO: Remove the above once COPY --parents becomes part of stable syntax
 
 #   This file is part of MqttSql (Copyright © 2024 Guiorgy).
