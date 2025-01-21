@@ -37,7 +37,7 @@ COPY --exclude=*.csproj --exclude=*/*.csproj --exclude=*/*/*.csproj . ./
 RUN dotnet build ./MqttSql/MqttSql.csproj --no-restore --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false -p:Define=DOCKER
 
 ### .NET Debug Base Stage ###
-FROM build-base as debug-base
+FROM build-base AS debug-base
 ARG DEBUG_CONFIG
 WORKDIR /app
 
@@ -48,7 +48,7 @@ ENV MqttSqlHome=/tmp/mqttsql
 RUN mkdir /tmp/mqttsql/ && echo -n "$DEBUG_CONFIG" > /tmp/mqttsql/config.json
 
 ### .NET App Debug Stage ###
-FROM debug-base as debug
+FROM debug-base AS debug
 
 # Copy the built files into the working directory
 COPY --from=build /build/MqttSql/bin/Debug/*/*/* .
@@ -57,7 +57,7 @@ COPY --from=build /build/MqttSql/bin/Debug/*/*/* .
 ENTRYPOINT ["dotnet", "MqttSql.dll"]
 
 ### .NET App Publish Stage ###
-FROM build as publish
+FROM build AS publish
 
 # Build a release executable targeting Linux and the specified architecture
 RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false --output /publish
@@ -66,7 +66,7 @@ RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arc
 RUN mv ./LICENSE /publish/
 
 ### .NET App Runtime Image ###
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime:$RUNTIME_TAG as runtime
+FROM mcr.microsoft.com/dotnet/runtime:$RUNTIME_TAG AS runtime
 WORKDIR /app
 
 # Copy the published files from the publish stage into the working directory
