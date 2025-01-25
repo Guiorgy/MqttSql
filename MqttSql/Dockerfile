@@ -77,3 +77,36 @@ ENV MqttSqlHome=/app/home
 
 # Define the entry point
 ENTRYPOINT ["dotnet", "MqttSql.dll"]
+
+ARG TITLE
+ARG DESCRIPTION
+ARG VERSION
+ARG AUTHOR
+ARG LICENSE
+ARG SOURCE
+ARG GIT_COMMIT
+ARG BUILD_TIMESTAMP
+ARG RUNTIME_TAG
+ARG IMAGE_TAG
+
+RUN [ -n "$TITLE" ] \
+  && [ -n "$DESCRIPTION" ] \
+  && [ -n "$VERSION" ] \
+  && [ -n "$AUTHOR" ] \
+  && [ -n "$LICENSE" ] \
+  && [ -n "$SOURCE" ] \
+  && [ -n "$GIT_COMMIT" ] \
+  && [ -n "$BUILD_TIMESTAMP" ] \
+  && [ -n "$RUNTIME_TAG" ] \
+  && [ -n "$IMAGE_TAG" ]
+
+LABEL org.opencontainers.image.title="$TITLE" \
+  org.opencontainers.image.description="$DESCRIPTION" \
+  org.opencontainers.image.version="$VERSION" \
+  org.opencontainers.image.authors="$AUTHOR" \
+  org.opencontainers.image.licenses="$LICENSE" \
+  org.opencontainers.image.source="$SOURCE" \
+  org.opencontainers.image.revision="$GIT_COMMIT" \
+  org.opencontainers.image.created="$BUILD_TIMESTAMP" \
+  org.opencontainers.image.base.name="docker.io/mcr.microsoft.com/dotnet/runtime:$RUNTIME_TAG" \
+  org.opencontainers.image.ref.name="$IMAGE_TAG"

@@ -86,7 +86,22 @@ if ($Command -eq 'build') {
 
   Write-Information "Building image '$($IMAGE_TAG):latest'"
 
-  docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_IMAGE_TAG --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG --tag "$($IMAGE_TAG):latest" --file MqttSql\Dockerfile .
+  docker build `
+    --platform=$PLATFORM `
+    --build-arg SDK_TAG=$SDK_IMAGE_TAG `
+    --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG `
+    --build-arg TITLE="MqttSql Treon" `
+    --build-arg DESCRIPTION="Service that subscribes to MQTT brokers and writes the messages to local SQLite databases" `
+    --build-arg VERSION="$(([Xml](Get-Content MqttSql\MqttSql.csproj)).Project.PropertyGroup.Version)" `
+    --build-arg AUTHOR=Guiorgy `
+    --build-arg LICENSE="GNU Affero General Public License v3.0" `
+    --build-arg SOURCE="github.com/Guiorgy/MqttSql" `
+    --build-arg GIT_COMMIT=$(git rev-parse HEAD) `
+    --build-arg BUILD_TIMESTAMP=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') `
+    --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
+    --tag "$($IMAGE_TAG):latest" `
+    --file MqttSql\Dockerfile `
+    .
 
   if ($?) {
     Write-Information "Image '$($IMAGE_TAG):latest' built"
