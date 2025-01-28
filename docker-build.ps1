@@ -84,29 +84,56 @@ if ($Command -eq 'build') {
     Write-Error "Invalid base image specified: $Base. Please use one of: $($(Get-AllKeysFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING) -join ', ')"
   }
 
-  Write-Information "Building image '$($IMAGE_TAG):latest'"
+  $UNCOMMITED_CHANGES = git status --porcelain
+  if ($UNCOMMITED_CHANGES) {
+    Write-Information "Uncommitted changes detected. Stashing changes"
 
-  docker build `
-    --platform=$PLATFORM `
-    --build-arg SDK_TAG=$SDK_IMAGE_TAG `
-    --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG `
-    --build-arg TITLE="MqttSql Treon" `
-    --build-arg DESCRIPTION="Service that subscribes to MQTT brokers and writes the messages to local SQLite databases" `
-    --build-arg VERSION="$(([Xml](Get-Content MqttSql\MqttSql.csproj)).Project.PropertyGroup.Version)" `
-    --build-arg AUTHOR=Guiorgy `
-    --build-arg LICENSE="GNU Affero General Public License v3.0" `
-    --build-arg SOURCE="github.com/Guiorgy/MqttSql" `
-    --build-arg GIT_COMMIT=$(git rev-parse HEAD) `
-    --build-arg BUILD_TIMESTAMP=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') `
-    --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
-    --tag "$($IMAGE_TAG):latest" `
-    --file MqttSql\Dockerfile `
-    .
+    git stash push --include-untracked --message "Temporary stash for building an image based on the current commit"
 
-  if ($?) {
-    Write-Information "Image '$($IMAGE_TAG):latest' built"
+    if ($?) {
+      $STASH_PUSHED = $true
+    } else {
+      Write-Error "Failed to stash uncommited changes"
+    }
   } else {
-    Write-Error "Image '$($IMAGE_TAG):latest' build failed"
+    $STASH_PUSHED = $false
+  }
+
+  try {
+    Write-Information "Building image '$($IMAGE_TAG):latest'"
+
+    docker build `
+      --platform=$PLATFORM `
+      --build-arg SDK_TAG=$SDK_IMAGE_TAG `
+      --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG `
+      --build-arg TITLE="MqttSql Treon" `
+      --build-arg DESCRIPTION="Service that subscribes to MQTT brokers and writes the messages to local SQLite databases" `
+      --build-arg VERSION="$(([Xml](Get-Content MqttSql\MqttSql.csproj)).Project.PropertyGroup.Version)" `
+      --build-arg AUTHOR=Guiorgy `
+      --build-arg LICENSE="GNU Affero General Public License v3.0" `
+      --build-arg SOURCE="github.com/Guiorgy/MqttSql" `
+      --build-arg GIT_COMMIT=$(git rev-parse HEAD) `
+      --build-arg BUILD_TIMESTAMP=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') `
+      --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
+      --tag "$($IMAGE_TAG):latest" `
+      --file MqttSql\Dockerfile `
+      .
+
+    if ($?) {
+      Write-Information "Image '$($IMAGE_TAG):latest' built"
+    } else {
+      Write-Error "Image '$($IMAGE_TAG):latest' build failed"
+    }
+  } finally {
+    if ($STASH_PUSHED) {
+      Write-Information "Unstashing changes"
+
+      git stash pop
+
+      if (!($?)) {
+        Write-Error "Failed to unstash changes"
+      }
+    }
   }
 } elseif ($Command -eq 'save') {
   New-Item -ItemType Directory -Force -Path .\Publish\Docker > $null
