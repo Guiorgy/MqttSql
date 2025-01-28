@@ -88,7 +88,11 @@ if ($Command -eq 'build') {
 
   docker build --platform=$PLATFORM --build-arg SDK_TAG=$SDK_IMAGE_TAG --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG --tag "$($IMAGE_TAG):latest" --file MqttSql\Dockerfile .
 
-  Write-Information "Image '$($IMAGE_TAG):latest' built"
+  if ($?) {
+    Write-Information "Image '$($IMAGE_TAG):latest' built"
+  } else {
+    Write-Error "Image '$($IMAGE_TAG):latest' build failed"
+  }
 } elseif ($Command -eq 'save') {
   New-Item -ItemType Directory -Force -Path .\Publish\Docker > $null
   $ARCHIVE = ".\Publish\Docker\$($IMAGE_TAG -replace '/', '-')-latest.tar.gz"
