@@ -10,6 +10,7 @@
 # Debian Slim: 9.0
 # Ubuntu 24.04: 9.0-noble
 # Alpine: 9.0-alpine
+# Azure Linux: 9.0-azurelinux3.0
 ARG SDK_TAG=9.0
 
 # Debian Slim: 9.0
@@ -17,6 +18,9 @@ ARG SDK_TAG=9.0
 # Ubuntu 24.04 Chiseled: 9.0-noble-chiseled
 # Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 9.0-noble-chiseled-extra
 # Alpine: 9.0-alpine
+# Azure Linux: 9.0-azurelinux3.0
+# Azure Linux Distroless: 9.0-azurelinux3.0-distroless
+# Azure Linux Distroless with tzdata (Time Zone Database) and icu (International Components for Unicode): 9.0-azurelinux3.0-distroless-extra
 ARG RUNTIME_TAG=9.0
 
 ### .NET Build Base Stage ###

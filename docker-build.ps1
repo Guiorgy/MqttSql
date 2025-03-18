@@ -48,26 +48,38 @@ function Get-AllKeysFromMapping {
   return $keys | Sort-Object
 }
 
+# Source: https://github.com/docker/cli/blob/master/cli/command/manifest/util.go
 $ARCH_DOCKER_PLATFORM_MAPPING = @{
   'linux' = @('auto')
   'linux/386' = @('x86')
   'linux/amd64' = @('x64')
   'linux/arm/v7' = @('arm')
   'linux/arm64' = @('arm64')
+  'linux/ppc64le' = @('ppc')
+  'linux/mips64' = @('mips')
+  'linux/mips64le' = @('mipsle')
+  'linux/riscv64' = @('riscv')
+  'linux/s390x' = @('s390x')
 }
 
+# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md#full-tag-listing
 $BASE_SDK_IMAGE_TAG_MAPPING = @{
   '9.0' = @('default', 'debian')
   '9.0-noble' = @('ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'ubuntu-24', 'ubuntu-24-chiseled', 'ubuntu-24-chiseled-extra')
   '9.0-alpine' = @('alpine')
+  '9.0-azurelinux3.0' = @('azurelinux', 'azurelinux-distroless', 'azurelinux-distroless-extra')
 }
 
+# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#linux-amd64-tags
 $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
   '9.0' = @('default', 'debian')
   '9.0-noble' = @('ubuntu', 'ubuntu-24')
   '9.0-noble-chiseled' = @('ubuntu-chiseled', 'ubuntu-24-chiseled')
   '9.0-noble-chiseled-extra' = @('ubuntu-chiseled-extra', 'ubuntu-24-chiseled-extra')
   '9.0-alpine' = @('alpine')
+  '9.0-azurelinux3.0' = @('azurelinux')
+  '9.0-azurelinux3.0-distroless' = @('azurelinux-distroless')
+  '9.0-azurelinux3.0-distroless-extra' = @('azurelinux-distroless-extra')
 }
 
 if ($Command -eq 'build') {
