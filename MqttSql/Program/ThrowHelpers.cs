@@ -6,7 +6,6 @@
 */
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using static System.Runtime.InteropServices.RuntimeInformation;
@@ -22,7 +21,7 @@ public static class ThrowHelpers
         string command = commandBox.Command;
 
         if (Array.Exists(platforms, IsOSPlatform))
-            throw new NotSupportedException($"{command} command not supported on the current platform");
+            throw new NotSupportedException($"{command} command not supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
     }
 
     public static void IsOnlySuportedOnPlatforms(this CommandBox commandBox, params OSPlatform[] platforms)
@@ -30,7 +29,7 @@ public static class ThrowHelpers
         string command = commandBox.Command;
 
         if (!Array.Exists(platforms, IsOSPlatform))
-            throw new NotSupportedException($"{command} command not supported on the current platform");
+            throw new NotSupportedException($"{command} command only supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
     }
 
     public static CommandAndCommandsBox IsUsedWithCommands(this CommandBox commandBox, params string[] commands) => new(commandBox.Command, commands);
@@ -41,15 +40,22 @@ public static class ThrowHelpers
         string[] commands = commandAndCommandsBox.Commands;
 
         if (args.Contains(command) && args.ContainsAny(commands))
-            throw new ArgumentException($"Can't use \"{command}\" with {CommandsToString(commands)}");
+            throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
+    }
 
-        static string CommandsToString(string[] commands) => commands.Length switch
+    private static string PrettyJoin(string[] strings, string separator = ", ", string lastSeparator = " and ", string empty = "none", bool quoted = false)
+    {
+        string quote = quoted ? "\"" : "";
+
+        return strings.Length switch
         {
-            0 => throw new UnreachableException(),
-            1 => $"\"{commands[0]}\"",
-            _ => '"' + string.Join("\", \"", commands[..^1]) + $"\" or \"{commands[^1]}\""
+            0 => empty,
+            1 => $"{quote}{strings[0]}{quote}",
+            _ => quote + string.Join($"{quote}{separator}{quote}", strings[..^1]) + $"{quote}{lastSeparator}{quote}{strings[^1]}{quote}"
         };
     }
+
+    private static string PrettyJoin(OSPlatform[] platforms) => PrettyJoin([.. platforms.Select(p => p.ToString())], ", ", " and ", "no", false);
 
     public sealed class CommandBox(string command)
     {
