@@ -57,7 +57,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
     public ServiceState State { get; private set; }
 
-    public Service(string? homeDirectory = null, MicrosoftLogger? loggerOverride = null)
+    public Service(string? configFilePath = null, string? logFilePath = null, string? sqliteBasePath = null, MicrosoftLogger? loggerOverride = null)
     {
         string? macAddress = NetworkInterface
             .GetAllNetworkInterfaces()
@@ -67,11 +67,24 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
         mqttClientIdBase = $"{macAddress ?? Guid.NewGuid().ToString()}-{Environment.MachineName}-{Environment.UserName}".Replace(' ', '.');
 
-        this.homeDirectory = homeDirectory ?? Environment.GetEnvironmentVariable("MqttSqlHome") ?? Directory.GetCurrentDirectory();
-        if (!Path.EndsInDirectorySeparator(this.homeDirectory)) this.homeDirectory += Path.DirectorySeparatorChar;
+        if (configFilePath == null || logFilePath == null || sqliteBasePath == null)
+        {
+            string workingDir = Directory.GetCurrentDirectory();
+            if (!Path.EndsInDirectorySeparator(workingDir)) workingDir += Path.DirectorySeparatorChar;
 
-        configurationFilePath = this.homeDirectory + configurationFileName;
-        var logFilePath = this.homeDirectory + logFileName;
+            if (configFilePath == null) configurationFileParentDirectoryPath = workingDir;
+            configurationFilePath = configFilePath ?? workingDir + configurationFileName;
+            logFilePath ??= workingDir + logFileName;
+            sqliteRelativeBasePath = sqliteBasePath ?? workingDir;
+        }
+        else
+        {
+            configurationFilePath = configFilePath;
+            sqliteRelativeBasePath = sqliteBasePath;
+        }
+
+        configurationFileParentDirectoryPath ??= Path.GetDirectoryName(configurationFilePath)!; // GetDirectoryName returns null if configurationFilePath is null, but it isn't
+        if (configurationFileParentDirectoryPath.Length == 0) configurationFileParentDirectoryPath = Directory.GetCurrentDirectory();
 
         logger = loggerOverride != null
             ? new Logger(
@@ -115,9 +128,9 @@ public sealed class Service : IDisposable, IAsyncDisposable
             );
 
         logger.Debug("Mqtt Client Id: \"", mqttClientIdBase, '"');
-        logger.Debug("Home: \"", this.homeDirectory, '"');
-        if (logger.LogToFileEnabled) logger.Debug("Logs: \"", logFilePath, '"');
         logger.Debug("Configuration: \"", configurationFilePath, '"');
+        if (logger.LogToFileEnabled) logger.Debug("Logs: \"", logFilePath, '"');
+        else logger.Debug("Logs: Logging to file is disabled");
 
         State = ServiceState.Created;
     }
@@ -294,7 +307,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
     {
         try
         {
-            brokers = ConfigurationLoader.LoadBrokersFromJson(configurationFilePath, logger, homeDirectory);
+            brokers = ConfigurationLoader.LoadBrokersFromJson(configurationFilePath, logger, sqliteRelativeBasePath);
 
             if (brokers.Length == 0)
             {
@@ -323,7 +336,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
             ConfigurationFileChangeToken
         );
 
-        configFileChangeWatcher = new(homeDirectory)
+        configFileChangeWatcher = new(configurationFileParentDirectoryPath)
         {
             IncludeSubdirectories = false,
             Filter = configurationFileName,
@@ -523,8 +536,9 @@ public sealed class Service : IDisposable, IAsyncDisposable
     private readonly Logger logger;
 
     private readonly string mqttClientIdBase;
-    private readonly string homeDirectory;
+    private readonly string configurationFileParentDirectoryPath;
     private readonly string configurationFilePath;
+    private readonly string sqliteRelativeBasePath;
 
     private FileSystemWatcher? configFileChangeWatcher;
     private CancellationTokenSource? configurationFileChangeTokenSource;

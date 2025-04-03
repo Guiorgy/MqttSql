@@ -43,6 +43,15 @@ public static class ThrowHelpers
             throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
     }
 
+    public static void InArgs(this CommandAndCommandsBox commandAndCommandsBox, CommandLineArgs args)
+    {
+        string command = commandAndCommandsBox.Command;
+        string[] commands = commandAndCommandsBox.Commands;
+
+        if (args.ContainsSubcommand(command) && args.ContainsAnySubcommand(commands))
+            throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
+    }
+
     private static string PrettyJoin(string[] strings, string separator = ", ", string lastSeparator = " and ", string empty = "none", bool quoted = false)
     {
         string quote = quoted ? "\"" : "";

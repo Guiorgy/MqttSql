@@ -6,7 +6,6 @@
 */
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.OSPlatform;
 using static System.Runtime.InteropServices.RuntimeInformation;
@@ -14,6 +13,7 @@ using static MqttSql.Program.ThrowHelpers;
 using static MqttSql.Program.LinuxHelpers;
 using System.Diagnostics;
 using System.IO;
+using static MqttSql.CommandLineArgs;
 
 namespace MqttSql.Program;
 
@@ -21,23 +21,26 @@ public static class Program
 {
     public static async Task Main(string[] args)
     {
-        if (args.Length != 0)
-        {
-            ThrowIfCommand("uninstall").IsUsedWithCommands("install", "start").InArgs(args);
-            ThrowIfCommand("stop").IsUsedWithCommands("start").InArgs(args);
+        CommandLineArgs cliArgs = new(args);
 
-            int exitCode = 0;
+        ThrowIfCommand("uninstall").IsUsedWithCommands("install", "start").InArgs(cliArgs);
+        ThrowIfCommand("stop").IsUsedWithCommands("start").InArgs(cliArgs);
 
-            if (args.Contains("install")) exitCode = await Install(args);
-            if (args.Contains("start")) exitCode = await Start();
-            if (args.Contains("stop")) exitCode = await Stop();
-            if (args.Contains("uninstall")) exitCode = await Uninstall();
+        int exitCode = 0;
 
-            Environment.ExitCode = exitCode;
-            return;
-        }
+        if (cliArgs.ContainsSubcommand("run") || cliArgs.SubcommandsAndArgs.Length == 0) exitCode = await Run(cliArgs.TopLevelArgs);
+        if (exitCode == 0 && cliArgs.ContainsSubcommand("install")) exitCode = await Install(cliArgs["install"]);
+        if (exitCode == 0 && cliArgs.ContainsSubcommand("start")) exitCode = await Start();
+        if (exitCode == 0 && cliArgs.ContainsSubcommand("stop")) exitCode = await Stop();
+        if (exitCode == 0 && cliArgs.ContainsSubcommand("uninstall")) exitCode = await Uninstall();
 
-        Service service = new();
+        Environment.ExitCode = exitCode;
+    }
+
+    private static async Task<int> Run(CommandAndArgs cliArgs)
+    {
+        var (config, logfile, sqliteBase) = GetPathsFromArgs(cliArgs);
+        Service service = new(configFilePath: config, logFilePath: logfile, sqliteBasePath: sqliteBase);
 
         bool serviceStopped = false;
 
@@ -62,15 +65,19 @@ public static class Program
         };
 
         await service.StartAsync();
+
+        return 0;
+
+        static (string? config, string? logfile, string? sqliteBase) GetPathsFromArgs(CommandAndArgs cliArgs) => (
+            cliArgs.ArgValue("config", 'c')?.RequiredValue,
+            cliArgs.ArgValue("logfile", 'l')?.RequiredValue,
+            cliArgs.ArgValue("sqlite-dir", 's')?.RequiredValue
+        );
     }
 
-    private static async Task<int> Install(string[] args)
+    private static async Task<int> Install(CommandAndArgs args)
     {
         ThrowIfCommand("install").IsOnlySuportedOnPlatforms(Linux);
-
-        string home = Directory.GetCurrentDirectory();
-        Console.WriteLine($"Setting home directory to \"{home}\"");
-        Environment.SetEnvironmentVariable("MqttSqlHome", home, EnvironmentVariableTarget.Machine);
 
         if (IsOSPlatform(Linux))
         {
@@ -80,20 +87,13 @@ public static class Program
             var workingDirectory = Directory.GetCurrentDirectory();
             var executable = Process.GetCurrentProcess().MainModule?.FileName ?? $"{workingDirectory}/{nameof(MqttSql)}";
 
-            string user = "root";
-            int indexOfUser = Array.IndexOf(args, "-u");
-            if (indexOfUser == -1) indexOfUser = Array.IndexOf(args, "--user");
-            if (indexOfUser != -1)
-            {
-                if (args.Length == indexOfUser + 1) throw new ArgumentException($"Value expected for the {args[indexOfUser]} argument");
-                user = args[indexOfUser + 1];
-            }
+            var userArg = args.ArgValue("user", 'u') ?? "root";
 
             Console.WriteLine("Creating systemd service:");
             Console.WriteLine($"\t Directory: {workingDirectory}");
             Console.WriteLine($"\t Executable: {executable}");
-            Console.WriteLine($"\t User: {user}");
-            if (user == "root")
+            Console.WriteLine($"\t User: {userArg.RequiredValue}");
+            if (userArg.Value == "root")
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("The service was set to run with \"root\" user. "

@@ -45,9 +45,6 @@ FROM build-base AS debug-base
 ARG DEBUG_CONFIG
 WORKDIR /app
 
-# Set environmental variables
-ENV MqttSqlHome=/tmp/mqttsql
-
 # Create the configuration file
 RUN mkdir /tmp/mqttsql/ && echo -n "$DEBUG_CONFIG" > /tmp/mqttsql/config.json
 
@@ -58,7 +55,7 @@ FROM debug-base AS debug
 COPY --from=build /build/MqttSql/bin/Debug/*/*/* .
 
 # Define the entry point
-ENTRYPOINT ["dotnet", "MqttSql.dll"]
+ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/tmp/mqttsql/config.json", "--logfile=/dev/null", "--sqlite-dir=/tmp/mqttsql/"]
 
 ### .NET App Publish Stage ###
 FROM build AS publish
@@ -76,11 +73,8 @@ WORKDIR /app
 # Copy the published files from the publish stage into the working directory
 COPY --from=publish /publish .
 
-# Set environmental variables
-ENV MqttSqlHome=/app/home
-
 # Define the entry point
-ENTRYPOINT ["dotnet", "MqttSql.dll"]
+ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/app/home/config.json", "--logfile=/dev/null", "--sqlite-dir=/app/home/"]
 
 ARG TITLE
 ARG DESCRIPTION
