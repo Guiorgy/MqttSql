@@ -44,7 +44,7 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
 
                 command.CommandText =
                     $"""
-                    CREATE TABLE IF NOT EXISTS {table} (
+                    CREATE TABLE IF NOT EXISTS '{table}' (
                         id INTEGER NOT NULL PRIMARY KEY,
                         Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
                         Message VARCHAR NOT NULL
@@ -96,7 +96,7 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                             timestampString = timestamp.ToStringFast(timeFormat);
                         }
 
-                        command.CommandText = $"INSERT INTO {table} (Timestamp, Message) values (@timestamp, @message);";
+                        command.CommandText = $"INSERT INTO '{table}' (Timestamp, Message) values (@timestamp, @message);";
                         command.Parameters.Clear();
                         command.Parameters.Add("@timestamp", DbType.DateTime).Value = timestampString;
                         command.Parameters.Add("@message", DbType.String).Value = message;

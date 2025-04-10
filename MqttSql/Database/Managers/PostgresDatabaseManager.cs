@@ -72,12 +72,12 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
                         SELECT * FROM information_schema.tables
                         WHERE table_schema = current_schema() AND table_name = '{table}'
                     ) THEN
-                        CREATE TABLE {table} (
+                        CREATE TABLE "{table}" (
                             id SERIAL PRIMARY KEY,
                             Timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                             Message TEXT NOT NULL
                         );
-                        CREATE INDEX idx_{table}_timestamp ON {table} (
+                        CREATE INDEX "idx_{table}_timestamp" ON "{table}" (
                 	        Timestamp ASC
                         );
                     END IF;
@@ -108,7 +108,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
             {
                 logger.Debug("Writing \"", message, "\" message to the \"", table, "\" table");
 
-                command.CommandText = $"INSERT INTO {table} (Timestamp, Message) values ($1, $2);";
+                command.CommandText = $@"INSERT INTO ""{table}"" (Timestamp, Message) values ($1, $2);";
 
                 command.Parameters.Clear();
                 _ = command.Parameters.AddWithValue(timestamp);
