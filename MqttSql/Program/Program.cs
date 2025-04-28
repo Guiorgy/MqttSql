@@ -5,15 +5,15 @@
     You should have received a copy of the GNU Affero General Public License along with MqttSql. If not, see <https://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.OSPlatform;
-using static System.Runtime.InteropServices.RuntimeInformation;
-using static MqttSql.Program.ThrowHelpers;
-using static MqttSql.Program.LinuxHelpers;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.Loader;
+using System.Threading.Tasks;
 using static MqttSql.CommandLineArgs;
+using static MqttSql.Program.LinuxHelpers;
+using static MqttSql.Program.ThrowHelpers;
+using static System.Runtime.InteropServices.OSPlatform;
+using static System.Runtime.InteropServices.RuntimeInformation;
 
 namespace MqttSql.Program;
 
@@ -55,14 +55,17 @@ public static class Program
         };
 
         // Handle SIGTERM
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        AssemblyLoadContext.Default.Unloading += (_) => stopService();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => stopService();
+        void stopService()
         {
             if (!serviceStopped && service.State != Service.ServiceState.Exited)
             {
                 Console.WriteLine("Received SIGTERM");
                 service.Stop();
+                serviceStopped = true;
             }
-        };
+        }
 
         await service.StartAsync();
 
@@ -112,7 +115,8 @@ public static class Program
                         description: "Subscribes to MQTT brokers and writes the messages to SQL databases"
                     )
                 );
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 return -1;
