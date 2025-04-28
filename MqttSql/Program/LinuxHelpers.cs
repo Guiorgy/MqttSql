@@ -82,6 +82,8 @@ public static class LinuxHelpers
         return exitCode;
     }
 
+    public static async Task<int> PrintServiceStatus(string name) => await ExecuteSystemd(SystemdSubcommand.Status, name);
+
     public static async Task<int> InstallService(string name, string description, string? user = null)
     {
         var systemdServiceUnitPath = GetSystemdServiceUnitPath(name);

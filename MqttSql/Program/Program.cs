@@ -28,6 +28,7 @@ public static class Program
         int exitCode = 0;
 
         if (cliArgs.ContainsSubcommand("run") || cliArgs.SubcommandsAndArgs.Length == 0) exitCode = await Run(cliArgs.TopLevelArgs);
+        if (exitCode == 0 && cliArgs.ContainsSubcommand("status")) exitCode = await Status();
         if (exitCode == 0 && cliArgs.ContainsSubcommand("install")) exitCode = await Install(cliArgs["install"]);
         if (exitCode == 0 && cliArgs.ContainsSubcommand("start")) exitCode = await Start();
         if (exitCode == 0 && cliArgs.ContainsSubcommand("stop")) exitCode = await Stop();
@@ -75,6 +76,20 @@ public static class Program
             cliArgs.ArgValue("logfile", 'l')?.RequiredValue,
             cliArgs.ArgValue("sqlite-dir", 's')?.RequiredValue
         );
+    }
+
+    private static async Task<int> Status()
+    {
+        ThrowIfCommand("stop").IsOnlySuportedOnPlatforms(Linux);
+
+        if (IsOSPlatform(Linux))
+        {
+            return await LinuxHelpers.PrintServiceStatus(systemdServiceName);
+        }
+        else
+        {
+            throw new UnreachableException();
+        }
     }
 
     private static async Task<int> Install(CommandAndArgs args)
