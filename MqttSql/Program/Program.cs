@@ -78,13 +78,18 @@ public static class Program
         );
     }
 
+#pragma warning disable IDE0046 // Convert to conditional expression
     private static async Task<int> Status()
     {
-        ThrowIfCommand("stop").IsOnlySuportedOnPlatforms(Linux);
+        ThrowIfCommand("stop").IsOnlySuportedOnPlatforms(Linux, Windows);
 
         if (IsOSPlatform(Linux))
         {
-            return await LinuxHelpers.PrintServiceStatus(systemdServiceName);
+            return await LinuxHelpers.PrintServiceStatus(serviceName);
+        }
+        else if (IsOSPlatform(Windows))
+        {
+            return await WindowsHelpers.QueryServiceStatus(serviceName);
         }
         else
         {
@@ -94,15 +99,19 @@ public static class Program
 
     private static async Task<int> Install(CommandAndArgs args)
     {
-        ThrowIfCommand("install").IsOnlySuportedOnPlatforms(Linux);
+        ThrowIfCommand("install").IsOnlySuportedOnPlatforms(Linux, Windows);
 
         if (IsOSPlatform(Linux))
         {
             return await LinuxHelpers.InstallService(
-                systemdServiceName,
+                serviceName,
                 serviceDescription,
                 args.ArgValue("user", 'u')?.Value
             );
+        }
+        else if (IsOSPlatform(Windows))
+        {
+            return await WindowsHelpers.InstallService(serviceName, serviceDisplayName);
         }
         else
         {
@@ -112,11 +121,15 @@ public static class Program
 
     private static async Task<int> Uninstall()
     {
-        ThrowIfCommand("uninstall").IsOnlySuportedOnPlatforms(Linux);
+        ThrowIfCommand("uninstall").IsOnlySuportedOnPlatforms(Linux, Windows);
 
         if (IsOSPlatform(Linux))
         {
-            return await LinuxHelpers.UninstallService(systemdServiceName);
+            return await LinuxHelpers.UninstallService(serviceName);
+        }
+        else if (IsOSPlatform(Windows))
+        {
+            return await WindowsHelpers.UninstallService(serviceName);
         }
         else
         {
@@ -126,11 +139,15 @@ public static class Program
 
     private static async Task<int> Start()
     {
-        ThrowIfCommand("start").IsOnlySuportedOnPlatforms(Linux);
+        ThrowIfCommand("start").IsOnlySuportedOnPlatforms(Linux, Windows);
 
         if (IsOSPlatform(Linux))
         {
-            return await LinuxHelpers.StartService(systemdServiceName);
+            return await LinuxHelpers.StartService(serviceName);
+        }
+        else if (IsOSPlatform(Windows))
+        {
+            return await WindowsHelpers.StartService(serviceName);
         }
         else
         {
@@ -140,18 +157,24 @@ public static class Program
 
     private static async Task<int> Stop()
     {
-        ThrowIfCommand("stop").IsOnlySuportedOnPlatforms(Linux);
+        ThrowIfCommand("stop").IsOnlySuportedOnPlatforms(Linux, Windows);
 
         if (IsOSPlatform(Linux))
         {
-            return await LinuxHelpers.StopService(systemdServiceName);
+            return await LinuxHelpers.StopService(serviceName);
+        }
+        else if (IsOSPlatform(Windows))
+        {
+            return await WindowsHelpers.StopService(serviceName);
         }
         else
         {
             throw new UnreachableException();
         }
     }
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-    private const string systemdServiceName = "mqtt-sql";
+    private const string serviceName = "mqtt-sql";
+    private const string serviceDisplayName = "MqttSql";
     private const string serviceDescription = "Subscribes to MQTT brokers and writes the messages to SQL databases";
 }
