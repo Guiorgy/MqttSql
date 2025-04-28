@@ -10,7 +10,6 @@ using System.IO;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
 using static MqttSql.CommandLineArgs;
-using static MqttSql.Program.LinuxHelpers;
 using static MqttSql.Program.ThrowHelpers;
 using static System.Runtime.InteropServices.OSPlatform;
 using static System.Runtime.InteropServices.RuntimeInformation;
@@ -84,45 +83,11 @@ public static class Program
 
         if (IsOSPlatform(Linux))
         {
-            var systemdServiceUnitPath = GetSystemdServiceUnitPath(systemdServiceName);
-            if (File.Exists(systemdServiceUnitPath)) return 0;
-
-            var workingDirectory = Directory.GetCurrentDirectory();
-            var executable = Process.GetCurrentProcess().MainModule?.FileName ?? $"{workingDirectory}/{nameof(MqttSql)}";
-
-            var userArg = args.ArgValue("user", 'u') ?? "root";
-
-            Console.WriteLine("Creating systemd service:");
-            Console.WriteLine($"\t Directory: {workingDirectory}");
-            Console.WriteLine($"\t Executable: {executable}");
-            Console.WriteLine($"\t User: {userArg.RequiredValue}");
-            if (userArg.Value == "root")
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("The service was set to run with \"root\" user. "
-                    + $"If this is undesirable, either modify the \"{systemdServiceUnitPath}\" service file, "
-                    + "or install using the \"-u\" or \"--user\" argument.");
-                Console.ResetColor();
-            }
-
-            try
-            {
-                await File.WriteAllTextAsync(
-                    systemdServiceUnitPath,
-                    GetSystemdServiceUnitContent(
-                        executablePath: executable,
-                        workingDirectory: workingDirectory,
-                        description: "Subscribes to MQTT brokers and writes the messages to SQL databases"
-                    )
-                );
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                return -1;
-            }
-
-            return await ExecuteSystemd(SystemdSubcommand.DaemonReload, systemdServiceName);
+            return await LinuxHelpers.InstallService(
+                systemdServiceName,
+                serviceDescription,
+                args.ArgValue("user", 'u')?.Value
+            );
         }
         else
         {
@@ -136,12 +101,7 @@ public static class Program
 
         if (IsOSPlatform(Linux))
         {
-            int exitCode = await Stop();
-            if (exitCode != 0) return exitCode;
-
-            File.Delete(GetSystemdServiceUnitPath(systemdServiceName));
-
-            return await ExecuteSystemd(SystemdSubcommand.DaemonReload, systemdServiceName);
+            return await LinuxHelpers.UninstallService(systemdServiceName);
         }
         else
         {
@@ -155,8 +115,7 @@ public static class Program
 
         if (IsOSPlatform(Linux))
         {
-            int exitCode = await ExecuteSystemd(SystemdSubcommand.Enable, systemdServiceName);
-            return exitCode == 0 ? await ExecuteSystemd(SystemdSubcommand.Start, systemdServiceName) : exitCode;
+            return await LinuxHelpers.StartService(systemdServiceName);
         }
         else
         {
@@ -170,8 +129,7 @@ public static class Program
 
         if (IsOSPlatform(Linux))
         {
-            int exitCode = await ExecuteSystemd(SystemdSubcommand.Stop, systemdServiceName);
-            return exitCode == 0 ? await ExecuteSystemd(SystemdSubcommand.Stop, systemdServiceName) : exitCode;
+            return await LinuxHelpers.StopService(systemdServiceName);
         }
         else
         {
@@ -180,4 +138,5 @@ public static class Program
     }
 
     private const string systemdServiceName = "mqtt-sql";
+    private const string serviceDescription = "Subscribes to MQTT brokers and writes the messages to SQL databases";
 }
