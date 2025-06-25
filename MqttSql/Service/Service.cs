@@ -23,6 +23,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -126,6 +127,12 @@ public sealed class Service : IDisposable, IAsyncDisposable
                 includeTimestamp: true
 #endif
             );
+
+        string? gitRevision = typeof(Service).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(metadata => metadata?.Key == "GitRevision", null)
+            ?.Value;
+        if (gitRevision != null) logger.Debug("Git Revision: \"", gitRevision, '"');
 
         logger.Debug("Mqtt Client Id: \"", mqttClientIdBase, '"');
         logger.Debug("Configuration: \"", configurationFilePath, '"');

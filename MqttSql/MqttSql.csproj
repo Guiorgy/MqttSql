@@ -30,6 +30,15 @@
     <DockerComposeDownArguments>--timeout 60</DockerComposeDownArguments>
   </PropertyGroup>
 
+  <Target Name="SetGitRevision" BeforeTargets="InitializeSourceControlInformation">
+    <Exec Command="git describe --long --always --dirty=* --exclude=* --abbrev=40" ConsoleToMSBuild="True" IgnoreExitCode="False">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitRevision" />
+    </Exec>
+    <ItemGroup>
+      <AssemblyMetadata Include="GitRevision" Value="$(GitRevision)" />
+    </ItemGroup>
+  </Target>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <ErrorReport>prompt</ErrorReport>
     <DebugType>portable</DebugType>
