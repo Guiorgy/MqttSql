@@ -76,20 +76,26 @@ public static class WindowsHelpers
 
     public static async Task<int> QueryServiceStatus(string name) => await ExecuteServiceControl(ServiceControlSubcommand.Query, name);
 
-    public static async Task<int> InstallService(string name, string? displayName = null)
+    public static async Task<int> InstallService(string name, string? displayName = null, string? config = null, string? logfile = null, string? sqliteDir = null)
     {
         var workingDirectory = Directory.GetCurrentDirectory();
         var executable = Process.GetCurrentProcess().MainModule?.FileName ?? $"{workingDirectory}/{nameof(MqttSql)}";
+
+        config ??= workingDirectory + "/config.json";
+        logfile ??= workingDirectory + "/logs.txt";
+        sqliteDir ??= workingDirectory;
+        var executableArgs = $@"--config=\""{config}\"" --logfile=\""{logfile}\"" --sqlite-dir=\""{sqliteDir}\""";
 
         Console.WriteLine("Creating Windows service:");
         Console.WriteLine($"\t Name: {name}");
         Console.WriteLine($"\t Display Name: {displayName ?? name}");
         Console.WriteLine($"\t Binary: {executable}");
+        Console.WriteLine($"\t Arguments: {executableArgs}");
         return await ExecuteServiceControl(
             ServiceControlSubcommand.Create,
             name,
             "DisplayName=", displayName ?? name,
-            "binpath=", $"\"{executable}\"",
+            "binpath=", $@"""\""{executable}\"" {executableArgs}""",
             "start=", "auto"
         );
     }

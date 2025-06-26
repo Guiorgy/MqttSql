@@ -5,8 +5,8 @@
     You should have received a copy of the GNU Affero General Public License along with MqttSql. If not, see <https://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
 using static MqttSql.CommandLineArgs;
@@ -37,9 +37,22 @@ public static class Program
         Environment.ExitCode = exitCode;
     }
 
+    private static (string? config, string? logfile, string? sqliteBase) GetPathsFromArgs(CommandAndArgs cliArgs, bool required = false)
+        => required
+            ? (
+                cliArgs.ArgValue("config", 'c')?.RequiredValue,
+                cliArgs.ArgValue("logfile", 'l')?.RequiredValue,
+                cliArgs.ArgValue("sqlite-dir", 's')?.RequiredValue
+            )
+            : (
+                cliArgs.ArgValue("config", 'c')?.Value,
+                cliArgs.ArgValue("logfile", 'l')?.Value,
+                cliArgs.ArgValue("sqlite-dir", 's')?.Value
+            );
+
     private static async Task<int> Run(CommandAndArgs cliArgs)
     {
-        var (config, logfile, sqliteBase) = GetPathsFromArgs(cliArgs);
+        var (config, logfile, sqliteBase) = GetPathsFromArgs(cliArgs, true);
         Service service = new(configFilePath: config, logFilePath: logfile, sqliteBasePath: sqliteBase);
 
         bool serviceStopped = false;
@@ -70,12 +83,6 @@ public static class Program
         await service.StartAsync();
 
         return 0;
-
-        static (string? config, string? logfile, string? sqliteBase) GetPathsFromArgs(CommandAndArgs cliArgs) => (
-            cliArgs.ArgValue("config", 'c')?.RequiredValue,
-            cliArgs.ArgValue("logfile", 'l')?.RequiredValue,
-            cliArgs.ArgValue("sqlite-dir", 's')?.RequiredValue
-        );
     }
 
 #pragma warning disable IDE0046 // Convert to conditional expression
@@ -101,17 +108,28 @@ public static class Program
     {
         ThrowIfCommand("install").IsOnlySuportedOnPlatforms(Linux, Windows);
 
+        var (config, logfile, sqliteBase) = GetPathsFromArgs(args);
+
         if (IsOSPlatform(Linux))
         {
             return await LinuxHelpers.InstallService(
                 serviceName,
                 serviceDescription,
-                args.ArgValue("user", 'u')?.Value
+                config: config,
+                logfile: logfile,
+                sqliteDir: sqliteBase,
+                user: args.ArgValue("user", 'u')?.Value
             );
         }
         else if (IsOSPlatform(Windows))
         {
-            return await WindowsHelpers.InstallService(serviceName, serviceDisplayName);
+            return await WindowsHelpers.InstallService(
+                serviceName,
+                serviceDisplayName,
+                config: config,
+                logfile: logfile,
+                sqliteDir: sqliteBase
+            );
         }
         else
         {

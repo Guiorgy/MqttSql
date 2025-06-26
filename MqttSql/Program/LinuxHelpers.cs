@@ -84,7 +84,7 @@ public static class LinuxHelpers
 
     public static async Task<int> PrintServiceStatus(string name) => await ExecuteSystemd(SystemdSubcommand.Status, name);
 
-    public static async Task<int> InstallService(string name, string description, string? user = null)
+    public static async Task<int> InstallService(string name, string description, string? config = null, string? logfile = null, string? sqliteDir = null, string? user = null)
     {
         var systemdServiceUnitPath = GetSystemdServiceUnitPath(name);
         if (File.Exists(systemdServiceUnitPath)) return 0;
@@ -92,11 +92,17 @@ public static class LinuxHelpers
         var workingDirectory = Directory.GetCurrentDirectory();
         var executable = Process.GetCurrentProcess().MainModule?.FileName ?? $"{workingDirectory}/{nameof(MqttSql)}";
 
+        config ??= workingDirectory + "/config.json";
+        logfile ??= workingDirectory + "/logs.txt";
+        sqliteDir ??= workingDirectory;
+        var executableArgs = $"--config='{config}' --logfile='{logfile}' --sqlite-dir='{sqliteDir}'";
+
         user ??= "root";
 
         Console.WriteLine("Creating systemd service:");
         Console.WriteLine($"\t Directory: {workingDirectory}");
         Console.WriteLine($"\t Executable: {executable}");
+        Console.WriteLine($"\t Arguments: {executableArgs}");
         Console.WriteLine($"\t User: {user}");
         if (user == "root")
         {
@@ -113,6 +119,7 @@ public static class LinuxHelpers
                 systemdServiceUnitPath,
                 GetSystemdServiceUnitContent(
                     executablePath: executable,
+                    executableArgs: executableArgs,
                     workingDirectory: workingDirectory,
                     description: description
                 )
@@ -161,7 +168,7 @@ public static class LinuxHelpers
         $"""
         [Unit]
         Description={description}
-        
+
         [Service]
         Type={type}
         WorkingDirectory={workingDirectory ?? Path.GetDirectoryName(executablePath)}
@@ -172,7 +179,7 @@ public static class LinuxHelpers
         StandardOutput=syslog
         StandardError=syslog
         SyslogIdentifier=%n
-        
+
         [Install]
         WantedBy=default.target
         """;
