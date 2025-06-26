@@ -75,6 +75,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
 
             if (configFilePath == null) configurationFileParentDirectoryPath = workingDir;
             configurationFilePath = configFilePath ?? workingDir + configurationFileName;
+            if (logFilePath == null) Console.WriteLine($"{nameof(logFilePath)} is null, defaulting to \"{workingDir + logFileName}\"");
             logFilePath ??= workingDir + logFileName;
             sqliteRelativeBasePath = sqliteBasePath ?? workingDir;
         }
