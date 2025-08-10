@@ -8,6 +8,7 @@
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Configurations>Debug;Release;LoggerExtensionsGeneratorDebug</Configurations>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <ItemGroup>

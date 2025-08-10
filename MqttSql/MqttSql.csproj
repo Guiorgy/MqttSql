@@ -28,10 +28,11 @@
     <DockerfileFastModeStage>debug-base</DockerfileFastModeStage>
     <DockerComposeUpArguments>--timeout 60</DockerComposeUpArguments>
     <DockerComposeDownArguments>--timeout 60</DockerComposeDownArguments>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <Target Name="SetGitRevision" BeforeTargets="InitializeSourceControlInformation">
-    <Exec Command="git describe --long --always --dirty=* --exclude=* --abbrev=40" ConsoleToMSBuild="True" IgnoreExitCode="False">
+    <Exec Command="git describe --long --always --dirty=* --exclude=* --abbrev=64" ConsoleToMSBuild="True" IgnoreExitCode="False">
       <Output TaskParameter="ConsoleOutput" PropertyName="GitRevision" />
     </Exec>
     <ItemGroup>
