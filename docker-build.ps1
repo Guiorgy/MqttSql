@@ -64,22 +64,26 @@ $ARCH_DOCKER_PLATFORM_MAPPING = @{
 
 # Source: https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md#full-tag-listing
 $BASE_SDK_IMAGE_TAG_MAPPING = @{
-  '9.0' = @('default', 'debian')
-  '9.0-noble' = @('ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'ubuntu-24', 'ubuntu-24-chiseled', 'ubuntu-24-chiseled-extra')
-  '9.0-alpine' = @('alpine')
-  '9.0-azurelinux3.0' = @('azurelinux', 'azurelinux-distroless', 'azurelinux-distroless-extra')
+  '10.0-noble' = @('default', 'ubuntu', 'ubuntu-chiseled', 'ubuntu-chiseled-extra', 'ubuntu-24', 'ubuntu-24-chiseled', 'ubuntu-24-chiseled-extra')
+  '10.0-noble-aot' = @('aot', 'ubuntu-aot', 'ubuntu-chiseled-aot', 'ubuntu-chiseled-extra-aot', 'ubuntu-24-aot', 'ubuntu-24-chiseled-aot', 'ubuntu-24-chiseled-extra-aot')
+  '10.0-alpine' = @('alpine')
+  '10.0-alpine-aot' = @('alpine-aot')
+  '10.0-azurelinux3.0' = @('azurelinux', 'azurelinux-distroless', 'azurelinux-distroless-extra')
+  '10.0-azurelinux3.0-aot' = @('azurelinux-aot', 'azurelinux-distroless-aot', 'azurelinux-distroless-extra-aot')
 }
 
-# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#linux-amd64-tags
+# Source:
+# https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#full-tag-listing
+# https://github.com/dotnet/dotnet-docker/blob/main/README.runtime-deps.md#full-tag-listing
 $BASE_RUNTIME_IMAGE_TAG_MAPPING = @{
-  '9.0' = @('default', 'debian')
-  '9.0-noble' = @('ubuntu', 'ubuntu-24')
-  '9.0-noble-chiseled' = @('ubuntu-chiseled', 'ubuntu-24-chiseled')
-  '9.0-noble-chiseled-extra' = @('ubuntu-chiseled-extra', 'ubuntu-24-chiseled-extra')
-  '9.0-alpine' = @('alpine')
-  '9.0-azurelinux3.0' = @('azurelinux')
-  '9.0-azurelinux3.0-distroless' = @('azurelinux-distroless')
-  '9.0-azurelinux3.0-distroless-extra' = @('azurelinux-distroless-extra')
+  '10.0-noble' = @('default', 'ubuntu', 'ubuntu-24')
+  '10.0-noble-chiseled' = @('ubuntu-chiseled', 'ubuntu-24-chiseled')
+  '10.0-noble-chiseled-extra' = @('ubuntu-chiseled-extra', 'ubuntu-24-chiseled-extra')
+  '10.0-alpine' = @('alpine')
+  '10.0-alpine-extra' = @('alpine-extra')
+  '10.0-azurelinux3.0' = @('azurelinux')
+  '10.0-azurelinux3.0-distroless' = @('azurelinux-distroless')
+  '10.0-azurelinux3.0-distroless-extra' = @('azurelinux-distroless-extra')
 }
 
 if ($Command -eq 'build') {
@@ -90,10 +94,20 @@ if ($Command -eq 'build') {
   }
 
   $SDK_IMAGE_TAG = Get-ValueFromMapping -Mapping $BASE_SDK_IMAGE_TAG_MAPPING -Key $Base
+  if (-not $Base.EndsWith('aot')) {
+    $RUNTIME_IMAGE = 'runtime'
+  } else {
+    $RUNTIME_IMAGE = 'runtime-deps'
+    if ($Base -eq 'aot') {
+      $Base = 'default'
+    } else {
+      $Base = $Base.TrimEnd('-aot')
+    }
+  }
   $RUNTIME_IMAGE_TAG = Get-ValueFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING -Key $Base
 
   if (-not $SDK_IMAGE_TAG -or -not $RUNTIME_IMAGE_TAG) {
-    Write-Error "Invalid base image specified: $Base. Please use one of: $($(Get-AllKeysFromMapping -Mapping $BASE_RUNTIME_IMAGE_TAG_MAPPING) -join ', ')"
+    Write-Error "Invalid base image specified: $Base. Please use one of: $($(Get-AllKeysFromMapping -Mapping $BASE_SDK_IMAGE_TAG_MAPPING) -join ', ')"
   }
 
   $UNCOMMITED_CHANGES = git status --porcelain
@@ -117,6 +131,7 @@ if ($Command -eq 'build') {
     docker build --pull `
       --platform=$PLATFORM `
       --build-arg SDK_TAG=$SDK_IMAGE_TAG `
+      --build-arg RUNTIME_IMAGE=$RUNTIME_IMAGE `
       --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG `
       --build-arg TITLE="MqttSql Treon" `
       --build-arg DESCRIPTION="Service that subscribes to MQTT brokers and writes the messages to local SQLite databases" `

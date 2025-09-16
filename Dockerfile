@@ -7,21 +7,30 @@
 #   MqttSql is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License along with MqttSql. If not, see <https://www.gnu.org/licenses/>.
 
-# Debian Slim: 9.0
-# Ubuntu 24.04: 9.0-noble
-# Alpine: 9.0-alpine
-# Azure Linux: 9.0-azurelinux3.0
-ARG SDK_TAG=9.0
+# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md#full-tag-listing
+# Ubuntu 24.04: 10.0, 10.0-noble
+# Ubuntu 24.04 AOT: 10.0-aot, 10.0-noble-aot
+# Alpine: 10.0-alpine
+# Alpine AOT: 10.0-alpine-aot
+# Azure Linux: 10.0-azurelinux3.0
+# Azure Linux AOT: 10.0-azurelinux3.0-aot
+ARG SDK_TAG=10.0
 
-# Debian Slim: 9.0
-# Ubuntu 24.04: 9.0-noble
-# Ubuntu 24.04 Chiseled: 9.0-noble-chiseled
-# Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 9.0-noble-chiseled-extra
-# Alpine: 9.0-alpine
-# Azure Linux: 9.0-azurelinux3.0
-# Azure Linux Distroless: 9.0-azurelinux3.0-distroless
-# Azure Linux Distroless with tzdata (Time Zone Database) and icu (International Components for Unicode): 9.0-azurelinux3.0-distroless-extra
-ARG RUNTIME_TAG=9.0
+# Source: https://github.com/dotnet/dotnet-docker/blob/main/documentation/image-variants.md
+# Runtime: runtime
+# Runtime with native dependencies: runtime-deps
+ARG RUNTIME_IMAGE=runtime
+
+# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#full-tag-listing
+# Ubuntu 24.04: 10.0, 10.0-noble
+# Ubuntu 24.04 Chiseled: 10.0-noble-chiseled
+# Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-noble-chiseled-extra
+# Alpine: 10.0-alpine
+# Alpine with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-alpine-extra
+# Azure Linux: 10.0-azurelinux3.0
+# Azure Linux Distroless: 10.0-azurelinux3.0-distroless
+# Azure Linux Distroless with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-azurelinux3.0-distroless-extra
+ARG RUNTIME_TAG=10.0
 
 ### .NET Build Base Stage ###
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:$SDK_TAG AS build-base
@@ -70,7 +79,7 @@ RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arc
 RUN mv ./LICENSE /publish/
 
 ### .NET App Runtime Image ###
-FROM mcr.microsoft.com/dotnet/runtime:$RUNTIME_TAG AS runtime
+FROM mcr.microsoft.com/dotnet/$RUNTIME_IMAGE:$RUNTIME_TAG AS runtime
 WORKDIR /app
 
 # Copy the published files from the publish stage into the working directory
