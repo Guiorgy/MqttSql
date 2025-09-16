@@ -129,6 +129,7 @@ if ($Command -eq 'build') {
       --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
       --tag "$($IMAGE_TAG):latest" `
       --file Dockerfile `
+      --target runtime `
       .
 
     if ($?) {
