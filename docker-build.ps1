@@ -124,7 +124,7 @@ if ($Command -eq 'build') {
       --build-arg AUTHOR=Guiorgy `
       --build-arg LICENSE="GNU Affero General Public License v3.0" `
       --build-arg SOURCE="github.com/Guiorgy/MqttSql" `
-      --build-arg GIT_COMMIT=$(git rev-parse HEAD) `
+      --build-arg GIT_COMMIT=$(git describe --long --always --dirty=* --exclude=* --abbrev=64) `
       --build-arg BUILD_TIMESTAMP=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') `
       --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
       --tag "$($IMAGE_TAG):latest" `

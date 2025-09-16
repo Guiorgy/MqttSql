@@ -32,6 +32,9 @@ WORKDIR /build
 ### .NET Build Stage ###
 FROM build-base AS build
 
+# Make the argument available to dotnet build
+ARG GIT_COMMIT
+
 # Copy project files only and restore dependencies (as a distinct layers for caching)
 COPY --parents *.csproj */*.csproj */*/*.csproj ./
 RUN dotnet restore ./MqttSql/MqttSql.csproj --arch $TARGETARCH

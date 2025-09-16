@@ -32,7 +32,10 @@
   </PropertyGroup>
 
   <Target Name="SetGitRevision" BeforeTargets="InitializeSourceControlInformation">
-    <Exec Command="git describe --long --always --dirty=* --exclude=* --abbrev=64" ConsoleToMSBuild="True" IgnoreExitCode="False">
+    <PropertyGroup>
+      <GitRevision>$([System.Environment]::GetEnvironmentVariable('GIT_COMMIT'))</GitRevision>
+    </PropertyGroup>
+    <Exec Command="git describe --long --always --dirty=* --exclude=* --abbrev=64" ConsoleToMSBuild="True" IgnoreExitCode="False" Condition="'$(GitRevision)' == ''">
       <Output TaskParameter="ConsoleOutput" PropertyName="GitRevision" />
     </Exec>
     <ItemGroup>
