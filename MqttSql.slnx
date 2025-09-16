@@ -9,6 +9,7 @@
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
+    <File Path="Dockerfile" />
     <File Path="docker-build.ps1" />
     <File Path="LICENSE" />
     <File Path="README.md" />

@@ -10,7 +10,7 @@ services:
     container_name: MqttSql
     image: guiorgy/mqttsql:dev
     build:
-      dockerfile: MqttSql/Dockerfile
+      dockerfile: Dockerfile
       context: .
       target: debug
       args:

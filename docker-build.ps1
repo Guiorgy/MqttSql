@@ -128,7 +128,7 @@ if ($Command -eq 'build') {
       --build-arg BUILD_TIMESTAMP=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') `
       --build-arg IMAGE_TAG="$($IMAGE_TAG):latest" `
       --tag "$($IMAGE_TAG):latest" `
-      --file MqttSql\Dockerfile `
+      --file Dockerfile `
       .
 
     if ($?) {
