@@ -114,7 +114,7 @@ if ($Command -eq 'build') {
   try {
     Write-Information "Building image '$($IMAGE_TAG):latest'"
 
-    docker build `
+    docker build --pull `
       --platform=$PLATFORM `
       --build-arg SDK_TAG=$SDK_IMAGE_TAG `
       --build-arg RUNTIME_TAG=$RUNTIME_IMAGE_TAG `
