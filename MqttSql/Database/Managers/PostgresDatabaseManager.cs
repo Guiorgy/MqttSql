@@ -60,7 +60,7 @@ public sealed class PostgresDatabaseManager(Logger logger, CancellationToken can
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(null, connection, transaction);
 
-        foreach (var (table, i) in tables.Select((table, i) => (table.Name, i)))
+        foreach (var table in tables.Select(table => table.Name))
         {
             logger.Debug("Checking the existence of table \"", table, '"');
 
