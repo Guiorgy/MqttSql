@@ -144,6 +144,10 @@ public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
                     {
                         // ignore
                     }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, "One of ", nameof(HandleMessagesAsync), " message handlers exited with an exception");
+                    }
                 }, cancellationToken);
 
                 tasks.Add(task);
