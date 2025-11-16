@@ -15,12 +15,15 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="DockerDebug.dcproj">
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
     <Build Solution="Debug|*" />
-    <Build Solution="LoggerExtensionsGeneratorDebug|*" />
   </Project>
-  <Project Path="MqttSql/MqttSql.csproj" />
+  <Project Path="MqttSql/MqttSql.csproj">
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
+  </Project>
   <Project Path="SourceGenerators/SourceGenerators.csproj" />
   <Project Path="Tests/Tests.csproj">
     <BuildDependency Project="MqttSql/MqttSql.csproj" />
+    <BuildType Solution="LoggerExtensionsGeneratorDebug|*" Project="Debug" />
   </Project>
 </Solution>
