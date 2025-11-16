@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -107,17 +108,6 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Gets the value associated with the specified key.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
-    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
-    /// <param name="dict">The dictionary to search in.</param>
-    /// <param name="key">The key of the value to get.</param>
-    /// <returns>The value associated with the specified key, if the key is found; otherwise, <see langword="null"/>.</returns>
-    [return: MaybeNull]
-    public static TValue GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class => dict.TryGetValue(key, out TValue? value) ? value : null;
-
-    /// <summary>
     /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
     /// </summary>
     /// <typeparam name="T">The type of the channel.</typeparam>
@@ -152,6 +142,14 @@ public static class Extensions
         TimeSpan collectionTime,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        if (collectionTime == default)
+        {
+            await foreach (var item in ReadBatchesAsync<T>(reader, cancellationToken))
+                yield return item;
+
+            yield break;
+        }
+
         while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             yield return await ToListAsync(Flush(reader, collectionTime, cancellationToken), cancellationToken);
 
@@ -237,6 +235,68 @@ public static class Extensions
     /// <returns>An <see cref="IEnumerable{T}/>"/> whose elements are the result of flattening the source sequence.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/></exception>
     public static IEnumerable<TResult> Flatten<TResult>(this IEnumerable<IEnumerable<TResult>> source) => source.SelectMany(x => x);
+
+    /// <summary>
+    /// Converts <see cref="DateTime"/> into a dd/MM/yyyy HH:mm:ss formatted string faster than <see cref="DateTime.ToString"/>.
+    /// </summary>
+    /// <param name="dateTime">the <see cref="DateTime"/> to be converted.</param>
+    /// <returns>The <see cref="DateTime"/> in the dd/MM/yyyy HH:mm:ss format.</returns>
+    public static string ToInternationalString(this DateTime dateTime)
+    {
+        static char DigitToAsciiChar(int digit) => (char)('0' + digit);
+
+        static void Write2Digits(Span<char> chars, int offset, int value)
+        {
+            int firstDigit = value / 10;
+            int secondDigit = value - (firstDigit * 10);
+
+            chars[offset] = DigitToAsciiChar(firstDigit);
+            chars[offset + 1] = DigitToAsciiChar(secondDigit);
+        }
+
+        static void Write2DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
+        {
+            Write2Digits(chars, offset, value);
+
+            chars[offset + 2] = postfix;
+        }
+
+        static void Write4Digits(Span<char> chars, int offset, int value)
+        {
+            int firstDigit = value / 1000;
+            value -= firstDigit * 1000;
+            int secondDigit = value / 100;
+            value -= secondDigit * 100;
+            int thirdDigit = value / 10;
+            int fourthDigit = value - (thirdDigit * 10);
+
+            chars[offset] = DigitToAsciiChar(firstDigit);
+            chars[offset + 1] = DigitToAsciiChar(secondDigit);
+            chars[offset + 2] = DigitToAsciiChar(thirdDigit);
+            chars[offset + 3] = DigitToAsciiChar(fourthDigit);
+        }
+
+        static void Write4DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
+        {
+            Write4Digits(chars, offset, value);
+
+            chars[offset + 4] = postfix;
+        }
+
+        const int length = 19;
+
+        return string.Create(length, dateTime, (chars, state) =>
+        {
+            var _dateTime = state;
+
+            Write2DigitsAndPostfix(chars, 0, _dateTime.Day, '/');
+            Write2DigitsAndPostfix(chars, 3, _dateTime.Month, '/');
+            Write4DigitsAndPostfix(chars, 6, _dateTime.Year, ' ');
+            Write2DigitsAndPostfix(chars, 11, _dateTime.Hour, ':');
+            Write2DigitsAndPostfix(chars, 14, _dateTime.Minute, ':');
+            Write2Digits(chars, 17, _dateTime.Second);
+        });
+    }
 
     /// <summary>
     /// Converts <see cref="DateTime"/> into an ISO 8601:2004 or ISO 8601-1:2019 (RFC 3339) string faster than <see cref="DateTime.ToString"/>.
@@ -828,5 +888,87 @@ public static class Extensions
 
         var group = match.Groups[groupIndex];
         return group.Success ? input.Replace(group.Index, group.Length, replacement) : input;
+    }
+
+    /// <summary>
+    /// Makes a copy of <paramref name="dictionary"/> with all lowercased keys and same values.
+    /// </summary>
+    /// <typeparam name="TValue">Value type of the <see cref="Dictionary{string, TValue}"/>.</typeparam>
+    /// <param name="dictionary">The dictionary to copy.</param>
+    /// <returns>A copy of <paramref name="dictionary"/> with all lowercased keys and same values.</returns>
+    /// <exception cref="ArgumentException">Duplicate keys after lowercaseing.</exception>
+    public static Dictionary<string, TValue> ToLowerKeys<TValue>(this Dictionary<string, TValue> dictionary)
+    {
+        var result = new Dictionary<string, TValue>(dictionary.Count);
+
+        foreach ((string key, TValue value) in dictionary)
+            result.Add(key.ToLower(), value);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the value associated with the specified key.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
+    /// <param name="dict">The dictionary to search in.</param>
+    /// <param name="key">The key of the value to get.</param>
+    /// <returns>The value associated with the specified key, if the key is found; otherwise, <see langword="null"/>.</returns>
+    public static TValue? GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class => dict.TryGetValue(key, out TValue? value) ? value : null;
+
+    /// <summary>
+    /// Adds a key/value pair to the <see cref="Dictionary{TKey, TValue}"/> if the key does not already exist.
+    /// Returns the new value, or the existing value if the key already exists.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the key of the element to add.</typeparam>
+    /// <typeparam name="TValue">The type of the value to be added, if the key does not already exist.</typeparam>
+    /// <param name="dictionary">The <see cref="Dictionary{TKey, TValue}"/> from which to get or add the value.</param>
+    /// <param name="key">The key of the element to add.</param>
+    /// <param name="value">The value to be added, if the key does not already exist.</param>
+    /// <returns>The new value, or the existing value if the key already exists.</returns>
+    public static TValue? GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue? value) where TKey : notnull
+    {
+        ref var valueRef = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
+
+        if (exists)
+        {
+            // The key already exists in the Dictionary. Return the associated value
+            return valueRef;
+        }
+        else
+        {
+            // The key did not exist, however, we've just inserted it with the default value. Update the value and return it
+            valueRef = value;
+            return value;
+        }
+    }
+
+    /// <summary>
+    /// Updates the value associated with <paramref name="key"/> to <paramref name="value"/>
+    /// if has such key exists.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the key of the element to update.</typeparam>
+    /// <typeparam name="TValue">The type of the value to be updated, if the key already exist.</typeparam>
+    /// <param name="dictionary">The <see cref="Dictionary{TKey, TValue}"/> in which to update the value.</param>
+    /// <param name="key">The key of the element to update.</param>
+    /// <param name="value">The value to be updated, if the key already exist.</param>
+    /// <returns><see langword="true"/> if the <paramref name="key"/> exists
+    /// and the associated value was replaced with <paramref name="value"/>;otherwise, <see langword="false"/>.</returns>
+    public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue? value) where TKey : notnull
+    {
+        ref var valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
+
+        if (Unsafe.IsNullRef(ref valueRef))
+        {
+            // The key does not exist. Nothing to update
+            return false;
+        }
+        else
+        {
+            // The key exists. Update the value
+            valueRef = value;
+            return true;
+        }
     }
 }
