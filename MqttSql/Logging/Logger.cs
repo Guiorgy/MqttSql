@@ -300,6 +300,7 @@ public sealed class Logger
     }
 
     [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Structured logging not supported")]
+    [SuppressMessage("Performance", "CA1873:Avoid potentially expensive logging", Justification = "Every caller is already guarded")]
     private void LogToLinkedLogger(LogLevelEnum logLevel, string message)
     {
         if (_linkedLogger == null) return;
@@ -307,6 +308,7 @@ public sealed class Logger
         _linkedLogger.Log(ToMicrosoftLogLevel(logLevel), message);
     }
 
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "Looks better as a LINQ chain")]
     private void FlushFailedLogs()
     {
         if (_flushingFailedLogs) return;

@@ -4,6 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);CS8620</NoWarn>
     <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
     <Platforms>AnyCPU</Platforms>
     <Authors>Guiorgy</Authors>
@@ -17,10 +19,8 @@
     <Version>2.0.0</Version>
     <PackageProjectUrl>https://github.com/Guiorgy/MqttSql</PackageProjectUrl>
     <PackageIcon>mqttsql.ico</PackageIcon>
-    <PackageIconUrl />
     <RepositoryUrl>https://github.com/Guiorgy/MqttSql</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);$(Define.Replace(",",";"))</DefineConstants>
     <DockerfileTag>guiorgy/mqttsql</DockerfileTag>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>

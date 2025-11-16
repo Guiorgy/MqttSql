@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,39 +17,49 @@ namespace MqttSql.Database;
 
 public static class Extensions
 {
-    public static string ToFriendlyString(this DatabaseType databaseType)
+    extension(DatabaseType databaseType)
     {
-        return databaseType switch
+        public string ToFriendlyString()
         {
-            DatabaseType.None => nameof(DatabaseType.None),
-            DatabaseType.GenericSql => "Generic SQL",
-            DatabaseType.PostgreSql => "PostgreSQL",
-            DatabaseType.SQLite => nameof(DatabaseType.SQLite),
-            _ => throw new NotImplementedException($"You forgot to update a switch statement after modifying the {nameof(DatabaseType)} enum.")
-        };
+            return databaseType switch
+            {
+                DatabaseType.None => nameof(DatabaseType.None),
+                DatabaseType.GenericSql => "Generic SQL",
+                DatabaseType.PostgreSql => "PostgreSQL",
+                DatabaseType.SQLite => nameof(DatabaseType.SQLite),
+                _ => throw new NotImplementedException($"You forgot to update a switch statement after modifying the {nameof(DatabaseType)} enum.")
+            };
+        }
     }
 
-    public static Task WriteToDatabaseAsync(this IDatabaseManager databaseManager, string connectionString, IEnumerable<DatabaseMessage> entries)
+    extension(IDatabaseManager databaseManager)
     {
-        return databaseManager.WriteToDatabaseAsync(
-            connectionString,
-            entries.Select(message => { message.Deconstruct(out var entry); return entry; }).ToArray()
-        );
+        [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "Looks better as a LINQ chain")]
+        public Task WriteToDatabaseAsync(string connectionString, IEnumerable<DatabaseMessage> entries)
+        {
+            return databaseManager.WriteToDatabaseAsync(
+                connectionString,
+                entries.Select(message => { message.Deconstruct(out var entry); return entry; }).ToArray()
+            );
+        }
     }
 
-    public static string ToStringFast(this DateTime dateTime, string format)
+    extension(DateTime dateTime)
     {
-        return format switch
+        public string ToStringFast(string format)
         {
-            "yyyy-MM-dd HH:mm:ss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: false),
-            "yyyy-MM-dd HH:mm:ss.fff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: false),
-            "yyyy-MM-ddTHH:mm:ss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: false),
-            "yyyy-MM-ddTHH:mm:ss.fff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: false),
-            "yyyyMMddTHHmmss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: true),
-            "yyyyMMddTHHmmssfff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: true),
-            "yyyyMMddHHmmss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: true),
-            "yyyyMMddHHmmssfff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: true),
-            _ => dateTime.ToString(format, CultureInfo.InvariantCulture)
-        };
+            return format switch
+            {
+                "yyyy-MM-dd HH:mm:ss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: false),
+                "yyyy-MM-dd HH:mm:ss.fff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: false),
+                "yyyy-MM-ddTHH:mm:ss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: false),
+                "yyyy-MM-ddTHH:mm:ss.fff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: false),
+                "yyyyMMddTHHmmss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: true),
+                "yyyyMMddTHHmmssfff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: true),
+                "yyyyMMddHHmmss" => dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: true),
+                "yyyyMMddHHmmssfff" => dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: true),
+                _ => dateTime.ToString(format, CultureInfo.InvariantCulture)
+            };
+        }
     }
 }

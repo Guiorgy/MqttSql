@@ -62,7 +62,9 @@ public sealed class DatabaseMessageHandler : IDisposable, IAsyncDisposable
             if (databasesForType == null) return [];
 
             var databasesByConStr = databasesForType.GroupBy(database => database.ConnectionString);
+#pragma warning disable IDE0305 // Simplify collection initialization (Justification: Looks better as a LINQ chain)
             return databasesByConStr.Select(group => (group.Key, group.SelectMany(database => database.Tables).Distinct().ToArray())).ToList();
+#pragma warning restore IDE0305 // Simplify collection initialization
         }
 
         foreach (var databaseType in Enum.GetValues<DatabaseType>())

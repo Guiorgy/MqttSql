@@ -12,14 +12,17 @@ namespace MqttSql.Configuration;
 
 public static class Extensions
 {
-    public static string ToFriendlyString(this MqttQualityOfService mqttQualityOfService)
+    extension(MqttQualityOfService mqttQualityOfService)
     {
-        return mqttQualityOfService switch
+        public string ToFriendlyString()
         {
-            MqttQualityOfService.AtMostOnce => "At Most Once",
-            MqttQualityOfService.AtLeastOnce => "At Least Once",
-            MqttQualityOfService.ExactlyOnce => "Exactly Once",
-            _ => throw new NotImplementedException($"You forgot to update a switch statement after modifying the {nameof(MqttQualityOfService)} enum.")
-        };
+            return mqttQualityOfService switch
+            {
+                MqttQualityOfService.AtMostOnce => "At Most Once",
+                MqttQualityOfService.AtLeastOnce => "At Least Once",
+                MqttQualityOfService.ExactlyOnce => "Exactly Once",
+                _ => throw new NotImplementedException($"You forgot to update a switch statement after modifying the {nameof(MqttQualityOfService)} enum.")
+            };
+        }
     }
 }

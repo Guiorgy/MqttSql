@@ -17,12 +17,12 @@ public sealed class Union<T1, T2> where T1 : class where T2 : class
 
     static Union()
     {
-        Debug.Assert(typeof(T1) != typeof(T2), $"The two types in {nameof(Union<T1, T2>)} must be distinct");
+        Debug.Assert(typeof(T1) != typeof(T2), $"The two types in {nameof(Union<,>)} must be distinct");
     }
 
-    private static void ThrowBothNullUnsupported() => throw new NotSupportedException($"One of the two types in {nameof(Union<T1, T2>)} must not be null");
-    private static void ThrowBothNotNullUnsupported() => throw new NotSupportedException($"One of the two types in {nameof(Union<T1, T2>)} must be null");
-    private static InvalidCastException InvalidCastException => new($"Attempted to dereference the wrong type from {nameof(Union<T1, T2>)}");
+    private static void ThrowBothNullUnsupported() => throw new NotSupportedException($"One of the two types in {nameof(Union<,>)} must not be null");
+    private static void ThrowBothNotNullUnsupported() => throw new NotSupportedException($"One of the two types in {nameof(Union<,>)} must be null");
+    private static InvalidCastException InvalidCastException => new($"Attempted to dereference the wrong type from {nameof(Union<,>)}");
 
     public Union(T1? first, T2? second)
     {

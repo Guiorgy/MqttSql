@@ -11,7 +11,7 @@ namespace MqttSql.Utility;
 
 public interface IAppendStringBuilder
 {
-    StringBuilder AppendStringBuilder(StringBuilder builder);
+    public StringBuilder AppendStringBuilder(StringBuilder builder);
 
-    string? ToString() => AppendStringBuilder(new StringBuilder()).ToString();
+    public string? ToString() => AppendStringBuilder(new StringBuilder()).ToString();
 }

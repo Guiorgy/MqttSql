@@ -23,952 +23,970 @@ namespace MqttSql;
 
 public static class Extensions
 {
-    /// <summary>
-    /// Determines whether a sequence contains any of the specified elements by using the default equality comparer.
-    /// </summary>
-    /// <typeparam name="TSource">The type of the elements of source.</typeparam>
-    /// <param name="source">A sequence in which to locate a value.</param>
-    /// <param name="values">The values to locate in the sequence.</param>
-    /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values) => source.Intersect(values).Any();
-
-    /// <summary>
-    /// Determines whether a sequence contains any of the specified elements by using the default equality comparer.
-    /// </summary>
-    /// <typeparam name="TSource">The type of the elements of source.</typeparam>
-    /// <param name="source">A sequence in which to locate a value.</param>
-    /// <param name="values">The values to locate in the sequence.</param>
-    /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAny<TSource>(this IEnumerable<TSource> source, params TSource[] values) => source.Intersect(values).Any();
-
-    /// <summary>
-    /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
-    /// </summary>
-    /// <typeparam name="TSource">The type of the elements of source.</typeparam>
-    /// <param name="source">A sequence in which to locate a value.</param>
-    /// <param name="values">The values to locate in the sequence.</param>
-    /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, IEnumerable<TSource> values) => source.Intersect(values).Count() == values.Count();
-
-    /// <summary>
-    /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
-    /// </summary>
-    /// <typeparam name="TSource">The type of the elements of source.</typeparam>
-    /// <param name="source">A sequence in which to locate a value.</param>
-    /// <param name="values">The values to locate in the sequence.</param>
-    /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
-    public static bool ContainsAll<TSource>(this IEnumerable<TSource> source, params TSource[] values) => source.Intersect(values).Count() == values.Length;
-
-    /// <summary>
-    /// Appends text to the start and end of every line in a string.
-    /// </summary>
-    /// <param name="str">The string to modify.</param>
-    /// <param name="before">The string that every line should start with.</param>
-    /// <param name="after">The string that every line should end with.</param>
-    /// <returns>The modified string.</returns>
-    public static string AppendToLines(this string str, string before, string after)
+    extension<TSource>(IEnumerable<TSource> source)
     {
-        return
-            before +
-            string.Join(after + Environment.NewLine + before,
-                str.Split(Environment.NewLine)) +
-            after;
+        /// <summary>
+        /// Determines whether a sequence contains any of the specified elements by using the default equality comparer.
+        /// </summary>
+        /// <param name="values">The values to locate in the sequence.</param>
+        /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
+        public bool ContainsAny(params IEnumerable<TSource> values) => source.Intersect(values).Any();
+
+        /// <summary>
+        /// Determines whether a sequence contains any of the specified elements by using the default equality comparer.
+        /// </summary>
+        /// <param name="values">The values to locate in the sequence.</param>
+        /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains any of the specified values; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
+        public bool ContainsAny(params TSource[] values) => source.Intersect(values).Any();
+
+        /// <summary>
+        /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
+        /// </summary>
+        /// <param name="values">The values to locate in the sequence.</param>
+        /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
+        public bool ContainsAll(params IEnumerable<TSource> values) => source.Intersect(values).Count() == values.Count();
+
+        /// <summary>
+        /// Determines whether a sequence contains all of the specified elements by using the default equality comparer.
+        /// </summary>
+        /// <param name="values">The values to locate in the sequence.</param>
+        /// <returns><see langword="true"/> if the <paramref name="source"/> sequence contains all of the specified values; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="values"/> is <see langword="null"/>.</exception>
+        public bool ContainsAll(params TSource[] values) => source.Intersect(values).Count() == values.Length;
     }
 
-    /// <summary>
-    /// Appends text to the start of every line in a string.
-    /// </summary>
-    /// <param name="str">The string to modify.</param>
-    /// <param name="before">The string that every line should start with.</param>
-    /// <returns>The modified string.</returns>
-    public static string AppendBeforeLines(this string str, string before)
+    extension<TResult>(IEnumerable<IEnumerable<TResult>> source)
     {
-        return
-            before +
-            string.Join(Environment.NewLine + before,
-                str.Split(Environment.NewLine));
+        /// <summary>
+        /// Projects each element of a sequence to an <see cref="IEnumerable{T}/>"/> and flattens the resulting sequences into one sequence.
+        /// </summary>
+        /// <returns>An <see cref="IEnumerable{T}/>"/> whose elements are the result of flattening the source sequence.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/></exception>
+        public IEnumerable<TResult> Flatten() => source.SelectMany(x => x);
     }
 
-    /// <summary>
-    /// Appends text to the end of every line in a string.
-    /// </summary>
-    /// <param name="str">The string to modify.</param>
-    /// <param name="after">The string that every line should end with.</param>
-    /// <returns>The modified string.</returns>
-    public static string AppendAfterLines(this string str, string after)
+    extension(string @string)
     {
-        return
-            string.Join(after + Environment.NewLine,
-                str.Split(Environment.NewLine)) +
-            after;
-    }
-
-    /// <summary>
-    /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
-    /// </summary>
-    /// <typeparam name="T">The type of the channel.</typeparam>
-    /// <param name="reader">The channel to be read.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
-    /// <returns>The <see cref="IAsyncEnumerable{List{T}}"/> that can be awaited.</returns>
-    /// <remarks><seealso href="https://stackoverflow.com/a/70698445/11427841">Source at StackOverflow</seealso></remarks>
-    public static async IAsyncEnumerable<List<T>> ReadBatchesAsync<T>(
-        this ChannelReader<T> reader,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-            yield return Flush(reader).ToList();
-
-        static IEnumerable<T> Flush(ChannelReader<T> reader)
+        /// <summary>
+        /// Appends text to the start and end of every line in a string.
+        /// </summary>
+        /// <param name="before">The string that every line should start with.</param>
+        /// <param name="after">The string that every line should end with.</param>
+        /// <returns>The modified string.</returns>
+        public string AppendToLines(string before, string after)
         {
-            while (reader.TryRead(out T? item))
-                yield return item;
+            return
+                before +
+                string.Join(after + Environment.NewLine + before,
+                    @string.Split(Environment.NewLine)) +
+                after;
+        }
+
+        /// <summary>
+        /// Appends text to the start of every line in a string.
+        /// </summary>
+        /// <param name="before">The string that every line should start with.</param>
+        /// <returns>The modified string.</returns>
+        public string AppendBeforeLines(string before)
+        {
+            return
+                before +
+                string.Join(Environment.NewLine + before,
+                    @string.Split(Environment.NewLine));
+        }
+
+        /// <summary>
+        /// Appends text to the end of every line in a string.
+        /// </summary>
+        /// <param name="after">The string that every line should end with.</param>
+        /// <returns>The modified string.</returns>
+        public string AppendAfterLines(string after)
+        {
+            return
+                string.Join(after + Environment.NewLine,
+                    @string.Split(Environment.NewLine)) +
+                after;
+        }
+
+        /// <summary>
+        /// Returns a new string in which a segment at a specified character position and with a specified length in the current instance is replaced with
+        /// another specified string.
+        /// </summary>
+        /// <param name="startIndex">The zero-based starting character position of a segment in this instance.</param>
+        /// <param name="length">The number of characters in the segment.</param>
+        /// <param name="replacement">The string to replace the speccified segment.</param>
+        /// <returns>
+        /// A string that is equivalent to the current string, except that <paramref name="length"/> number of characters begining at <paramref name="startIndex"/>
+        /// are replaced with <paramref name="replacement"/>.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <paramref name="startIndex"/> or <paramref name="length"/> is less than zero, or <paramref name="startIndex"/> is greater than or equal to the
+        /// length of <paramref name="source"/> string.
+        /// </exception>
+        public string Replace(int startIndex, int length, string replacement)
+        {
+            if (startIndex < 0 || @string.Length <= startIndex) throw new ArgumentOutOfRangeException(nameof(startIndex), startIndex, "The indicated position is not within this instance.");
+            if (length < 0) throw new ArgumentOutOfRangeException(nameof(length), length, "Length is less than zero.");
+
+            length = Math.Min(length, @string.Length - startIndex);
+
+            return string.Create(@string.Length - length + replacement.Length, (@string, startIndex, length, replacement), (chars, state) => {
+                state.@string.AsSpan()[..state.startIndex].CopyTo(chars);
+                state.replacement.AsSpan().CopyTo(chars[state.startIndex..]);
+                state.@string.AsSpan()[(state.startIndex + state.length)..].CopyTo(chars[(state.startIndex + state.replacement.Length)..]);
+            });
+        }
+
+        /// <summary>
+        /// In a specified input string, replaces substrings that match a regular expression pattern with a specified replacement string.
+        /// </summary>
+        /// <param name="regex">A regex object with the specified regex pattern.</param>
+        /// <param name="input">The string to search for a match.</param>
+        /// <param name="replacement">The replacement string.</param>
+        /// <param name="groupIndex">The index of the captured group to replace.</param>
+        /// <returns>
+        /// A new string that is identical to the input string, except that the replacement string takes the place of the matched string.
+        /// If the regular expression pattern is not matched in the current instance, the method returns the current instance unchanged.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="groupIndex"/> is less than zero.</exception>
+        public string ReplaceGroup(Regex regex, string replacement, int groupIndex = 1)
+        {
+            if (groupIndex < 1) throw new ArgumentOutOfRangeException(nameof(groupIndex), groupIndex, "Captured groups by a regex match start from 1");
+            var match = regex.Match(@string);
+            if (!match.Success || match.Groups.Count < groupIndex) return @string;
+
+            var group = match.Groups[groupIndex];
+            return group.Success ? @string.Replace(group.Index, group.Length, replacement) : @string;
         }
     }
 
-    /// <summary>
-    /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
-    /// </summary>
-    /// <typeparam name="T">The type of the channel.</typeparam>
-    /// <param name="reader">The channel to be read.</param>
-    /// <param name="collectionTime">The time to wait for additional elements before the batch is returned.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
-    /// <returns>The <see cref="IAsyncEnumerable{List{T}}"/> that can be awaited.</returns>
-    public static async IAsyncEnumerable<List<T>> ReadBatchesAsync<T>(
-        this ChannelReader<T> reader,
-        TimeSpan collectionTime,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    extension<T>(ChannelReader<T> reader)
     {
-        if (collectionTime == default)
+        /// <summary>
+        /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
+        /// <returns>The <see cref="IAsyncEnumerable{List{T}}"/> that can be awaited.</returns>
+        /// <remarks><seealso href="https://stackoverflow.com/a/70698445/11427841">Source at StackOverflow</seealso></remarks>
+        public async IAsyncEnumerable<List<T>> ReadBatchesAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            await foreach (var item in ReadBatchesAsync<T>(reader, cancellationToken))
-                yield return item;
+            while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                yield return Flush(reader).ToList();
 
-            yield break;
-        }
-
-        while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-            yield return await ToListAsync(Flush(reader, collectionTime, cancellationToken), cancellationToken);
-
-        static async IAsyncEnumerable<T> Flush(ChannelReader<T> reader, TimeSpan maxWaitTime, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            while (true)
+            static IEnumerable<T> Flush(ChannelReader<T> reader)
             {
                 while (reader.TryRead(out T? item))
                     yield return item;
-
-                await Task.Delay(maxWaitTime, cancellationToken).ConfigureAwait(false);
-
-                if (reader.TryRead(out T? _item))
-                    yield return _item;
-                else
-                    break;
             }
         }
 
-        static async ValueTask<List<T>> ToListAsync(IAsyncEnumerable<T> source, CancellationToken cancellationToken)
+        /// <summary>
+        /// Creates an <see cref="IAsyncEnumerable{List{T}}"/> that enables reading all of the data from the channel in batches.
+        /// </summary>
+        /// <param name="collectionTime">The time to wait for additional elements before the batch is returned.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
+        /// <returns>The <see cref="IAsyncEnumerable{List{T}}"/> that can be awaited.</returns>
+        public async IAsyncEnumerable<List<T>> ReadBatchesAsync(TimeSpan collectionTime, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var list = new List<T>();
-            await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
-                list.Add(item);
-            return list;
+            if (collectionTime == default)
+            {
+                await foreach (var item in ReadBatchesAsync(reader, cancellationToken))
+                    yield return item;
+
+                yield break;
+            }
+
+            while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                yield return await ToListAsync(Flush(reader, collectionTime, cancellationToken), cancellationToken);
+
+            static async IAsyncEnumerable<T> Flush(ChannelReader<T> reader, TimeSpan maxWaitTime, [EnumeratorCancellation] CancellationToken cancellationToken)
+            {
+                while (true)
+                {
+                    while (reader.TryRead(out T? item))
+                        yield return item;
+
+                    await Task.Delay(maxWaitTime, cancellationToken).ConfigureAwait(false);
+
+                    if (reader.TryRead(out T? _item))
+                        yield return _item;
+                    else
+                        break;
+                }
+            }
+
+            static async ValueTask<List<T>> ToListAsync(IAsyncEnumerable<T> source, CancellationToken cancellationToken)
+            {
+                var list = new List<T>();
+                await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
+                    list.Add(item);
+                return list;
+            }
         }
+
+        /// <summary>
+        /// Determines if the specified channel reader is empty.
+        /// </summary>
+        /// <returns><see langword="true"/> if <paramref name="reader"/> was empty; otherwise, <see langword="false"/>.</returns>
+        public bool IsEmpty() => !reader.TryPeek(out _);
     }
 
-    /// <summary>
-    /// Determines if the specified channel reader is empty.
-    /// </summary>
-    /// <typeparam name="T">The type of the channel.</typeparam>
-    /// <param name="reader">The channel reader to be checked.</param>
-    /// <returns><see langword="true"/> if <paramref name="reader"/> was empty; otherwise, <see langword="false"/>.</returns>
-    public static bool IsEmpty<T>(this ChannelReader<T> reader) => !reader.TryPeek(out _);
-
-    /// <summary>
-    /// Determines if the specified channel is empty.
-    /// </summary>
-    /// <typeparam name="T">The type of the channel.</typeparam>
-    /// <param name="channel">The channel to be checked.</param>
-    /// <returns><see langword="true"/> if <paramref name="channel"/> was empty; otherwise, <see langword="false"/>.</returns>
-    public static bool IsEmpty<T>(this Channel<T> channel) => channel.Reader.IsEmpty();
+    extension<T>(Channel<T> channel)
+    {
+        /// <summary>
+        /// Determines if the specified channel is empty.
+        /// </summary>
+        /// <returns><see langword="true"/> if <paramref name="channel"/> was empty; otherwise, <see langword="false"/>.</returns>
+        public bool IsEmpty() => channel.Reader.IsEmpty();
+    }
 
     private static readonly DateTime SampleDateTime = new(2022, 04, 26, 16, 10, 30, 500, DateTimeKind.Utc);
 
-    /// <summary>
-    /// Validates <see cref="DateTime"/> formats.
-    /// </summary>
-    /// <remarks>
-    /// A <see cref="DateTime"/> format will be considered valid if:
-    ///   - The format string is not empty/white space.
-    ///   - Converting <see cref="DateTime.Now"/> to string and parsing it back doesn't throw an exception.
-    ///   - Converting <see cref="DateTime.Now"/> to string and parsing it back retains at least some information,
-    ///     i.e. the round-trip parsed <see cref="DateTime"/> shouldn't be equal to the <see cref="default"/>.
-    ///     <c>((DateTime)default).ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) = "0001/01/01 00:00:00.000"</c>
-    /// </remarks>
-    /// <param name="format">The foramt to validate.</param>
-    /// <returns><see langword="true"/> if the <paramref name="format"/> passes validations; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValidDateTimeFormat(this string format)
+    extension(string format)
     {
-        if (string.IsNullOrWhiteSpace(format)) return false;
-        try
+        /// <summary>
+        /// Validates <see cref="DateTime"/> formats.
+        /// </summary>
+        /// <remarks>
+        /// A <see cref="DateTime"/> format will be considered valid if:
+        ///   - The format string is not empty/white space.
+        ///   - Converting <see cref="DateTime.Now"/> to string and parsing it back doesn't throw an exception.
+        ///   - Converting <see cref="DateTime.Now"/> to string and parsing it back retains at least some information,
+        ///     i.e. the round-trip parsed <see cref="DateTime"/> shouldn't be equal to the <see cref="default"/>.
+        ///     <c>((DateTime)default).ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) = "0001/01/01 00:00:00.000"</c>
+        /// </remarks>
+        /// <returns><see langword="true"/> if the <paramref name="format"/> passes validations; otherwise, <see langword="false"/>.</returns>
+        public bool IsValidDateTimeFormat()
         {
-            var dt = DateTime.ParseExact(
-                SampleDateTime.ToString(format, CultureInfo.InvariantCulture),
-                format,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.NoCurrentDateDefault);
-            return dt != default;
-        }
-        catch
-        {
-            return false;
+            if (string.IsNullOrWhiteSpace(format)) return false;
+            try
+            {
+                var dt = DateTime.ParseExact(
+                    SampleDateTime.ToString(format, CultureInfo.InvariantCulture),
+                    format,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.NoCurrentDateDefault);
+                return dt != default;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
-    /// <summary>
-    /// Projects each element of a sequence to an <see cref="IEnumerable{T}/>"/> and flattens the resulting sequences into one sequence.
-    /// </summary>
-    /// <typeparam name="TResult">The type of the elements of the resulting sequence.</typeparam>
-    /// <param name="source">The sequence to be flattened.</param>
-    /// <returns>An <see cref="IEnumerable{T}/>"/> whose elements are the result of flattening the source sequence.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/></exception>
-    public static IEnumerable<TResult> Flatten<TResult>(this IEnumerable<IEnumerable<TResult>> source) => source.SelectMany(x => x);
-
-    /// <summary>
-    /// Converts <see cref="DateTime"/> into a dd/MM/yyyy HH:mm:ss formatted string faster than <see cref="DateTime.ToString"/>.
-    /// </summary>
-    /// <param name="dateTime">the <see cref="DateTime"/> to be converted.</param>
-    /// <returns>The <see cref="DateTime"/> in the dd/MM/yyyy HH:mm:ss format.</returns>
-    public static string ToInternationalString(this DateTime dateTime)
+    extension(DateTime dateTime)
     {
-        static char DigitToAsciiChar(int digit) => (char)('0' + digit);
-
-        static void Write2Digits(Span<char> chars, int offset, int value)
+        /// <summary>
+        /// Converts <see cref="DateTime"/> into a dd/MM/yyyy HH:mm:ss formatted string faster than <see cref="DateTime.ToString"/>.
+        /// </summary>
+        /// <returns>The <see cref="DateTime"/> in the dd/MM/yyyy HH:mm:ss format.</returns>
+        public string ToInternationalString()
         {
-            int firstDigit = value / 10;
-            int secondDigit = value - (firstDigit * 10);
+            const int length = 19;
 
-            chars[offset] = DigitToAsciiChar(firstDigit);
-            chars[offset + 1] = DigitToAsciiChar(secondDigit);
-        }
-
-        static void Write2DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
-        {
-            Write2Digits(chars, offset, value);
-
-            chars[offset + 2] = postfix;
-        }
-
-        static void Write4Digits(Span<char> chars, int offset, int value)
-        {
-            int firstDigit = value / 1000;
-            value -= firstDigit * 1000;
-            int secondDigit = value / 100;
-            value -= secondDigit * 100;
-            int thirdDigit = value / 10;
-            int fourthDigit = value - (thirdDigit * 10);
-
-            chars[offset] = DigitToAsciiChar(firstDigit);
-            chars[offset + 1] = DigitToAsciiChar(secondDigit);
-            chars[offset + 2] = DigitToAsciiChar(thirdDigit);
-            chars[offset + 3] = DigitToAsciiChar(fourthDigit);
-        }
-
-        static void Write4DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
-        {
-            Write4Digits(chars, offset, value);
-
-            chars[offset + 4] = postfix;
-        }
-
-        const int length = 19;
-
-        return string.Create(length, dateTime, (chars, state) =>
-        {
-            var _dateTime = state;
-
-            Write2DigitsAndPostfix(chars, 0, _dateTime.Day, '/');
-            Write2DigitsAndPostfix(chars, 3, _dateTime.Month, '/');
-            Write4DigitsAndPostfix(chars, 6, _dateTime.Year, ' ');
-            Write2DigitsAndPostfix(chars, 11, _dateTime.Hour, ':');
-            Write2DigitsAndPostfix(chars, 14, _dateTime.Minute, ':');
-            Write2Digits(chars, 17, _dateTime.Second);
-        });
-    }
-
-    /// <summary>
-    /// Converts <see cref="DateTime"/> into an ISO 8601:2004 or ISO 8601-1:2019 (RFC 3339) string faster than <see cref="DateTime.ToString"/>.
-    /// </summary>
-    /// <param name="dateTime">the <see cref="DateTime"/> to be converted.</param>
-    /// <param name="milliseconds">if <see langword="false"/>, milliseconds won't be shown.</param>
-    /// <param name="strictDateTimeDelimiter">if <see langword="true"/>, the letter <c>'T'</c> will be used as the delimiter between date and time as per ISO 8601-1:2019.</param>
-    /// <param name="omitDelimiters">if <see langword="true"/>, delimiters will be omited, except for the letter <c>'T'</c> between date and time when <paramref name="strictDateTimeDelimiter"/> is <see langword="true"/>.</param>
-    /// <returns>The <see cref="DateTime"/> in the ISO 8601:2004/ISO 8601-1:2019 format.</returns>
-    /// <remarks>
-    /// Possible formats using this method:
-    /// <list type="bullet">
-    /// <item>
-    /// <description>"yyyy-MM-dd HH:mm:ss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-dd HH:mm:ss.fff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmssfff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmssfff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: true)</c></description>
-    /// </item>
-    /// </list>
-    /// </remarks>
-    public static string ToIsoString(this DateTime dateTime, bool milliseconds = false, bool strictDateTimeDelimiter = false, bool omitDelimiters = false)
-    {
-        static char DigitToAsciiChar(int digit) => (char)('0' + digit);
-
-        static void Write2Digits(Span<char> chars, int offset, int value)
-        {
-            int firstDigit = value / 10;
-            int secondDigit = value - (firstDigit * 10);
-
-            chars[offset] = DigitToAsciiChar(firstDigit);
-            chars[offset + 1] = DigitToAsciiChar(secondDigit);
-        }
-
-        static void Write2DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
-        {
-            Write2Digits(chars, offset, value);
-
-            chars[offset + 2] = postfix;
-        }
-
-        static void Write3Digits(Span<char> chars, int offset, int value)
-        {
-            int firstDigit = value / 100;
-            value -= firstDigit * 100;
-            int secondDigit = value / 10;
-            int thirdDigit = value - (secondDigit * 10);
-
-            chars[offset] = DigitToAsciiChar(firstDigit);
-            chars[offset + 1] = DigitToAsciiChar(secondDigit);
-            chars[offset + 2] = DigitToAsciiChar(thirdDigit);
-        }
-
-        /*static void Write3DigitsAndPostrfix(Span<char> chars, int offset, int value, char postfix)
-        {
-            Write3Digits(chars, offset, value);
-
-            chars[offset + 3] = postfix;
-        }*/
-
-        static void Write4Digits(Span<char> chars, int offset, int value)
-        {
-            int firstDigit = value / 1000;
-            value -= firstDigit * 1000;
-            int secondDigit = value / 100;
-            value -= secondDigit * 100;
-            int thirdDigit = value / 10;
-            int fourthDigit = value - (thirdDigit * 10);
-
-            chars[offset] = DigitToAsciiChar(firstDigit);
-            chars[offset + 1] = DigitToAsciiChar(secondDigit);
-            chars[offset + 2] = DigitToAsciiChar(thirdDigit);
-            chars[offset + 3] = DigitToAsciiChar(fourthDigit);
-        }
-
-        static void Write4DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
-        {
-            Write4Digits(chars, offset, value);
-
-            chars[offset + 4] = postfix;
-        }
-
-        if (omitDelimiters)
-        {
-            int length = 14 + (strictDateTimeDelimiter ? 1 : 0) + (milliseconds ? 3 : 0);
-
-            return string.Create(length, (dateTime, strictDateTimeDelimiter, milliseconds), (chars, state) =>
+            return string.Create(length, dateTime, (chars, state) =>
             {
-                (var _dateTime, var _strictDelimiter, var _milliseconds) = state;
+                var _dateTime = state;
 
-                Write4Digits(chars, 0, _dateTime.Year);
-                Write2Digits(chars, 4, _dateTime.Month);
-
-                if (_strictDelimiter) Write2DigitsAndPostfix(chars, 6, _dateTime.Day, 'T');
-                else Write2Digits(chars, 6, _dateTime.Day);
-                int tOffset = _strictDelimiter ? 1 : 0;
-
-                Write2Digits(chars, 8 + tOffset, _dateTime.Hour);
-                Write2Digits(chars, 10 + tOffset, _dateTime.Minute);
-                Write2Digits(chars, 12 + tOffset, _dateTime.Second);
-
-                if (_milliseconds) Write3Digits(chars, 14 + tOffset, _dateTime.Millisecond);
-            });
-        }
-        else
-        {
-            int length = 19 + (milliseconds ? 4 : 0);
-
-            return string.Create(length, (dateTime, strictDateTimeDelimiter, milliseconds), (chars, state) =>
-            {
-                (var _dateTime, var _strictDelimiter, var _milliseconds) = state;
-
-                Write4DigitsAndPostfix(chars, 0, _dateTime.Year, '-');
-                Write2DigitsAndPostfix(chars, 5, _dateTime.Month, '-');
-                Write2DigitsAndPostfix(chars, 8, _dateTime.Day, _strictDelimiter ? 'T' : ' ');
+                Write2DigitsAndPostfix(chars, 0, _dateTime.Day, '/');
+                Write2DigitsAndPostfix(chars, 3, _dateTime.Month, '/');
+                Write4DigitsAndPostfix(chars, 6, _dateTime.Year, ' ');
                 Write2DigitsAndPostfix(chars, 11, _dateTime.Hour, ':');
                 Write2DigitsAndPostfix(chars, 14, _dateTime.Minute, ':');
-
-                if (_milliseconds)
-                {
-                    Write2DigitsAndPostfix(chars, 17, _dateTime.Second, '.');
-                    Write3Digits(chars, 20, _dateTime.Millisecond);
-                }
-                else
-                {
-                    Write2Digits(chars, 17, _dateTime.Second);
-                }
+                Write2Digits(chars, 17, _dateTime.Second);
             });
-        }
-    }
 
-    /// <summary>
-    /// Converts <see cref="DateTime"/> into an ISO 8601:2004 string (<c>yyyy-MM-dd HH:mm:ss.fff</c>) faster than <see cref="DateTime.ToString"/>.
-    /// </summary>
-    /// <param name="dateTime">the <see cref="DateTime"/> to be converted.</param>
-    /// <param name="milliseconds">if <see langword="false"/>, milliseconds won't be shown (<c>yyyy-MM-dd HH:mm:ss</c>).</param>
-    /// <param name="strictDateTimeDelimiter">if <see langword="true"/>, <c>'T'</c> will be used as the delimiter between date and time as per ISO 8601-1:2019 (<c>yyyy-MM-ddTHH:mm:ss.fff</c>).</param>
-    /// <param name="omitDelimiters">if <see langword="true"/>, delimiters will be omited, except for <c>'T'</c> between date and time when
-    /// <paramref name="strictDateTimeDelimiter"/> is <see langword="true"/> (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
-    /// <returns>The <see cref="DateTime"/> in the ISO 8601:2004 format.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="dateTime"/> is null.</exception>
-    public static string ToIsoString(this DateTime? dateTime, bool milliseconds = true, bool strictDateTimeDelimiter = false, bool omitDelimiters = false)
-    {
-        if (dateTime == null) throw new ArgumentNullException(nameof(dateTime));
+            static char DigitToAsciiChar(int digit) => (char)('0' + digit);
 
-        DateTime _dateTime = (DateTime)dateTime;
-
-        return ToIsoString(_dateTime, milliseconds, strictDateTimeDelimiter, omitDelimiters);
-    }
-
-    /// <summary>
-    /// Converts the ISO 8601:2004 (<c>yyyy-MM-dd HH:mm:ss.fff</c>) string representation of a date and time to its <see cref="DateTime"/> equivalent faster than <see cref="DateTime.TryParseExact"/>.
-    /// </summary>
-    /// <param name="isoDateTimeString">The string containing a date and time to convert.</param>
-    /// <param name="milliseconds">Whether the string contains milliseconds.</param>
-    /// <param name="noDateTimeDelimiter">if <see langword="true"/>, the delimiter between date and time (<c>'T'</c>) is assumed to be omitted (<c>yyyy-MM-ddHH:mm:ss.fff</c>).</param>
-    /// <param name="noDelimiters">if <see langword="true"/>, all delimiters, except for <c>'T'</c> between date and time when
-    /// <paramref name="noDateTimeDelimiter"/> is <see langword="false"/>, are assumed to be omitted (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
-    /// <returns><see langword="true"/> if <paramref name="isoDateTimeString"/> was converted successfully; otherwise, <see langword="false"/>.</returns>
-    /// <remarks>
-    /// Possible formats using this method:
-    /// <list type="bullet">
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmssfff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmssfff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddHH:mm:ss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddHH:mm:ss.fff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
-    /// </item>
-    /// </list>
-    /// </remarks>
-    public static bool TryParseIsoDateTime(this string isoDateTimeString, out DateTime dateTime, bool milliseconds = false, bool noDateTimeDelimiter = false, bool noDelimiters = false)
-    {
-        int expectedLength = (milliseconds, noDateTimeDelimiter, noDelimiters) switch
-        {
-            (false, false, false) => 19, // yyyy-MM-ddTHH:mm:ss
-            (true, false, false) => 23, // yyyy-MM-ddTHH:mm:ss.fff
-            (false, false, true) => 15, // yyyyMMddTHHmmss
-            (true, false, true) => 18, // yyyyMMddTHHmmssfff
-            (false, true, true) => 14, // yyyyMMddHHmmss
-            (true, true, true) => 17, // yyyyMMddHHmmssfff
-            (false, true, false) => 18, // yyyy-MM-ddHH:mm:ss
-            (true, true, false) => 22, // yyyy-MM-ddHH:mm:ss.fff
-        };
-
-        if (isoDateTimeString == null || isoDateTimeString.Length != expectedLength)
-        {
-            dateTime = default;
-            return false;
-        }
-
-        static int AsciiCharToDigit(char digit) => digit - '0';
-
-        static bool IsDigit(int i) => i is >= 0 and <= 9;
-
-        static bool TryRead4Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
-        {
-            int a = AsciiCharToDigit(chars[0]);
-            int b = AsciiCharToDigit(chars[1]);
-            int c = AsciiCharToDigit(chars[2]);
-            int d = AsciiCharToDigit(chars[3]);
-
-            if (!IsDigit(a) || !IsDigit(b) || !IsDigit(c) || !IsDigit(d))
+            static void Write2Digits(Span<char> chars, int offset, int value)
             {
-                value = 0;
-                return false;
+                int firstDigit = value / 10;
+                int secondDigit = value - (firstDigit * 10);
+
+                chars[offset] = DigitToAsciiChar(firstDigit);
+                chars[offset + 1] = DigitToAsciiChar(secondDigit);
             }
 
-            chars = chars[(skipNext ? 5 : 4)..];
-
-            value = (a * 1000) + (b * 100) + (c * 10) + d;
-            return true;
-        }
-
-        static bool TryRead3Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
-        {
-            int a = AsciiCharToDigit(chars[0]);
-            int b = AsciiCharToDigit(chars[1]);
-            int c = AsciiCharToDigit(chars[2]);
-            if (!IsDigit(a) || !IsDigit(b) || !IsDigit(c))
+            static void Write2DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
             {
-                value = 0;
-                return false;
-            }
-            chars = chars[(skipNext ? 4 : 3)..];
-            value = (a * 100) + (b * 10) + c;
-            return true;
-        }
+                Write2Digits(chars, offset, value);
 
-        static bool TryRead2Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
-        {
-            int a = AsciiCharToDigit(chars[0]);
-            int b = AsciiCharToDigit(chars[1]);
-
-            if (!IsDigit(a) || !IsDigit(b))
-            {
-                value = 0;
-                return false;
+                chars[offset + 2] = postfix;
             }
 
-            chars = chars[(skipNext ? 3 : 2)..];
-
-            value = (a * 10) + b;
-            return true;
-        }
-
-        ReadOnlySpan<char> isoSpan = isoDateTimeString.AsSpan();
-
-        int millisecond = 0;
-        if (TryRead4Digits(ref isoSpan, !noDelimiters, out int year)
-            && TryRead2Digits(ref isoSpan, !noDelimiters, out int month)
-            && TryRead2Digits(ref isoSpan, !noDateTimeDelimiter, out int day)
-            && TryRead2Digits(ref isoSpan, !noDelimiters, out int hour)
-            && TryRead2Digits(ref isoSpan, !noDelimiters, out int minute)
-            && TryRead2Digits(ref isoSpan, !noDelimiters && milliseconds, out int second)
-            && (!milliseconds || TryRead3Digits(ref isoSpan, false, out millisecond)))
-        {
-            dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Unspecified);
-            return true;
-        }
-        else
-        {
-            dateTime = default;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Converts the ISO 8601:2004 (<c>yyyy-MM-dd HH:mm:ss.fff</c>) string representation of a date and time to its <see cref="DateTime"/> equivalent faster than <see cref="DateTime.TryParseExact"/>.
-    /// </summary>
-    /// <param name="isoDateTimeString">The string containing a date and time to convert.</param>
-    /// <param name="milliseconds">Whether the string contains milliseconds.</param>
-    /// <param name="noDateTimeDelimiter">if <see langword="true"/>, the delimiter between date and time (<c>'T'</c>) is assumed to be omitted (<c>yyyy-MM-ddHH:mm:ss.fff</c>).</param>
-    /// <param name="noDelimiters">if <see langword="true"/>, all delimiters, except for <c>'T'</c> between date and time when
-    /// <paramref name="noDateTimeDelimiter"/> is <see langword="false"/>, are assumed to be omitted (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
-    /// <returns>An object that is equivalent to the date and time contained in <paramref name="isoDateTimeString"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="isoDateTimeString"/> is null.</exception>
-    /// <exception cref="FormatException"><paramref name="isoDateTimeString"/> is not in the correct ISO format.</exception>
-    /// <remarks>
-    /// Possible formats using this method:
-    /// <list type="bullet">
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddTHHmmssfff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyyMMddHHmmssfff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddHH:mm:ss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
-    /// </item>
-    /// <item>
-    /// <description>"yyyy-MM-ddHH:mm:ss.fff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
-    /// </item>
-    /// </list>
-    /// </remarks>
-    public static DateTime ParseIsoDateTime(this string isoDateTimeString, bool milliseconds = false, bool noDateTimeDelimiter = false, bool noDelimiters = false)
-    {
-        ArgumentNullException.ThrowIfNull(isoDateTimeString);
-
-        return !TryParseIsoDateTime(isoDateTimeString, out DateTime dateTime, milliseconds, noDateTimeDelimiter, noDelimiters)
-            ? throw new FormatException("String is not in the correct ISO format")
-            : dateTime;
-    }
-
-    /// <summary>
-    /// Appends the <paramref name="number"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="number">The number to append.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, int number) => builder.AppendLine(number.ToString());
-
-    /// <summary>
-    /// Appends the <paramref name="character"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="character">The character to append.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, char character) => builder.AppendLine(character.ToString());
-
-    /// <summary>
-    /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="boolean">The boolean to append.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean) => builder.AppendLine(boolean.ToString());
-
-    /// <summary>
-    /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="boolean">The boolean to append.</param>
-    /// <param name="falseString">The string to append when <paramref name="boolean"/> is <see langword="false"/>.</param>
-    /// <param name="trueString">The string to append when <paramref name="boolean"/> is <see langword="true"/>.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, bool boolean, string falseString, string trueString) => builder.AppendLine(boolean ? trueString : falseString);
-
-    /// <summary>
-    /// Appends the <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="appendStringBuilder">The <see cref="IAppendStringBuilder"/> to append.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, IAppendStringBuilder appendStringBuilder) =>
-        // AppendStringBuilder already appends a new line at the end
-        appendStringBuilder.AppendStringBuilder(builder);
-
-    /// <summary>
-    /// Appends the array of <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
-    /// </summary>
-    /// <param name="builder">The <see cref="StringBuilder"/> to append to.</param>
-    /// <param name="appendStringBuilders">The array of <see cref="IAppendStringBuilder"/> to append.</param>
-    /// <param name="appendLineAfterElement">If <see langword="true"/>, an additional new line will be appended after each element.</param>
-    /// <param name="appendLineIfEmpty">If <see langword="true"/>, a new line will be appended even if the array is empty.</param>
-    /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
-    public static StringBuilder AppendLine(this StringBuilder builder, IAppendStringBuilder[] appendStringBuilders, bool appendLineAfterElement = false, bool appendLineIfEmpty = false)
-    {
-        if (appendStringBuilders.Length == 0)
-        {
-            if (appendLineIfEmpty) _ = builder.AppendLine();
-        }
-        else
-        {
-            if (appendLineAfterElement)
+            static void Write4Digits(Span<char> chars, int offset, int value)
             {
-                foreach (var appendStringBuilder in appendStringBuilders)
-                    _ = builder.AppendLine(appendStringBuilder).AppendLine();
+                int firstDigit = value / 1000;
+                value -= firstDigit * 1000;
+                int secondDigit = value / 100;
+                value -= secondDigit * 100;
+                int thirdDigit = value / 10;
+                int fourthDigit = value - (thirdDigit * 10);
+
+                chars[offset] = DigitToAsciiChar(firstDigit);
+                chars[offset + 1] = DigitToAsciiChar(secondDigit);
+                chars[offset + 2] = DigitToAsciiChar(thirdDigit);
+                chars[offset + 3] = DigitToAsciiChar(fourthDigit);
+            }
+
+            static void Write4DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
+            {
+                Write4Digits(chars, offset, value);
+
+                chars[offset + 4] = postfix;
+            }
+        }
+
+        /// <summary>
+        /// Converts <see cref="DateTime"/> into an ISO 8601:2004 or ISO 8601-1:2019 (RFC 3339) string faster than <see cref="DateTime.ToString"/>.
+        /// </summary>
+        /// <param name="milliseconds">if <see langword="false"/>, milliseconds won't be shown.</param>
+        /// <param name="strictDateTimeDelimiter">if <see langword="true"/>, the letter <c>'T'</c> will be used as the delimiter between date and time as per ISO 8601-1:2019.</param>
+        /// <param name="omitDelimiters">if <see langword="true"/>, delimiters will be omited, except for the letter <c>'T'</c> between date and time when <paramref name="strictDateTimeDelimiter"/> is <see langword="true"/>.</param>
+        /// <returns>The <see cref="DateTime"/> in the ISO 8601:2004/ISO 8601-1:2019 format.</returns>
+        /// <remarks>
+        /// Possible formats using this method:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>"yyyy-MM-dd HH:mm:ss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-dd HH:mm:ss.fff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: true, omitDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmssfff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: true, omitDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmss" => <c>dateTime.ToIsoString(milliseconds: false, strictDateTimeDelimiter: false, omitDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmssfff" => <c>dateTime.ToIsoString(milliseconds: true, strictDateTimeDelimiter: false, omitDelimiters: true)</c></description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        public string ToIsoString(bool milliseconds = false, bool strictDateTimeDelimiter = false, bool omitDelimiters = false)
+        {
+            if (omitDelimiters)
+            {
+                int length = 14 + (strictDateTimeDelimiter ? 1 : 0) + (milliseconds ? 3 : 0);
+
+                return string.Create(length, (dateTime, strictDateTimeDelimiter, milliseconds), (chars, state) =>
+                {
+                    (var _dateTime, var _strictDelimiter, var _milliseconds) = state;
+
+                    Write4Digits(chars, 0, _dateTime.Year);
+                    Write2Digits(chars, 4, _dateTime.Month);
+
+                    if (_strictDelimiter) Write2DigitsAndPostfix(chars, 6, _dateTime.Day, 'T');
+                    else Write2Digits(chars, 6, _dateTime.Day);
+                    int tOffset = _strictDelimiter ? 1 : 0;
+
+                    Write2Digits(chars, 8 + tOffset, _dateTime.Hour);
+                    Write2Digits(chars, 10 + tOffset, _dateTime.Minute);
+                    Write2Digits(chars, 12 + tOffset, _dateTime.Second);
+
+                    if (_milliseconds) Write3Digits(chars, 14 + tOffset, _dateTime.Millisecond);
+                });
             }
             else
             {
-                foreach (var appendStringBuilder in appendStringBuilders)
-                    _ = builder.AppendLine(appendStringBuilder);
+                int length = 19 + (milliseconds ? 4 : 0);
+
+                return string.Create(length, (dateTime, strictDateTimeDelimiter, milliseconds), (chars, state) =>
+                {
+                    (var _dateTime, var _strictDelimiter, var _milliseconds) = state;
+
+                    Write4DigitsAndPostfix(chars, 0, _dateTime.Year, '-');
+                    Write2DigitsAndPostfix(chars, 5, _dateTime.Month, '-');
+                    Write2DigitsAndPostfix(chars, 8, _dateTime.Day, _strictDelimiter ? 'T' : ' ');
+                    Write2DigitsAndPostfix(chars, 11, _dateTime.Hour, ':');
+                    Write2DigitsAndPostfix(chars, 14, _dateTime.Minute, ':');
+
+                    if (_milliseconds)
+                    {
+                        Write2DigitsAndPostfix(chars, 17, _dateTime.Second, '.');
+                        Write3Digits(chars, 20, _dateTime.Millisecond);
+                    }
+                    else
+                    {
+                        Write2Digits(chars, 17, _dateTime.Second);
+                    }
+                });
+            }
+
+            static char DigitToAsciiChar(int digit) => (char)('0' + digit);
+
+            static void Write2Digits(Span<char> chars, int offset, int value)
+            {
+                int firstDigit = value / 10;
+                int secondDigit = value - (firstDigit * 10);
+
+                chars[offset] = DigitToAsciiChar(firstDigit);
+                chars[offset + 1] = DigitToAsciiChar(secondDigit);
+            }
+
+            static void Write2DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
+            {
+                Write2Digits(chars, offset, value);
+
+                chars[offset + 2] = postfix;
+            }
+
+            static void Write3Digits(Span<char> chars, int offset, int value)
+            {
+                int firstDigit = value / 100;
+                value -= firstDigit * 100;
+                int secondDigit = value / 10;
+                int thirdDigit = value - (secondDigit * 10);
+
+                chars[offset] = DigitToAsciiChar(firstDigit);
+                chars[offset + 1] = DigitToAsciiChar(secondDigit);
+                chars[offset + 2] = DigitToAsciiChar(thirdDigit);
+            }
+
+            /*static void Write3DigitsAndPostrfix(Span<char> chars, int offset, int value, char postfix)
+            {
+                Write3Digits(chars, offset, value);
+
+                chars[offset + 3] = postfix;
+            }*/
+
+            static void Write4Digits(Span<char> chars, int offset, int value)
+            {
+                int firstDigit = value / 1000;
+                value -= firstDigit * 1000;
+                int secondDigit = value / 100;
+                value -= secondDigit * 100;
+                int thirdDigit = value / 10;
+                int fourthDigit = value - (thirdDigit * 10);
+
+                chars[offset] = DigitToAsciiChar(firstDigit);
+                chars[offset + 1] = DigitToAsciiChar(secondDigit);
+                chars[offset + 2] = DigitToAsciiChar(thirdDigit);
+                chars[offset + 3] = DigitToAsciiChar(fourthDigit);
+            }
+
+            static void Write4DigitsAndPostfix(Span<char> chars, int offset, int value, char postfix)
+            {
+                Write4Digits(chars, offset, value);
+
+                chars[offset + 4] = postfix;
+            }
+        }
+    }
+
+    extension(DateTime? dateTime)
+    {
+        /// <summary>
+        /// Converts <see cref="DateTime"/> into an ISO 8601:2004 string (<c>yyyy-MM-dd HH:mm:ss.fff</c>) faster than <see cref="DateTime.ToString"/>.
+        /// </summary>
+        /// <param name="milliseconds">if <see langword="false"/>, milliseconds won't be shown (<c>yyyy-MM-dd HH:mm:ss</c>).</param>
+        /// <param name="strictDateTimeDelimiter">if <see langword="true"/>, <c>'T'</c> will be used as the delimiter between date and time as per ISO 8601-1:2019 (<c>yyyy-MM-ddTHH:mm:ss.fff</c>).</param>
+        /// <param name="omitDelimiters">if <see langword="true"/>, delimiters will be omited, except for <c>'T'</c> between date and time when
+        /// <paramref name="strictDateTimeDelimiter"/> is <see langword="true"/> (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
+        /// <returns>The <see cref="DateTime"/> in the ISO 8601:2004 format.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="dateTime"/> is null.</exception>
+        public string ToIsoString(bool milliseconds = true, bool strictDateTimeDelimiter = false, bool omitDelimiters = false)
+        {
+            if (dateTime == null) throw new ArgumentNullException(nameof(dateTime));
+
+            DateTime _dateTime = (DateTime)dateTime;
+
+            return ToIsoString(_dateTime, milliseconds, strictDateTimeDelimiter, omitDelimiters);
+        }
+    }
+
+    extension(string isoDateTimeString)
+    {
+        /// <summary>
+        /// Converts the ISO 8601:2004 (<c>yyyy-MM-dd HH:mm:ss.fff</c>) string representation of a date and time to its <see cref="DateTime"/> equivalent faster than <see cref="DateTime.TryParseExact"/>.
+        /// </summary>
+        /// <param name="milliseconds">Whether the string contains milliseconds.</param>
+        /// <param name="noDateTimeDelimiter">if <see langword="true"/>, the delimiter between date and time (<c>'T'</c>) is assumed to be omitted (<c>yyyy-MM-ddHH:mm:ss.fff</c>).</param>
+        /// <param name="noDelimiters">if <see langword="true"/>, all delimiters, except for <c>'T'</c> between date and time when
+        /// <paramref name="noDateTimeDelimiter"/> is <see langword="false"/>, are assumed to be omitted (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
+        /// <returns><see langword="true"/> if <paramref name="isoDateTimeString"/> was converted successfully; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// Possible formats using this method:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmssfff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmssfff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddHH:mm:ss" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: false, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddHH:mm:ss.fff" => <c>isoDateTimeString.TryParseIsoDateTime(out DateTime dateTime, milliseconds: true, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        public bool TryParseIsoDateTime(out DateTime dateTime, bool milliseconds = false, bool noDateTimeDelimiter = false, bool noDelimiters = false)
+        {
+            int expectedLength = (milliseconds, noDateTimeDelimiter, noDelimiters) switch
+            {
+                (false, false, false) => 19, // yyyy-MM-ddTHH:mm:ss
+                (true, false, false) => 23, // yyyy-MM-ddTHH:mm:ss.fff
+                (false, false, true) => 15, // yyyyMMddTHHmmss
+                (true, false, true) => 18, // yyyyMMddTHHmmssfff
+                (false, true, true) => 14, // yyyyMMddHHmmss
+                (true, true, true) => 17, // yyyyMMddHHmmssfff
+                (false, true, false) => 18, // yyyy-MM-ddHH:mm:ss
+                (true, true, false) => 22, // yyyy-MM-ddHH:mm:ss.fff
+            };
+
+            if (isoDateTimeString == null || isoDateTimeString.Length != expectedLength)
+            {
+                dateTime = default;
+                return false;
+            }
+
+            ReadOnlySpan<char> isoSpan = isoDateTimeString.AsSpan();
+
+            int millisecond = 0;
+            if (TryRead4Digits(ref isoSpan, !noDelimiters, out int year)
+                && TryRead2Digits(ref isoSpan, !noDelimiters, out int month)
+                && TryRead2Digits(ref isoSpan, !noDateTimeDelimiter, out int day)
+                && TryRead2Digits(ref isoSpan, !noDelimiters, out int hour)
+                && TryRead2Digits(ref isoSpan, !noDelimiters, out int minute)
+                && TryRead2Digits(ref isoSpan, !noDelimiters && milliseconds, out int second)
+                && (!milliseconds || TryRead3Digits(ref isoSpan, false, out millisecond)))
+            {
+                dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Unspecified);
+                return true;
+            }
+            else
+            {
+                dateTime = default;
+                return false;
+            }
+
+            static int AsciiCharToDigit(char digit) => digit - '0';
+
+            static bool IsDigit(int i) => i is >= 0 and <= 9;
+
+            static bool TryRead4Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
+            {
+                int a = AsciiCharToDigit(chars[0]);
+                int b = AsciiCharToDigit(chars[1]);
+                int c = AsciiCharToDigit(chars[2]);
+                int d = AsciiCharToDigit(chars[3]);
+
+                if (!IsDigit(a) || !IsDigit(b) || !IsDigit(c) || !IsDigit(d))
+                {
+                    value = 0;
+                    return false;
+                }
+
+                chars = chars[(skipNext ? 5 : 4)..];
+
+                value = (a * 1000) + (b * 100) + (c * 10) + d;
+                return true;
+            }
+
+            static bool TryRead3Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
+            {
+                int a = AsciiCharToDigit(chars[0]);
+                int b = AsciiCharToDigit(chars[1]);
+                int c = AsciiCharToDigit(chars[2]);
+                if (!IsDigit(a) || !IsDigit(b) || !IsDigit(c))
+                {
+                    value = 0;
+                    return false;
+                }
+                chars = chars[(skipNext ? 4 : 3)..];
+                value = (a * 100) + (b * 10) + c;
+                return true;
+            }
+
+            static bool TryRead2Digits(ref ReadOnlySpan<char> chars, bool skipNext, out int value)
+            {
+                int a = AsciiCharToDigit(chars[0]);
+                int b = AsciiCharToDigit(chars[1]);
+
+                if (!IsDigit(a) || !IsDigit(b))
+                {
+                    value = 0;
+                    return false;
+                }
+
+                chars = chars[(skipNext ? 3 : 2)..];
+
+                value = (a * 10) + b;
+                return true;
             }
         }
 
-        return builder;
-    }
-
-    /// <summary>
-    /// Converts an array of type <typeparamref name="T"/> to a string that starts with <paramref name="open"/> and ends with <paramref name="close"/>,
-    /// each element is prefixed with <paramref name="prefix"/> and postfixed with <paramref name="postfix"/>, and elements are separated with <paramref name="separator"/>.
-    /// </summary>
-    /// <typeparam name="T">The element type of the array.</typeparam>
-    /// <param name="values">The array to convert.</param>
-    /// <param name="open">The string with which the resulting string should be prefixed.</param>
-    /// <param name="prefix">The string with which every element should be prefixed.</param>
-    /// <param name="postfix">The string with which every element should be postfixed.</param>
-    /// <param name="separator">The string with which every element should be separated.</param>
-    /// <param name="close">The string with which the resulting string should be postfixed.</param>
-    /// <param name="prefixPostfixLines">If <see langword="true"/>, every element inside <paramref name="values"/> will be split into lines, and
-    /// every line will be prefixed and postfixed with <paramref name="prefix"/> and <paramref name="postfix"/> separately.</param>
-    /// <returns>The string representation of the array in the given format.</returns>
-    public static string ToString<T>(this T[] values, string? open = null, string? prefix = null, string? postfix = null, string separator = ", ", string? close = null, bool prefixPostfixLines = false)
-    {
-        IEnumerable<T> _values = values;
-        return _values.ToString(open, prefix, postfix, separator, close, prefixPostfixLines);
-    }
-
-    /// <summary>
-    /// Converts a sequence of type <typeparamref name="T"/> to a string that starts with <paramref name="open"/> and ends with <paramref name="close"/>,
-    /// each element is prefixed with <paramref name="prefix"/> and postfixed with <paramref name="postfix"/>, and elements are separated with <paramref name="separator"/>.
-    /// </summary>
-    /// <typeparam name="T">The element type of the sequence.</typeparam>
-    /// <param name="values">The sequence to convert.</param>
-    /// <param name="open">The string with which the resulting string should be prefixed.</param>
-    /// <param name="prefix">The string with which every element should be postfixed prefixed.</param>
-    /// <param name="postfix">The string with which every element should end.</param>
-    /// <param name="separator">The string with which every element should be separated.</param>
-    /// <param name="close">The string with which the resulting string should be postfixed.</param>
-    /// <param name="prefixPostfixLines">If <see langword="true"/>, every element inside <paramref name="values"/> will be split into lines, and
-    /// every line will be prefixed and postfixed with <paramref name="prefix"/> and <paramref name="postfix"/> separately.</param>
-    /// <returns>The string representation of the sequence in the given format.</returns>
-    [SuppressMessage("Style", "IDE0045:Convert to conditional expression")]
-    [SuppressMessage("Style", "IDE0046:Convert to conditional expression")]
-    public static string ToString<T>(this IEnumerable<T> values, string? open = null, string? prefix = null, string? postfix = null, string separator = ", ", string? close = null, bool prefixPostfixLines = false)
-    {
-        IEnumerable<string?> _values;
-
-        if (prefixPostfixLines)
+        /// <summary>
+        /// Converts the ISO 8601:2004 (<c>yyyy-MM-dd HH:mm:ss.fff</c>) string representation of a date and time to its <see cref="DateTime"/> equivalent faster than <see cref="DateTime.TryParseExact"/>.
+        /// </summary>
+        /// <param name="milliseconds">Whether the string contains milliseconds.</param>
+        /// <param name="noDateTimeDelimiter">if <see langword="true"/>, the delimiter between date and time (<c>'T'</c>) is assumed to be omitted (<c>yyyy-MM-ddHH:mm:ss.fff</c>).</param>
+        /// <param name="noDelimiters">if <see langword="true"/>, all delimiters, except for <c>'T'</c> between date and time when
+        /// <paramref name="noDateTimeDelimiter"/> is <see langword="false"/>, are assumed to be omitted (<c>yyyyMMddHHmmssfff</c>, <c>yyyyMMddTHHmmssfff</c>).</param>
+        /// <returns>An object that is equivalent to the date and time contained in <paramref name="isoDateTimeString"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="isoDateTimeString"/> is null.</exception>
+        /// <exception cref="FormatException"><paramref name="isoDateTimeString"/> is not in the correct ISO format.</exception>
+        /// <remarks>
+        /// Possible formats using this method:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddTHH:mm:ss.fff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: false, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddTHHmmssfff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: false, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyyMMddHHmmssfff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: true, noDelimiters: true)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddHH:mm:ss" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: false, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
+        /// </item>
+        /// <item>
+        /// <description>"yyyy-MM-ddHH:mm:ss.fff" => <c>isoDateTimeString.ParseIsoDateTime(milliseconds: true, noDateTimeDelimiter: true, noDelimiters: false)</c></description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        public DateTime ParseIsoDateTime(bool milliseconds = false, bool noDateTimeDelimiter = false, bool noDelimiters = false)
         {
-            if (prefix == null && postfix == null)
-                _values = values.Select(value => value?.ToString());
-            else if (prefix != null && postfix != null)
-                _values = values.Select(value => value?.ToString()?.AppendToLines(prefix, postfix));
-            else if (prefix != null/* && postfix == null*/)
-                _values = values.Select(value => value?.ToString()?.AppendBeforeLines(prefix));
-            else // prefix == null && postfix != null
-                _values = values.Select(value => value?.ToString()?.AppendAfterLines(postfix!));
-        }
-        else
-        {
-            if (prefix == null && postfix == null)
-                _values = values.Select(value => $"{value}");
-            else if (prefix != null && postfix != null)
-                _values = values.Select(value => $"{prefix}{value}{postfix}");
-            else if (prefix != null/* && postfix == null*/)
-                _values = values.Select(value => $"{prefix}{value}");
-            else // prefix == null && postfix != null
-                _values = values.Select(value => $"{value}{postfix!}");
-        }
+            ArgumentNullException.ThrowIfNull(isoDateTimeString);
 
-        if (open != null && close != null)
-            return $"{open}{string.Join(separator, _values)}{close}";
-        else if (open == null && close == null)
-            return string.Join(separator, _values);
-        else if (open != null/* && close == null*/)
-            return $"{open}{string.Join(separator, _values)}";
-        else // open == null && close != null
-            return $"{string.Join(separator, _values)}{close!}";
-    }
-
-    /// <summary>
-    /// Check if the given string is equal to one of the given strings ignoring case.
-    /// </summary>
-    /// <param name="value">The string to search.</param>
-    /// <param name="values">The strings to search in.</param>
-    /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsInIgnoreCase(this string value, params string[] values) => values != null && values.Length != 0 && values.Contains(value, StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// Check if the given string is equal to one of the given strings.
-    /// </summary>
-    /// <param name="value">The string to search.</param>
-    /// <param name="values">The strings to search in.</param>
-    /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn(this string value, params string[] values) => values != null && values.Length != 0 && values.Contains(value);
-
-    /// <summary>
-    /// Check if the given object is equal to one of the given objects.
-    /// </summary>
-    /// <typeparam name="T">The type of <paramref name="value"/> and elements inside <paramref name="values"/>.</typeparam>
-    /// <param name="value">The object to search.</param>
-    /// <param name="values">The objects to search in.</param>
-    /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn<T>(this T value, params T[] values) => values != null && values.Length != 0 && values.Contains(value);
-
-    /// <summary>
-    /// Check if the given object is equal to one of the given objects.
-    /// </summary>
-    /// <typeparam name="T">The type of <paramref name="value"/> and elements inside <paramref name="values"/>.</typeparam>
-    /// <param name="value">The object to search.</param>
-    /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> to use to compare objects.</param>
-    /// <param name="values">The objects to search in.</param>
-    /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
-    public static bool IsIn<T>(this T value, IEqualityComparer<T> comparer, params T[] values) => values != null && values.Length != 0 && values.Contains(value, comparer);
-
-    /// <summary>
-    /// Groups every element in a sequence with its positional index.
-    /// </summary>
-    /// <typeparam name="T">The element type in the target sequence.</typeparam>
-    /// <param name="source">The target sequence.</param>
-    /// <returns>A new enumerable sequence with tuples of elements and their indexes.</returns>
-    public static IEnumerable<(int position, T value)> Enumerate<T>(this IEnumerable<T> source) => source.Select((value, position) => (position, value));
-
-    /// <summary>
-    /// Returns a new string in which a segment at a specified character position and with a specified length in the current instance is replaced with
-    /// another specified string.
-    /// </summary>
-    /// <param name="source">The source string to modify.</param>
-    /// <param name="startIndex">The zero-based starting character position of a segment in this instance.</param>
-    /// <param name="length">The number of characters in the segment.</param>
-    /// <param name="replacement">The string to replace the speccified segment.</param>
-    /// <returns>
-    /// A string that is equivalent to the current string, except that <paramref name="length"/> number of characters begining at <paramref name="startIndex"/>
-    /// are replaced with <paramref name="replacement"/>.
-    /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="startIndex"/> or <paramref name="length"/> is less than zero, or <paramref name="startIndex"/> is greater than or equal to the
-    /// length of <paramref name="source"/> string.
-    /// </exception>
-    public static string Replace(this string source, int startIndex, int length, string replacement)
-    {
-        if (startIndex < 0 || source.Length <= startIndex) throw new ArgumentOutOfRangeException(nameof(startIndex), startIndex, "The indicated position is not within this instance.");
-        if (length < 0) throw new ArgumentOutOfRangeException(nameof(length), length, "Length is less than zero.");
-
-        length = Math.Min(length, source.Length - startIndex);
-
-        return string.Create(source.Length - length + replacement.Length, (source, startIndex, length, replacement), (chars, state) => {
-            state.source.AsSpan()[..state.startIndex].CopyTo(chars);
-            state.replacement.AsSpan().CopyTo(chars[state.startIndex..]);
-            state.source.AsSpan()[(state.startIndex + state.length)..].CopyTo(chars[(state.startIndex + state.replacement.Length)..]);
-        });
-    }
-
-    /// <summary>
-    /// In a specified input string, replaces a strings that matches a regular expression pattern with a specified replacement string.
-    /// </summary>
-    /// <param name="regex">A regex object with the specified regex pattern.</param>
-    /// <param name="input">The string to search for a match.</param>
-    /// <param name="replacement">The replacement string.</param>
-    /// <param name="groupIndex">The index of the captured group to replace.</param>
-    /// <returns>
-    /// A new string that is identical to the input string, except that the replacement string takes the place of the matched string.
-    /// If the regular expression pattern is not matched in the current instance, the method returns the current instance unchanged.
-    /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="groupIndex"/> is less than zero.</exception>
-    public static string ReplaceGroup(this Regex regex, string input, string replacement, int groupIndex = 1)
-    {
-        if (groupIndex < 1) throw new ArgumentOutOfRangeException(nameof(groupIndex), groupIndex, "Captured groups by a regex match start from 1");
-        var match = regex.Match(input);
-        if (!match.Success || match.Groups.Count < groupIndex) return input;
-
-        var group = match.Groups[groupIndex];
-        return group.Success ? input.Replace(group.Index, group.Length, replacement) : input;
-    }
-
-    /// <summary>
-    /// Makes a copy of <paramref name="dictionary"/> with all lowercased keys and same values.
-    /// </summary>
-    /// <typeparam name="TValue">Value type of the <see cref="Dictionary{string, TValue}"/>.</typeparam>
-    /// <param name="dictionary">The dictionary to copy.</param>
-    /// <returns>A copy of <paramref name="dictionary"/> with all lowercased keys and same values.</returns>
-    /// <exception cref="ArgumentException">Duplicate keys after lowercaseing.</exception>
-    public static Dictionary<string, TValue> ToLowerKeys<TValue>(this Dictionary<string, TValue> dictionary)
-    {
-        var result = new Dictionary<string, TValue>(dictionary.Count);
-
-        foreach ((string key, TValue value) in dictionary)
-            result.Add(key.ToLower(), value);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Gets the value associated with the specified key.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
-    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
-    /// <param name="dict">The dictionary to search in.</param>
-    /// <param name="key">The key of the value to get.</param>
-    /// <returns>The value associated with the specified key, if the key is found; otherwise, <see langword="null"/>.</returns>
-    public static TValue? GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : class => dict.TryGetValue(key, out TValue? value) ? value : null;
-
-    /// <summary>
-    /// Adds a key/value pair to the <see cref="Dictionary{TKey, TValue}"/> if the key does not already exist.
-    /// Returns the new value, or the existing value if the key already exists.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the key of the element to add.</typeparam>
-    /// <typeparam name="TValue">The type of the value to be added, if the key does not already exist.</typeparam>
-    /// <param name="dictionary">The <see cref="Dictionary{TKey, TValue}"/> from which to get or add the value.</param>
-    /// <param name="key">The key of the element to add.</param>
-    /// <param name="value">The value to be added, if the key does not already exist.</param>
-    /// <returns>The new value, or the existing value if the key already exists.</returns>
-    public static TValue? GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue? value) where TKey : notnull
-    {
-        ref var valueRef = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
-
-        if (exists)
-        {
-            // The key already exists in the Dictionary. Return the associated value
-            return valueRef;
-        }
-        else
-        {
-            // The key did not exist, however, we've just inserted it with the default value. Update the value and return it
-            valueRef = value;
-            return value;
+            return !TryParseIsoDateTime(isoDateTimeString, out DateTime dateTime, milliseconds, noDateTimeDelimiter, noDelimiters)
+                ? throw new FormatException("String is not in the correct ISO format")
+                : dateTime;
         }
     }
 
-    /// <summary>
-    /// Updates the value associated with <paramref name="key"/> to <paramref name="value"/>
-    /// if has such key exists.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the key of the element to update.</typeparam>
-    /// <typeparam name="TValue">The type of the value to be updated, if the key already exist.</typeparam>
-    /// <param name="dictionary">The <see cref="Dictionary{TKey, TValue}"/> in which to update the value.</param>
-    /// <param name="key">The key of the element to update.</param>
-    /// <param name="value">The value to be updated, if the key already exist.</param>
-    /// <returns><see langword="true"/> if the <paramref name="key"/> exists
-    /// and the associated value was replaced with <paramref name="value"/>;otherwise, <see langword="false"/>.</returns>
-    public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue? value) where TKey : notnull
+    extension(StringBuilder builder)
     {
-        ref var valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
+        /// <summary>
+        /// Appends the <paramref name="number"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
+        /// </summary>
+        /// <param name="number">The number to append.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(int number) => builder.AppendLine(number.ToString());
 
-        if (Unsafe.IsNullRef(ref valueRef))
+        /// <summary>
+        /// Appends the <paramref name="character"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
+        /// </summary>
+        /// <param name="character">The character to append.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(char character) => builder.AppendLine(character.ToString());
+
+        /// <summary>
+        /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
+        /// </summary>
+        /// <param name="boolean">The boolean to append.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(bool boolean) => builder.AppendLine(boolean.ToString());
+
+        /// <summary>
+        /// Appends the <paramref name="boolean"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/> object.
+        /// </summary>
+        /// <param name="boolean">The boolean to append.</param>
+        /// <param name="falseString">The string to append when <paramref name="boolean"/> is <see langword="false"/>.</param>
+        /// <param name="trueString">The string to append when <paramref name="boolean"/> is <see langword="true"/>.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(bool boolean, string falseString, string trueString) => builder.AppendLine(boolean ? trueString : falseString);
+
+        /// <summary>
+        /// Appends the <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
+        /// </summary>
+        /// <param name="appendStringBuilder">The <see cref="IAppendStringBuilder"/> to append.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(IAppendStringBuilder appendStringBuilder) =>
+            // AppendStringBuilder already appends a new line at the end
+            appendStringBuilder.AppendStringBuilder(builder);
+
+        /// <summary>
+        /// Appends the array of <see cref="IAppendStringBuilder"/> as a string followed by the default line terminator to the end of the current <see cref="StringBuilder"/>
+        /// </summary>
+        /// <param name="appendStringBuilders">The array of <see cref="IAppendStringBuilder"/> to append.</param>
+        /// <param name="appendLineAfterElement">If <see langword="true"/>, an additional new line will be appended after each element.</param>
+        /// <param name="appendLineIfEmpty">If <see langword="true"/>, a new line will be appended even if the array is empty.</param>
+        /// <returns>A reference to <paramref name="builder"/> after the append operation has completed.</returns>
+        public StringBuilder AppendLine(IAppendStringBuilder[] appendStringBuilders, bool appendLineAfterElement = false, bool appendLineIfEmpty = false)
         {
-            // The key does not exist. Nothing to update
-            return false;
+            if (appendStringBuilders.Length == 0)
+            {
+                if (appendLineIfEmpty) _ = builder.AppendLine();
+            }
+            else
+            {
+                if (appendLineAfterElement)
+                {
+                    foreach (var appendStringBuilder in appendStringBuilders)
+                        _ = builder.AppendLine(appendStringBuilder).AppendLine();
+                }
+                else
+                {
+                    foreach (var appendStringBuilder in appendStringBuilders)
+                        _ = builder.AppendLine(appendStringBuilder);
+                }
+            }
+
+            return builder;
         }
-        else
+    }
+
+    extension<T>(T[] values)
+    {
+        /// <summary>
+        /// Converts an array of type <typeparamref name="T"/> to a string that starts with <paramref name="open"/> and ends with <paramref name="close"/>,
+        /// each element is prefixed with <paramref name="prefix"/> and postfixed with <paramref name="postfix"/>, and elements are separated with <paramref name="separator"/>.
+        /// </summary>
+        /// <param name="open">The string with which the resulting string should be prefixed.</param>
+        /// <param name="prefix">The string with which every element should be prefixed.</param>
+        /// <param name="postfix">The string with which every element should be postfixed.</param>
+        /// <param name="separator">The string with which every element should be separated.</param>
+        /// <param name="close">The string with which the resulting string should be postfixed.</param>
+        /// <param name="prefixPostfixLines">If <see langword="true"/>, every element inside <paramref name="values"/> will be split into lines, and
+        /// every line will be prefixed and postfixed with <paramref name="prefix"/> and <paramref name="postfix"/> separately.</param>
+        /// <returns>The string representation of the array in the given format.</returns>
+        public string ToString(string? open = null, string? prefix = null, string? postfix = null, string separator = ", ", string? close = null, bool prefixPostfixLines = false)
+            => (values as IEnumerable<T>).ToString(open, prefix, postfix, separator, close, prefixPostfixLines);
+    }
+
+    extension<T>(IEnumerable<T> values)
+    {
+        /// <summary>
+        /// Converts a sequence of type <typeparamref name="T"/> to a string that starts with <paramref name="open"/> and ends with <paramref name="close"/>,
+        /// each element is prefixed with <paramref name="prefix"/> and postfixed with <paramref name="postfix"/>, and elements are separated with <paramref name="separator"/>.
+        /// </summary>
+        /// <param name="open">The string with which the resulting string should be prefixed.</param>
+        /// <param name="prefix">The string with which every element should be postfixed prefixed.</param>
+        /// <param name="postfix">The string with which every element should end.</param>
+        /// <param name="separator">The string with which every element should be separated.</param>
+        /// <param name="close">The string with which the resulting string should be postfixed.</param>
+        /// <param name="prefixPostfixLines">If <see langword="true"/>, every element inside <paramref name="values"/> will be split into lines, and
+        /// every line will be prefixed and postfixed with <paramref name="prefix"/> and <paramref name="postfix"/> separately.</param>
+        /// <returns>The string representation of the sequence in the given format.</returns>
+        [SuppressMessage("Style", "IDE0045:Convert to conditional expression")]
+        [SuppressMessage("Style", "IDE0046:Convert to conditional expression")]
+        public string ToString(string? open = null, string? prefix = null, string? postfix = null, string separator = ", ", string? close = null, bool prefixPostfixLines = false)
         {
-            // The key exists. Update the value
-            valueRef = value;
-            return true;
+            IEnumerable<string?> _values;
+
+            if (prefixPostfixLines)
+            {
+                if (prefix == null && postfix == null)
+                    _values = values.Select(value => value?.ToString());
+                else if (prefix != null && postfix != null)
+                    _values = values.Select(value => value?.ToString()?.AppendToLines(prefix, postfix));
+                else if (prefix != null/* && postfix == null*/)
+                    _values = values.Select(value => value?.ToString()?.AppendBeforeLines(prefix));
+                else // prefix == null && postfix != null
+                    _values = values.Select(value => value?.ToString()?.AppendAfterLines(postfix!));
+            }
+            else
+            {
+                if (prefix == null && postfix == null)
+                    _values = values.Select(value => $"{value}");
+                else if (prefix != null && postfix != null)
+                    _values = values.Select(value => $"{prefix}{value}{postfix}");
+                else if (prefix != null/* && postfix == null*/)
+                    _values = values.Select(value => $"{prefix}{value}");
+                else // prefix == null && postfix != null
+                    _values = values.Select(value => $"{value}{postfix!}");
+            }
+
+            if (open != null && close != null)
+                return $"{open}{string.Join(separator, _values)}{close}";
+            else if (open == null && close == null)
+                return string.Join(separator, _values);
+            else if (open != null/* && close == null*/)
+                return $"{open}{string.Join(separator, _values)}";
+            else // open == null && close != null
+                return $"{string.Join(separator, _values)}{close!}";
+        }
+    }
+
+    extension(string value)
+    {
+        /// <summary>
+        /// Check if the given string is equal to one of the given strings ignoring case.
+        /// </summary>
+        /// <param name="values">The strings to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsInIgnoreCase(params string[] values) => values != null && value.IsInIgnoreCase(values.AsSpan());
+
+        /// <summary>
+        /// Check if the given string is equal to one of the given strings ignoring case.
+        /// </summary>
+        /// <param name="values">The strings to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsInIgnoreCase(params ReadOnlySpan<string> values) => values.Length != 0 && values.Contains(value, StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Check if the given string is equal to one of the given strings.
+        /// </summary>
+        /// <param name="values">The strings to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(params string[] values) => values != null && value.IsIn(values.AsSpan());
+
+        /// <summary>
+        /// Check if the given string is equal to one of the given strings.
+        /// </summary>
+        /// <param name="values">The strings to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(params ReadOnlySpan<string> values) => values.Length != 0 && values.Contains(value);
+    }
+
+    extension<T>(T value)
+    {
+        /// <summary>
+        /// Check if the given object is equal to one of the given objects.
+        /// </summary>
+        /// <param name="values">The objects to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(params T[] values) => values != null && value.IsIn(values.AsSpan());
+
+        /// <summary>
+        /// Check if the given object is equal to one of the given objects.
+        /// </summary>
+        /// <param name="values">The objects to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(params ReadOnlySpan<T> values) => values.Length != 0 && values.Contains(value);
+
+        /// <summary>
+        /// Check if the given object is equal to one of the given objects.
+        /// </summary>
+        /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> to use to compare objects.</param>
+        /// <param name="values">The objects to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(IEqualityComparer<T> comparer, params T[] values) => values != null && value.IsIn(comparer, values.AsSpan());
+
+        /// <summary>
+        /// Check if the given object is equal to one of the given objects.
+        /// </summary>
+        /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> to use to compare objects.</param>
+        /// <param name="values">The objects to search in.</param>
+        /// <returns>Whether <paramref name="value"/> was found inside <paramref name="values"/>.</returns>
+        public bool IsIn(IEqualityComparer<T> comparer, params ReadOnlySpan<T> values) => values.Length != 0 && values.Contains(value, comparer);
+    }
+
+    extension<T>(IEnumerable<T> source)
+    {
+        /// <summary>
+        /// Groups every element in a sequence with its positional index.
+        /// </summary>
+        /// <returns>A new enumerable sequence with tuples of elements and their indexes.</returns>
+        public IEnumerable<(int position, T value)> Enumerate() => source.Select((value, position) => (position, value));
+    }
+
+    extension<TValue>(Dictionary<string, TValue> dictionary)
+    {
+        /// <summary>
+        /// Makes a copy of <paramref name="dictionary"/> with all lowercased keys and same values.
+        /// </summary>
+        /// <returns>A copy of <paramref name="dictionary"/> with all lowercased keys and same values.</returns>
+        /// <exception cref="ArgumentException">Duplicate keys after lowercaseing.</exception>
+        public Dictionary<string, TValue> ToLowerKeys()
+        {
+            var result = new Dictionary<string, TValue>(dictionary.Count);
+
+            foreach ((string key, TValue value) in dictionary)
+                result.Add(key.ToLower(), value);
+
+            return result;
+        }
+    }
+
+    extension<TKey, TValue>(IDictionary<TKey, TValue> dictionary) where TValue : class
+    {
+        /// <summary>
+        /// Gets the value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        /// <returns>The value associated with the specified key, if the key is found; otherwise, <see langword="null"/>.</returns>
+        public TValue? GetValueOrNull(TKey key) => dictionary.TryGetValue(key, out TValue? value) ? value : null;
+    }
+
+    extension<TKey, TValue>(Dictionary<TKey, TValue> dictionary) where TKey : notnull
+    {
+        /// <summary>
+        /// Adds a key/value pair to the <see cref="Dictionary{TKey, TValue}"/> if the key does not already exist.
+        /// Returns the new value, or the existing value if the key already exists.
+        /// </summary>
+        /// <param name="key">The key of the element to add.</param>
+        /// <param name="value">The value to be added, if the key does not already exist.</param>
+        /// <returns>The new value, or the existing value if the key already exists.</returns>
+        public TValue? GetOrAdd(TKey key, TValue? value)
+        {
+            ref var valueRef = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
+
+            if (exists)
+            {
+                // The key already exists in the Dictionary. Return the associated value
+                return valueRef;
+            }
+            else
+            {
+                // The key did not exist, however, we've just inserted it with the default value. Update the value and return it
+                valueRef = value;
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// Updates the value associated with <paramref name="key"/> to <paramref name="value"/>
+        /// if has such key exists.
+        /// </summary>
+        /// <param name="key">The key of the element to update.</param>
+        /// <param name="value">The value to be updated, if the key already exist.</param>
+        /// <returns><see langword="true"/> if the <paramref name="key"/> exists
+        /// and the associated value was replaced with <paramref name="value"/>;otherwise, <see langword="false"/>.</returns>
+        public bool TryUpdate(TKey key, TValue? value)
+        {
+            ref var valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
+
+            if (Unsafe.IsNullRef(ref valueRef))
+            {
+                // The key does not exist. Nothing to update
+                return false;
+            }
+            else
+            {
+                // THe key exists. Update the value
+                valueRef = value;
+                return true;
+            }
         }
     }
 }

@@ -16,40 +16,46 @@ public static class ThrowHelpers
 {
     public static CommandBox ThrowIfCommand(string command) => new(command);
 
-    public static void IsUnsuportedOnPlatforms(this CommandBox commandBox, params OSPlatform[] platforms)
+    extension(CommandBox commandBox)
     {
-        string command = commandBox.Command;
+        public void IsUnsuportedOnPlatforms(params OSPlatform[] platforms)
+        {
+            string command = commandBox.Command;
 
-        if (Array.Exists(platforms, IsOSPlatform))
-            throw new NotSupportedException($"{command} command not supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
+            if (Array.Exists(platforms, IsOSPlatform))
+                throw new NotSupportedException($"{command} command not supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
+        }
+
+        public void IsOnlySuportedOnPlatforms(params OSPlatform[] platforms)
+        {
+            string command = commandBox.Command;
+
+            if (!Array.Exists(platforms, IsOSPlatform))
+                throw new NotSupportedException($"{command} command only supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
+        }
+
+        public CommandAndCommandsBox IsUsedWithCommands(params string[] commands) => new(commandBox.Command, commands);
     }
 
-    public static void IsOnlySuportedOnPlatforms(this CommandBox commandBox, params OSPlatform[] platforms)
+    extension(CommandAndCommandsBox commandAndCommandsBox)
     {
-        string command = commandBox.Command;
+        public void InArgs(string[] args)
+        {
+            string command = commandAndCommandsBox.Command;
+            string[] commands = commandAndCommandsBox.Commands;
 
-        if (!Array.Exists(platforms, IsOSPlatform))
-            throw new NotSupportedException($"{command} command only supported on the {PrettyJoin(platforms)} platform{(platforms.Length > 1 ? "s" : "")}");
-    }
+            if (args.Contains(command) && args.ContainsAny(commands))
+                throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
+        }
 
-    public static CommandAndCommandsBox IsUsedWithCommands(this CommandBox commandBox, params string[] commands) => new(commandBox.Command, commands);
+        public void InArgs(CommandLineArgs args)
+        {
+            string command = commandAndCommandsBox.Command;
+            string[] commands = commandAndCommandsBox.Commands;
 
-    public static void InArgs(this CommandAndCommandsBox commandAndCommandsBox, string[] args)
-    {
-        string command = commandAndCommandsBox.Command;
-        string[] commands = commandAndCommandsBox.Commands;
-
-        if (args.Contains(command) && args.ContainsAny(commands))
-            throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
-    }
-
-    public static void InArgs(this CommandAndCommandsBox commandAndCommandsBox, CommandLineArgs args)
-    {
-        string command = commandAndCommandsBox.Command;
-        string[] commands = commandAndCommandsBox.Commands;
-
-        if (args.ContainsSubcommand(command) && args.ContainsAnySubcommand(commands))
-            throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
+            if (args.ContainsSubcommand(command) && args.ContainsAnySubcommand(commands))
+                throw new ArgumentException($"Can't use \"{command}\" with {PrettyJoin(commands, lastSeparator: " or ", empty: "any", quoted: true)} commands");
+        }
     }
 
     private static string PrettyJoin(string[] strings, string separator = ", ", string lastSeparator = " and ", string empty = "none", bool quoted = false)

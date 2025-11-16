@@ -74,7 +74,7 @@ public sealed class Service : IDisposable, IAsyncDisposable
             if (!Path.EndsInDirectorySeparator(workingDir)) workingDir += Path.DirectorySeparatorChar;
 
             if (configFilePath == null) configurationFileParentDirectoryPath = workingDir;
-            configurationFilePath = configFilePath ?? workingDir + configurationFileName;
+            configurationFilePath = configFilePath ?? (workingDir + configurationFileName);
             if (logFilePath == null) Console.WriteLine($"{nameof(logFilePath)} is null, defaulting to \"{workingDir + logFileName}\"");
             logFilePath ??= workingDir + logFileName;
             sqliteRelativeBasePath = sqliteBasePath ?? workingDir;
