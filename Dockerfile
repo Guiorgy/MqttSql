@@ -88,16 +88,16 @@ COPY --from=publish /publish .
 # Define the entry point
 ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/app/home/config.json", "--logfile=/dev/null", "--sqlite-dir=/app/home/"]
 
-ARG TITLE
-ARG DESCRIPTION
-ARG VERSION
-ARG AUTHOR
-ARG LICENSE
-ARG SOURCE
-ARG GIT_COMMIT
-ARG BUILD_TIMESTAMP
-ARG RUNTIME_TAG
-ARG IMAGE_TAG
+ARG TITLE \
+  DESCRIPTION \
+  VERSION \
+  AUTHOR \
+  LICENSE \
+  SOURCE \
+  GIT_COMMIT \
+  BUILD_TIMESTAMP \
+  RUNTIME_TAG \
+  IMAGE_TAG
 
 RUN [ -n "$TITLE" ] \
   && [ -n "$DESCRIPTION" ] \
