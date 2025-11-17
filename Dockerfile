@@ -92,8 +92,11 @@ WORKDIR /app
 # Copy the published files from the publish stage into the working directory
 COPY --from=publish /publish .
 
+# Define the volumes
+VOLUME /app/config /app/data
+
 # Define the entry point
-ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/app/home/config.json", "--logfile=/dev/null", "--sqlite-dir=/app/home/"]
+ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/app/config/config.json", "--logfile=/dev/null", "--sqlite-dir=/app/data/"]
 
 ARG TITLE \
   DESCRIPTION \
