@@ -50,7 +50,10 @@ RUN dotnet restore ./MqttSql/MqttSql.csproj --arch $TARGETARCH
 
 # Copy all files (except already copied project files) and build a release executable targeting Linux and the specified architecture
 COPY --exclude=*.csproj --exclude=*/*.csproj --exclude=*/*/*.csproj . ./
-RUN dotnet build ./MqttSql/MqttSql.csproj --no-restore --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false -p:Define=DOCKER
+RUN dotnet build ./MqttSql/MqttSql.csproj \
+  --no-restore --nologo \
+  --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION \
+  -p:UseAppHost=false -p:Define=DOCKER -p:GitRevision="$GIT_COMMIT"
 
 ### .NET Debug Base Stage ###
 FROM build-base AS debug-base
@@ -73,7 +76,11 @@ ENTRYPOINT ["dotnet", "MqttSql.dll", "--config=/tmp/mqttsql/config.json", "--log
 FROM build AS publish
 
 # Build a release executable targeting Linux and the specified architecture
-RUN dotnet publish ./MqttSql/MqttSql.csproj --no-build --nologo --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION -p:UseAppHost=false --output /publish
+RUN dotnet publish ./MqttSql/MqttSql.csproj \
+  --no-build --nologo \
+  --os linux --arch $TARGETARCH --self-contained false --configuration $BUILD_CONFIGURATION \
+  -p:UseAppHost=false \
+  --output /publish
 
 # Move the LICENSE file into the output directory
 RUN mv ./LICENSE /publish/
