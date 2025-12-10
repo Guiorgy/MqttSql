@@ -47,7 +47,7 @@ public sealed class SqliteDatabaseManager(Logger logger, CancellationToken cance
                     CREATE TABLE IF NOT EXISTS '{table}' (
                         id INTEGER NOT NULL PRIMARY KEY,
                         Timestamp DATETIME DEFAULT (DATETIME(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
-                        Message VARCHAR NOT NULL
+                        Message TEXT NOT NULL
                     );
                     """;
 
