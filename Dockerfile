@@ -10,6 +10,8 @@
 # Source: https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md#full-tag-listing
 # Ubuntu 24.04: 10.0, 10.0-noble
 # Ubuntu 24.04 AOT: 10.0-aot, 10.0-noble-aot
+# Ubuntu 26.04: 10.0-resolute
+# Ubuntu 26.04 AOT: 10.0-resolute-aot
 # Alpine: 10.0-alpine
 # Alpine AOT: 10.0-alpine-aot
 # Azure Linux: 10.0-azurelinux3.0
@@ -21,10 +23,15 @@ ARG SDK_TAG=10.0
 # Runtime with native dependencies: runtime-deps
 ARG RUNTIME_IMAGE=runtime
 
-# Source: https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#full-tag-listing
+# Source:
+# - https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md#full-tag-listing
+# - https://github.com/dotnet/dotnet-docker/blob/main/README.runtime-deps.md#full-tag-listing
 # Ubuntu 24.04: 10.0, 10.0-noble
 # Ubuntu 24.04 Chiseled: 10.0-noble-chiseled
 # Ubuntu 24.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-noble-chiseled-extra
+# Ubuntu 26.04: 10.0, 10.0-resolute
+# Ubuntu 26.04 Chiseled: 10.0-resolute-chiseled
+# Ubuntu 26.04 Chiseled with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-resolute-chiseled-extra
 # Alpine: 10.0-alpine
 # Alpine with tzdata (Time Zone Database) and icu (International Components for Unicode): 10.0-alpine-extra
 # Azure Linux: 10.0-azurelinux3.0
